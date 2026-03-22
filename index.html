@@ -120,6 +120,7 @@ tbody tr.highrisk-row{background:rgba(239,68,68,0.02)}
 .badge.active{background:var(--blue-soft);color:var(--blue);border:1px solid rgba(59,130,246,0.15)}
 .badge.online{background:var(--green-soft);color:var(--green);border:1px solid rgba(34,197,94,0.15)}
 .badge.limit{background:var(--amber-soft);color:var(--amber);border:1px solid rgba(245,158,11,0.15)}
+.badge.new-tag{background:var(--purple-soft);color:var(--purple);border:1px solid rgba(167,139,250,0.2);animation:dpulse 2s ease-in-out infinite}
 @keyframes dpulse{0%,100%{box-shadow:none}50%{box-shadow:0 0 8px rgba(239,68,68,0.12)}}
 .bdot{width:4px;height:4px;border-radius:50%}
 .bdot.a{background:var(--amber)}.bdot.r{background:var(--red);animation:blink 1s ease-in-out infinite}.bdot.g{background:var(--green)}
@@ -1049,10 +1050,14 @@ function renderTable() {
             domHtml = `<span class="days-ref ${domClass}">${dom}d</span>`;
         }
 
+        // "NEW" label for tokens recently added to monitoring (within 30 days)
+        const isNew = t.monDate && daysBetween(t.monDate, today) <= 30 && (t.status === 'monitoring' || t.status === 'delisting');
+        const newBadge = isNew ? `<span class="badge new-tag">NEW</span> ` : '';
+
         // Status badge
         const badges = {
-            monitoring: `<span class="badge monitoring"><span class="bdot a"></span>MON</span>`,
-            delisting: `<span class="badge delisting"><span class="bdot r"></span>DELIST</span>`,
+            monitoring: `${newBadge}<span class="badge monitoring"><span class="bdot a"></span>MON</span>`,
+            delisting: `${newBadge}<span class="badge delisting"><span class="bdot r"></span>DELIST</span>`,
             delisted: `<span class="badge delisted">DELISTED</span>`,
             restored: `<span class="badge restored"><span class="bdot g"></span>RESTORED</span>`,
             active: `<span class="badge active">ACTIVE</span>`,
