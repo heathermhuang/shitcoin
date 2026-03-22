@@ -970,9 +970,30 @@ function renderStats() {
 }
 
 function renderPredBar() {
+    // Compute next expected announcement date dynamically
+    // Collect all unique monDates, find the latest, add median interval
+    const dates = [...new Set(TRACKED_TOKENS.map(t => t.monDate).filter(Boolean))].sort();
+    let nextWave = '—';
+    if (dates.length >= 2) {
+        const intervals = [];
+        for (let i = 1; i < dates.length; i++) {
+            intervals.push(daysBetween(dates[i-1], dates[i]));
+        }
+        intervals.sort((a,b) => a-b);
+        const medInterval = intervals[Math.floor(intervals.length / 2)];
+        const lastDate = dates[dates.length - 1];
+        const nextDate = new Date(lastDate + 'T00:00:00');
+        nextDate.setDate(nextDate.getDate() + medInterval);
+        const today = NOW.toISOString().slice(0,10);
+        if (nextDate.toISOString().slice(0,10) > today) {
+            nextWave = '~' + nextDate.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
+        } else {
+            nextWave = 'Due soon';
+        }
+    }
     document.getElementById('bn-predBar').innerHTML = `
         <span class="pred-label">🔮 Pattern Analysis</span>
-        <span class="pred-val">Next tag wave: ~Apr 3, 2026</span>
+        <span class="pred-val">Next tag wave: ${nextWave}</span>
         <span class="pred-sep"></span>
         <span class="pred-val">Delist rate: ${Math.round(TRACKED_TOKENS.filter(t=>t.status==='delisted').length / TRACKED_TOKENS.length * 100)}%</span>
         <span class="pred-sep"></span>
