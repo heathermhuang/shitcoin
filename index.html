@@ -1432,7 +1432,7 @@ function cbRenderAll() {
     ` : `<span>${list.length} coins</span>`;
 
     // Sort indicators
-    document.querySelectorAll('th').forEach(th => th.classList.remove('sorted'));
+    document.querySelectorAll('#cb-section th').forEach(th => th.classList.remove('sorted'));
 
     // Update stats
     const online = allCoins.filter(c => c.status === 'online' && !c.limitOnly);
