@@ -4,6 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Crypto Monitor · Binance & Coinbase</title>
+<meta name="description" content="Real-time monitoring of Binance and Coinbase coins under delisting watch — risk scores, order book depth, and cross-exchange data.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚡</text></svg>">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=DM+Sans:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
@@ -84,6 +86,9 @@ thead{background:var(--bg-2)}
 th{padding:10px 12px;text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:1.2px;color:var(--text-3);font-family:'IBM Plex Mono',monospace;font-weight:500;border-bottom:1px solid var(--border-1);white-space:nowrap;cursor:pointer;user-select:none;transition:color 0.15s}
 th:hover{color:var(--text-2)}
 th.sorted{color:var(--blue)}
+th[data-sort]::after{content:'';margin-left:3px;opacity:0.3;font-size:9px}
+th[data-sort].sorted::after{content:' ▼';opacity:1}
+th[data-sort].sorted.asc-dir::after{content:' ▲';opacity:1}
 td{padding:10px 12px;border-bottom:1px solid var(--border-1);font-size:13px;vertical-align:middle}
 tr{transition:background 0.1s}
 tbody tr:hover{background:var(--bg-3)}
@@ -231,18 +236,18 @@ tbody tr.highrisk-row{background:rgba(239,68,68,0.02)}
 <div class="tbl-wrap">
     <table>
         <thead><tr>
-            <th onclick="bnSortBy('symbol')">Token</th>
-            <th onclick="bnSortBy('status')">Status</th>
-            <th onclick="bnSortBy('risk')" title="AI risk score: likelihood of monitoring tag">Risk</th>
-            <th onclick="bnSortBy('daysOnMon')" title="Days since monitoring tag added">Days</th>
-            <th onclick="bnSortBy('monDate')">Mon. Added</th>
-            <th onclick="bnSortBy('delistDate')">Delist Date</th>
-            <th onclick="bnSortBy('price')">Price</th>
-            <th onclick="bnSortBy('change')">24h %</th>
-            <th onclick="bnSortBy('vol')">24h Vol</th>
-            <th onclick="bnSortBy('mcap')">Mkt Cap</th>
-            <th onclick="bnSortBy('bidDepth')" title="Bid depth within 2% below price">Bid -2%</th>
-            <th onclick="bnSortBy('askDepth')" title="Ask depth within 2% above price">Ask +2%</th>
+            <th data-sort="symbol" onclick="bnSortBy('symbol')">Token</th>
+            <th data-sort="status" onclick="bnSortBy('status')">Status</th>
+            <th data-sort="risk" onclick="bnSortBy('risk')" title="Risk score: volume + mcap + depth + status">Risk</th>
+            <th data-sort="daysOnMon" onclick="bnSortBy('daysOnMon')" title="Days since monitoring tag added">Days</th>
+            <th data-sort="monDate" onclick="bnSortBy('monDate')">Mon. Added</th>
+            <th data-sort="delistDate" onclick="bnSortBy('delistDate')">Delist Date</th>
+            <th data-sort="price" onclick="bnSortBy('price')">Price</th>
+            <th data-sort="change" onclick="bnSortBy('change')">24h %</th>
+            <th data-sort="vol" onclick="bnSortBy('vol')">24h Vol</th>
+            <th data-sort="mcap" onclick="bnSortBy('mcap')">Mkt Cap</th>
+            <th data-sort="bidDepth" onclick="bnSortBy('bidDepth')" title="Bid depth within 2% below price">Bid -2%</th>
+            <th data-sort="askDepth" onclick="bnSortBy('askDepth')" title="Ask depth within 2% above price">Ask +2%</th>
             <th title="Also listed on other exchanges">Also On</th>
         </tr></thead>
         <tbody id="bn-tbody"></tbody>
@@ -296,15 +301,15 @@ tbody tr.highrisk-row{background:rgba(239,68,68,0.02)}
 <div class="tbl-wrap">
 <table>
 <thead><tr>
-    <th onclick="cbSortBy('symbol')">Token</th>
-    <th onclick="cbSortBy('status')">Status</th>
-    <th onclick="cbSortBy('risk')" class="sorted" title="Risk score based on volume, mcap, exchange support">Risk</th>
-    <th onclick="cbSortBy('price')">Price</th>
-    <th onclick="cbSortBy('change')">24h %</th>
-    <th onclick="cbSortBy('vol')">24h Vol</th>
-    <th onclick="cbSortBy('mcap')">Mkt Cap</th>
-    <th onclick="cbSortBy('bidDepth')" title="Bid depth within 2% below price">Bid -2%</th>
-    <th onclick="cbSortBy('askDepth')" title="Ask depth within 2% above price">Ask +2%</th>
+    <th data-sort="symbol" onclick="cbSortBy('symbol')">Token</th>
+    <th data-sort="status" onclick="cbSortBy('status')">Status</th>
+    <th data-sort="risk" onclick="cbSortBy('risk')" title="Risk score based on volume, mcap, exchange support">Risk</th>
+    <th data-sort="price" onclick="cbSortBy('price')">Price</th>
+    <th data-sort="change" onclick="cbSortBy('change')">24h %</th>
+    <th data-sort="vol" onclick="cbSortBy('vol')">24h Vol</th>
+    <th data-sort="mcap" onclick="cbSortBy('mcap')">Mkt Cap</th>
+    <th data-sort="bidDepth" onclick="cbSortBy('bidDepth')" title="Bid depth within 2% below price">Bid -2%</th>
+    <th data-sort="askDepth" onclick="cbSortBy('askDepth')" title="Ask depth within 2% above price">Ask +2%</th>
     <th title="Also listed on other exchanges">Also On</th>
 </tr></thead>
 <tbody id="cb-tBody"><tr><td colspan="10" style="text-align:center;padding:40px;color:var(--text-3)">Loading Coinbase data... If this persists, try hard refresh (Ctrl+Shift+R)</td></tr></tbody>
@@ -1114,6 +1119,15 @@ function renderTable() {
         </tr>`;
     }).join('');
 
+    // Sort indicators
+    document.querySelectorAll('#bn-section th[data-sort]').forEach(th => {
+        th.classList.remove('sorted', 'asc-dir');
+        if (th.dataset.sort === sort.key) {
+            th.classList.add('sorted');
+            if (sort.dir === 'asc') th.classList.add('asc-dir');
+        }
+    });
+
     // Pagination
     const total = list.length;
     const pages = Math.ceil(total / PAGE_SIZE);
@@ -1453,7 +1467,13 @@ function cbRenderAll() {
     ` : `<span>${list.length} coins</span>`;
 
     // Sort indicators
-    document.querySelectorAll('#cb-section th').forEach(th => th.classList.remove('sorted'));
+    document.querySelectorAll('#cb-section th[data-sort]').forEach(th => {
+        th.classList.remove('sorted', 'asc-dir');
+        if (th.dataset.sort === sortCol) {
+            th.classList.add('sorted');
+            if (sortAsc) th.classList.add('asc-dir');
+        }
+    });
 
     // Update stats
     const online = allCoins.filter(c => c.status === 'online' && !c.limitOnly);
