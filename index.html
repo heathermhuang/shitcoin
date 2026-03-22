@@ -1453,7 +1453,7 @@ function cbRenderAll() {
 }
 
 // ===== CONTROLS =====
-function cbSetFilter(f) { filter = f; page = 0; document.querySelectorAll('.ftab').forEach(b => b.classList.toggle('active', b.dataset.f === f)); cbRenderAll(); }
+function cbSetFilter(f) { filter = f; page = 0; document.querySelectorAll('#cb-section .ftab').forEach(b => b.classList.toggle('active', b.dataset.f === f)); cbRenderAll(); }
 function cbSortBy(col) { if (sortCol === col) sortAsc = !sortAsc; else { sortCol = col; sortAsc = col === 'symbol'; } cbRenderAll(); }
 function cbSetQuery(q) { query = q; page = 0; cbRenderAll(); }
 function cbSetPage(p) { page = Math.max(0, p); cbRenderAll(); window.scrollTo({top: document.querySelector('.tbl-wrap').offsetTop - 80, behavior:'smooth'}); }
