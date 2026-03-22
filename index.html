@@ -1615,8 +1615,9 @@ async function init() {
     setInterval(cbDoRefresh, 180000);
     setInterval(() => {
         if (lastRefresh) {
-            const rem = 180 - Math.floor((Date.now() - lastRefresh) / 1000);
-            if (rem > 0) document.getElementById('cb-refreshTimer').textContent = `next: ${rem}s`;
+            const rem = Math.max(0, 180 - Math.floor((Date.now() - lastRefresh) / 1000));
+            const m = Math.floor(rem / 60), s = rem % 60;
+            document.getElementById('cb-refreshTimer').textContent = `next: ${m}:${String(s).padStart(2, '0')}`;
         }
     }, 1000);
 }
