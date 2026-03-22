@@ -1725,5 +1725,38 @@ document.addEventListener('DOMContentLoaded', () => {
     switchExchange(hash === 'coinbase' ? 'coinbase' : 'binance');
 });
 
+// Keyboard shortcuts
+document.addEventListener('keydown', e => {
+    const tag = document.activeElement.tagName;
+    const inInput = tag === 'INPUT' || tag === 'TEXTAREA';
+
+    // Press '/' to focus the active section's search box
+    if (e.key === '/' && !inInput) {
+        e.preventDefault();
+        const activeSection = document.querySelector('.ex-section.active');
+        const search = activeSection?.querySelector('input.search');
+        if (search) search.focus();
+    }
+
+    // Press 'Escape' to clear search and blur
+    if (e.key === 'Escape' && inInput) {
+        e.preventDefault();
+        const input = document.activeElement;
+        if (input.classList.contains('search')) {
+            input.value = '';
+            input.blur();
+            // Determine which module's query to clear
+            if (input.closest('#bn-section')) bnSetQuery('');
+            else if (input.closest('#cb-section')) cbSetQuery('');
+        }
+    }
+
+    // 'b' / 'c' to switch exchange tabs (when not in input)
+    if (!inInput) {
+        if (e.key === 'b' || e.key === 'B') switchExchange('binance');
+        if (e.key === 'c' || e.key === 'C') switchExchange('coinbase');
+    }
+});
+
 </script>
 </body></html>
