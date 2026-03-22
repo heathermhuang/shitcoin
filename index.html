@@ -1411,7 +1411,7 @@ function cbRenderAll() {
         const rowClass = c.status === 'delisted' ? 'delisted-row' : c.limitOnly ? 'limit-row' : (c._risk >= 60 ? 'highrisk-row' : '');
 
         return `<tr class="${rowClass}">
-            <td><div class="tk"><div class="tk-ico" style="${iconStyle}">${ld.icon ? '' : c.sym.slice(0,2)}</div><div><div class="tk-sym">${c.sym}</div><div class="tk-name">${c.sym}</div><div class="tk-links"><a href="${cbLink}" target="_blank" title="${c.status==='delisted'?'CoinGecko':'Coinbase'}">${primaryIcon}</a>${cmcHtml}</div></div></div></td>
+            <td><div class="tk"><div class="tk-ico" style="${iconStyle}">${ld.icon ? '' : c.sym.slice(0,2)}</div><div><div class="tk-sym">${c.sym}</div><div class="tk-name">${c.pairs.length} pair${c.pairs.length > 1 ? 's' : ''}</div><div class="tk-links"><a href="${cbLink}" target="_blank" title="${c.status==='delisted'?'CoinGecko':'Coinbase'}">${primaryIcon}</a>${cmcHtml}</div></div></div></td>
             <td>${badge}</td>
             <td>${riskHtml}</td>
             <td><span class="vol">${fmtPrice(ld.price)}</span></td>
