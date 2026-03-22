@@ -297,7 +297,7 @@ tbody tr.highrisk-row{background:rgba(239,68,68,0.02)}
     <button class="ftab" data-f="limit" onclick="cbSetFilter('limit')">Limit Only <span class="cnt" id="cb-cLimit"></span></button>
     <button class="ftab" data-f="delisted" onclick="cbSetFilter('delisted')">Delisted <span class="cnt" id="cb-cDelisted"></span></button>
     <button class="ftab" data-f="highrisk" onclick="cbSetFilter('highrisk')">High Risk <span class="cnt" id="cb-cHighRisk"></span></button>
-    <input class="search" type="text" placeholder="search coins..." id="cb-searchInput" oninput="cbSetQuery(this.value)">
+    <input class="search" type="text" placeholder="Search coins... ( / )" id="cb-searchInput" oninput="cbSetQuery(this.value)">
 </div>
 <div class="tbl-wrap">
 <table>
@@ -1027,7 +1027,7 @@ function renderFilters() {
     ];
     document.getElementById('bn-filters').innerHTML = tabs.map(([k,l,c]) =>
         `<button class="ftab ${filter===k?'active':''}" onclick="bnSetFilter('${k}')">${l}<span class="cnt">${c}</span></button>`
-    ).join('') + `<input class="search" type="text" placeholder="Search token..." value="${query}" oninput="bnSetQuery(this.value)">`;
+    ).join('') + `<input class="search" type="text" placeholder="Search token... ( / )" value="${query}" oninput="bnSetQuery(this.value)">`;
 }
 
 function renderTable() {
