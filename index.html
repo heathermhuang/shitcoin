@@ -44,11 +44,11 @@
 *{margin:0;padding:0;box-sizing:border-box}
 body{background:var(--bg-0);color:var(--text-1);font-family:'DM Sans',sans-serif;min-height:100vh;overflow-x:hidden}
 body::after{content:'';position:fixed;top:0;left:0;width:100%;height:100%;opacity:0.025;background:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");pointer-events:none;z-index:0}
-.wrap{position:relative;z-index:1;max-width:1700px;margin:0 auto;padding:32px 20px}
+.wrap{position:relative;z-index:1;max-width:1700px;margin:0 auto;padding:28px 24px}
 .mono{font-family:'IBM Plex Mono',monospace}
 
 /* HEADER */
-.hdr{display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:16px;margin-bottom:28px}
+.hdr{display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:16px;margin-bottom:20px}
 .hdr-left{display:flex;align-items:center;gap:14px}
 .logo{width:38px;height:38px;background:var(--bg-3);border:1px solid var(--border-2);border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:800;color:var(--amber);font-family:'IBM Plex Mono',monospace}
 .hdr h1{font-size:22px;font-weight:800;letter-spacing:-0.5px}
@@ -199,36 +199,54 @@ tbody tr.limit-row{background:rgba(245,158,11,0.03)}
 .loader .lprog-fill{height:100%;width:0%;background:var(--amber);border-radius:1px;transition:width 0.5s ease}
 
 @media(max-width:900px){.wrap{padding:16px 12px}.hdr{flex-direction:column}.search{width:100%;margin-left:0}.stats{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:640px){.tnav-name{display:none}.tnav-divider{display:none}.tnav-tabs{justify-content:flex-start}.tnav-tab{padding:6px 14px;font-size:12px}.topnav-inner{padding:0 14px}}
 @media(max-width:480px){.stats{grid-template-columns:1fr}}
 @media(max-width:640px){.col-days,.col-mon,.col-vol,.col-mcap,.col-bid,.col-ask,.col-also{display:none}table{min-width:380px}}
 ::-webkit-scrollbar{width:5px;height:5px}::-webkit-scrollbar-track{background:var(--bg-1)}::-webkit-scrollbar-thumb{background:var(--border-2);border-radius:3px}::-webkit-scrollbar-thumb:hover{background:var(--text-3)}
 
-/* EXCHANGE SWITCHER */
-.ex-switcher{display:flex;align-items:center;justify-content:center;gap:0;padding:24px 20px 0;position:relative;z-index:2}
-.ex-switcher-inner{display:flex;background:var(--bg-2);border:1px solid var(--border-1);border-radius:10px;padding:3px;gap:3px}
-.ex-tab{padding:9px 24px;border-radius:7px;font-size:13px;font-weight:600;cursor:pointer;transition:all 0.2s;border:1px solid transparent;background:transparent;color:var(--text-3);font-family:'DM Sans',sans-serif;display:flex;align-items:center;gap:7px;letter-spacing:-0.2px}
-.ex-tab:hover{color:var(--text-2)}
-.ex-tab.active{color:#fff;border-color:transparent}
-.ex-tab.active.binance{background:linear-gradient(135deg,#F0B90B,#c89209);color:#000;box-shadow:0 2px 12px rgba(240,185,11,0.3)}
-.ex-tab.active.coinbase{background:linear-gradient(135deg,#0052FF,#2d6fff);color:#fff;box-shadow:0 2px 12px rgba(0,82,255,0.3)}
-.ex-tab-icon{font-size:14px;font-family:'IBM Plex Mono',monospace;font-weight:800}
+/* TOP NAV */
+.topnav{position:sticky;top:0;z-index:200;background:rgba(7,8,12,0.88);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);border-bottom:1px solid var(--border-1)}
+.topnav-inner{max-width:1700px;margin:0 auto;padding:0 24px;height:54px;display:flex;align-items:center;gap:0}
+.tnav-brand{display:flex;align-items:center;gap:9px;flex-shrink:0;text-decoration:none}
+.tnav-logo{width:30px;height:30px;background:var(--bg-3);border:1px solid var(--border-2);border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:15px;color:var(--amber);font-family:'IBM Plex Mono',monospace;font-weight:800}
+.tnav-name{font-size:13px;font-weight:700;letter-spacing:-0.3px;color:var(--text-2)}
+.tnav-divider{width:1px;height:20px;background:var(--border-1);margin:0 20px;flex-shrink:0}
+.tnav-tabs{display:flex;align-items:center;gap:2px;flex:1;justify-content:center}
+.tnav-tab{display:inline-flex;align-items:center;gap:8px;padding:7px 18px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;transition:all 0.18s;border:1px solid transparent;background:transparent;color:var(--text-3);font-family:'DM Sans',sans-serif;letter-spacing:-0.2px}
+.tnav-tab:hover{background:var(--bg-3);color:var(--text-2)}
+.tnav-tab.active.binance{background:rgba(240,185,11,0.1);color:#F0B90B;border-color:rgba(240,185,11,0.18)}
+.tnav-tab.active.coinbase{background:rgba(0,82,255,0.1);color:#6b9fff;border-color:rgba(0,82,255,0.18)}
+.tnav-right{display:flex;align-items:center;gap:12px;flex-shrink:0;min-width:fit-content}
+/* EXCHANGE SECTIONS */
 .ex-section{display:none}
 .ex-section.active{display:block}
 </style>
 </head>
 <body>
 
-<!-- EXCHANGE TABS -->
-<div class="ex-switcher">
-    <div class="ex-switcher-inner">
-        <button class="ex-tab binance active" id="ex-tab-binance" onclick="switchExchange('binance')">
-            <span class="ex-tab-icon">₿</span> Binance
-        </button>
-        <button class="ex-tab coinbase" id="ex-tab-coinbase" onclick="switchExchange('coinbase')">
-            <span class="ex-tab-icon">CB</span> Coinbase
-        </button>
+<!-- TOP NAV -->
+<nav class="topnav">
+    <div class="topnav-inner">
+        <div class="tnav-brand">
+            <div class="tnav-logo">⚡</div>
+            <span class="tnav-name">Crypto Monitor</span>
+        </div>
+        <div class="tnav-divider"></div>
+        <div class="tnav-tabs">
+            <button class="tnav-tab binance active" id="ex-tab-binance" onclick="switchExchange('binance')">
+                <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path fill="#F0B90B" d="M7 1 4.8 3.2 7 5.4 9.2 3.2z"/><path fill="#F0B90B" d="M1 7 3.2 4.8 5.4 7 3.2 9.2z"/><path fill="#F0B90B" d="M13 7 10.8 4.8 8.6 7 10.8 9.2z"/><path fill="#F0B90B" d="M7 8.6 4.8 10.8 7 13 9.2 10.8z"/><path fill="#F0B90B" d="M7 4.8 5.1 6.7 7 8.6 8.9 6.7z"/></svg>
+                Binance
+            </button>
+            <button class="tnav-tab coinbase" id="ex-tab-coinbase" onclick="switchExchange('coinbase')">
+                <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><rect width="14" height="14" rx="3.5" fill="#0052FF"/><circle cx="7" cy="7" r="3.5" fill="#0052FF"/><circle cx="7" cy="7" r="3.5" stroke="white" stroke-width="1.5" fill="none"/><rect x="3.5" y="5.9" width="7" height="2.2" fill="#0052FF"/></svg>
+                Coinbase
+            </button>
+        </div>
+        <div class="tnav-right">
+            <div class="live" id="tnav-live" style="display:none"><span class="live-dot"></span>LIVE</div>
+        </div>
     </div>
-</div>
+</nav>
 
 <!-- BINANCE SECTION -->
 <div class="ex-section active" id="bn-section">
@@ -236,11 +254,12 @@ tbody tr.limit-row{background:rgba(245,158,11,0.03)}
 <div class="wrap">
 <div class="hdr">
     <div class="hdr-left">
-        <div class="logo">⚡</div>
-        <div><h1>Binance Monitor</h1><div class="sub mono">risk scores · monitoring tags · delistings · all coins</div></div>
+        <div>
+            <h1>Binance Monitor</h1>
+            <div class="sub mono">risk scores · monitoring tags · delistings · all coins</div>
+        </div>
     </div>
     <div class="hdr-right">
-        <div class="live"><span class="live-dot"></span>LIVE</div>
         <span class="meta-text" id="bn-updTime">loading...</span>
         <span class="meta-text" id="bn-refreshTimer"></span>
         <button class="btn" id="bn-refreshBtn" onclick="bnDoRefresh()">
@@ -288,11 +307,12 @@ tbody tr.limit-row{background:rgba(245,158,11,0.03)}
 <div class="wrap">
 <div class="hdr">
     <div class="hdr-left">
-        <div class="logo">CB</div>
-        <div><h1>Coinbase Monitor</h1><div class="sub mono">risk scores · trading status · delistings · all coins</div></div>
+        <div>
+            <h1>Coinbase Monitor</h1>
+            <div class="sub mono">risk scores · trading status · delistings · all coins</div>
+        </div>
     </div>
     <div class="hdr-right">
-        <div class="live"><span class="live-dot"></span>LIVE</div>
         <span class="meta-text" id="cb-updTime">loading...</span>
         <span class="meta-text" id="cb-refreshTimer"></span>
         <button class="btn" id="cb-refreshBtn" onclick="cbDoRefresh()">
@@ -594,7 +614,7 @@ async function fetchAllData() {
     if (ltxt) ltxt.textContent = 'Rendering table...';
     bnRenderAll();
     if (lprog) lprog.style.width = '100%';
-    setTimeout(() => document.getElementById('bn-loader').classList.add('hidden'), 200);
+    setTimeout(() => { document.getElementById('bn-loader').classList.add('hidden'); const nl = document.getElementById('tnav-live'); if (nl) nl.style.display = 'flex'; }, 200);
 
     // Step 4: Fetch market caps from CoinGecko (async, renders update when done)
     fetchMarketCaps();
