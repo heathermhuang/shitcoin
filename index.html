@@ -561,19 +561,30 @@ TRACKED_TOKENS.forEach(t => { trackedMap[t.sym] = t; });
 let allCoins = []; // Combined: tracked + discovered active coins
 let liveData = {};
 let exchangeData = { coinbase: new Set(), okx: new Set(), kraken: new Set() };
-let filter = 'active'; // default tab
+let filter = 'highrisk'; // default: show at-risk + monitoring + delisting coins
 let query = '';
 let sort = { key: 'risk', dir: 'desc' };
 let page = 0;
 const PAGE_SIZE = 100;
 
 // Leveraged/stable tokens to exclude
-const EXCLUDE = new Set(['USDC','BUSD','TUSD','FDUSD','USDP','DAI','USDD','AEUR','XUSD','BFUSD','RLUSD','USD1','USDE',
+const EXCLUDE = new Set([
+    // Stablecoins
+    'USDC','BUSD','TUSD','FDUSD','USDP','DAI','USDD','AEUR','XUSD','BFUSD','RLUSD','USD1','USDE',
+    // Leveraged tokens
     'BTCUP','BTCDOWN','ETHUP','ETHDOWN','BNBUP','BNBDOWN','XRPUP','XRPDOWN',
     'TRXUP','TRXDOWN','LINKUP','LINKDOWN','DOTUP','DOTDOWN','ADAUP','ADADOWN',
     'EOSUP','EOSDOWN','LTCUP','LTCDOWN','XLMUP','XLMDOWN','UNIUP','UNIDOWN',
     'SXPUP','SXPDOWN','FILUP','FILDOWN','AAVEUP','AAVEDOWN','SUSHIUP','SUSHIDOWN',
-    'WBTC','WBETH','BNSOL','LUNC','USTC','PAXG','EUR','EURI','OCEAN','AGIX','MATIC','FTM','UST','LUNA','BTCST','MFT','BOND']);
+    // Wrapped / legacy tokens
+    'WBTC','WBETH','BNSOL','LUNC','USTC','PAXG','EUR','EURI','OCEAN','AGIX','MATIC','FTM','UST','LUNA','BTCST','MFT','BOND',
+    // Blue chip coins — never at delisting risk
+    'BTC','ETH','BNB','XRP','ADA','SOL','DOGE','TRX','DOT','SHIB',
+    'LTC','AVAX','LINK','ATOM','TON','UNI','XLM','BCH','NEAR','APT',
+    'ICP','OP','ARB','ETC','HBAR','FIL','VET','CAKE','STX','SUI',
+    'SEI','TIA','INJ','RUNE','KAS','THETA','EOS','XTZ','ALGO','EGLD',
+    'SAND','MANA','AXS','GALA','ENJ','CRO','GRT','SNX','AAVE','MKR',
+    'COMP','CRV','1INCH','SUSHI','YFI','BAT','ZRX','LDO','RNDR','FET']);
 
 // ============ HELPERS ============
 const daysBetween = (a,b) => Math.round((new Date(b)-new Date(a))/(864e5));
@@ -691,10 +702,15 @@ async function fetchAllData() {
 
 async function fetchMarketCaps() {
     try {
-        // Get active tokens for CoinGecko lookup
+        // Get active tokens for CoinGecko lookup (include delisted for icon-only fetch)
         const activeSyms = allCoins
             .filter(t => t.status !== 'delisted' && liveData[t.sym])
             .map(t => t.sym);
+        // Add delisted tracked tokens for icon fetch (no live data needed, just icons)
+        const delistedSyms = TRACKED_TOKENS
+            .filter(t => t.status === 'delisted' && !liveData[t.sym]?.icon)
+            .map(t => t.sym);
+        const allSymsForIcons = [...new Set([...activeSyms, ...delistedSyms])];
 
         // Manual overrides for ambiguous symbols
         const overrides = {
@@ -740,14 +756,33 @@ async function fetchMarketCaps() {
             'LDO':'lido-dao','ENS':'ethereum-name-service','DYDX':'dydx-chain',
             'GMX':'gmx','SNX':'havven','SUSHI':'sushi','CAKE':'pancakeswap-token',
             'PENDLE':'pendle','TAO':'bittensor','HBAR':'hedera-hashgraph',
+            // Common active altcoins
+            'QKC':'quark-chain','ICX':'icon','LSK':'lisk','BNT':'bancor',
+            'IOST':'iostoken','KGST':'kanga-exchange','RPL':'rocket-pool',
+            'POND':'marlin','REQ':'request-network','BICO':'biconomy',
+            'XNO':'nano','OSMO':'osmosis','HOT':'holotoken','CVC':'civic',
+            'WIN':'wink','TFUEL':'theta-fuel','ONE':'harmony','CHZ':'chiliz',
+            'ARPA':'arpa-chain','IOTX':'iotex','RLC':'iexec-rlc','OGN':'origin-protocol',
+            'CTSI':'cartesi','HIVE':'hive','CHR':'chromia','KNC':'kyber-network-crystal',
+            'SC':'siacoin','VTHO':'vethor-token','DGB':'digibyte','DCR':'decred',
+            'STORJ':'storj','JST':'just','NMR':'numeraire','RSR':'reserve-rights-token',
+            'TRB':'tellor','KSM':'kusama','DIA':'dia-data','UMA':'uma',
+            'BEL':'bella-protocol','UTK':'utrust','XVS':'venus','AUDIO':'audius',
+            'CTK':'certik','STRAX':'stratis','ROSE':'oasis-network','AVA':'concierge-io',
+            'SKL':'skale','PSG':'paris-saint-germain-fan-token','JUV':'juventus-fan-token',
+            'CELO':'celo','RIF':'rif-token','CELR':'celer-network','DASH':'dash',
+            'RVN':'ravencoin','BAND':'band-protocol','ZIL':'zilliqa',
+            'ONT':'ontology','ONG':'ong','MDX':'mdex','VAI':'vai',
+            'MOB':'mobilecoin','TORN':'tornado-cash','WAX':'wax',
+            'MULTI':'multichain','IRIS':'iris-network','CVP':'powerpool',
         };
 
         const getGeckoId = sym => overrides[sym] || sym.toLowerCase();
 
         // Batch fetch from CoinGecko markets API (100 at a time)
         const batches = [];
-        for (let i = 0; i < activeSyms.length; i += 100) {
-            batches.push(activeSyms.slice(i, i + 100));
+        for (let i = 0; i < allSymsForIcons.length; i += 100) {
+            batches.push(allSymsForIcons.slice(i, i + 100));
         }
 
         for (const batch of batches) {
@@ -761,8 +796,11 @@ async function fetchMarketCaps() {
                     const sym = batch.find(s => getGeckoId(s) === coin.id);
                     if (sym) {
                         if (!liveData[sym]) liveData[sym] = {};
-                        liveData[sym].mcap = coin.market_cap || coin.fully_diluted_valuation || 0;
-                        liveData[sym].fdv = coin.fully_diluted_valuation;
+                        // Only update price/mcap for non-delisted coins with live data
+                        if (liveData[sym].price !== undefined) {
+                            liveData[sym].mcap = coin.market_cap || coin.fully_diluted_valuation || 0;
+                            liveData[sym].fdv = coin.fully_diluted_valuation;
+                        }
                         if (coin.image) liveData[sym].icon = coin.image;
                         if (coin.id) liveData[sym].cgId = coin.id;
                     }
@@ -1190,9 +1228,10 @@ function renderTable() {
 
         const rowClass = t.status === 'delisting' ? 'delisting-row' : t.status === 'delisted' ? 'delisted-row' : t.status === 'restored' ? 'restored-row' : (t.status === 'active' && t._risk >= 70) ? 'highrisk-row' : '';
 
-        const ghIconUrl = `https://raw.githubusercontent.com/ErikThiart/cryptocurrency-icons/master/32/${t.sym.toLowerCase()}.png`;
-        const cgIconFallback = ld.icon || '';
-        const coinIconHtml = `<div class="tk-ico"><img src="${ghIconUrl}" alt="${t.sym}" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'${cgIconFallback ? `;this.src='${cgIconFallback}';this.onerror=function(){this.style.display='none';this.nextElementSibling.style.display='flex';}` : ''}"><span class="coin-letter-icon" style="display:none">${t.sym.charAt(0)}</span></div>`;
+        const ghIconUrl = `https://cdn.jsdelivr.net/gh/ErikThiart/cryptocurrency-icons@master/32/${t.sym.toLowerCase()}.png`;
+        const primaryIconUrl = ld.icon || ghIconUrl;
+        const fallbackIconUrl = ld.icon ? ghIconUrl : '';
+        const coinIconHtml = `<div class="tk-ico"><img src="${primaryIconUrl}" alt="${t.sym}" data-fb="${fallbackIconUrl}" onerror="if(this.dataset.fb){var f=this.dataset.fb;this.dataset.fb='';this.src=f;return;}this.style.display='none';this.nextElementSibling.style.display='flex'"><span class="coin-letter-icon" style="display:none">${t.sym.charAt(0)}</span></div>`;
         const bnIcon = '<img src="https://www.google.com/s2/favicons?domain=binance.com&sz=32" alt="Binance">';
         const cgIcon = '<img src="https://www.google.com/s2/favicons?domain=coingecko.com&sz=32" alt="CoinGecko">';
         const cmcIcon = '<img src="https://www.google.com/s2/favicons?domain=coinmarketcap.com&sz=32" alt="CMC">';
@@ -1203,7 +1242,7 @@ function renderTable() {
             : 'https://www.binance.com/en/trade/' + t.sym + '_USDT?type=spot';
         const cmcSlug = getCMCSlug(t.sym);
         const cmcLink = cmcSlug ? 'https://coinmarketcap.com/currencies/' + cmcSlug + '/' : '';
-        const cmcHtml = cmcLink ? '<a href="' + cmcLink + '" target="_blank" title="CoinMarketCap"><img src="https://coinmarketcap.com/apple-touch-icon.png" alt="CMC"></a>' : '';
+        const cmcHtml = cmcLink ? '<a href="' + cmcLink + '" target="_blank" title="CoinMarketCap"><img src="https://www.google.com/s2/favicons?domain=coinmarketcap.com&sz=32" alt="CMC"></a>' : '';
 
         return `<tr class="${rowClass}">
             <td><div class="tk">${coinIconHtml}<div><div class="tk-sym">${t.sym}</div><div class="tk-name">${t.name||t.sym}</div><div class="tk-links"><a href="${binanceLink}" target="_blank" title="${linkTitle}">${linkPrimaryIcon}</a>${cmcHtml}</div></div></div></td>
@@ -1329,10 +1368,18 @@ const PAGE_SIZE = 50;
 let allCoins = [];
 let liveData = {}; // sym -> {price, change, vol, mcap, icon, cgId, bidDepth, askDepth}
 let exchangeData = { binance: new Set(), okx: new Set(), kraken: new Set() };
-let filter = 'all', sortCol = 'risk', sortAsc = false, page = 0, query = '';
+let filter = 'highrisk', sortCol = 'risk', sortAsc = false, page = 0, query = '';
 let lastRefresh = 0;
 
-const EXCLUDE = new Set(['USDC','USDT','DAI','USDS','USD1','EURC','AUDD','XSGD','PAX','PYUSD','GUSD','GYEN','MUSD','BUSD']);
+const EXCLUDE = new Set([
+    // Stablecoins
+    'USDC','USDT','DAI','USDS','USD1','EURC','AUDD','XSGD','PAX','PYUSD','GUSD','GYEN','MUSD','BUSD',
+    // Blue chip coins — never at delisting risk on Coinbase
+    'BTC','ETH','SOL','XRP','ADA','DOGE','DOT','SHIB','LTC','AVAX',
+    'LINK','ATOM','TON','UNI','XLM','BCH','NEAR','APT','ICP','OP',
+    'ARB','ETC','HBAR','FIL','VET','STX','SUI','SEI','TIA','INJ',
+    'RNDR','FET','AAVE','MKR','COMP','SNX','CRV','1INCH','LDO','GRT',
+    'ENS','THETA','ALGO','EOS','XTZ','SAND','MANA','AXS','GALA']);
 
 // CoinGecko ID overrides
 const CG_OVERRIDES = {
@@ -1479,7 +1526,7 @@ function getFiltered() {
     if (filter === 'online') list = list.filter(c => c.status === 'online' && !c.limitOnly);
     else if (filter === 'limit') list = list.filter(c => c.limitOnly);
     else if (filter === 'delisted') list = list.filter(c => c.status === 'delisted');
-    else if (filter === 'highrisk') list = list.filter(c => c._risk >= 60 && c.status !== 'delisted');
+    else if (filter === 'highrisk') list = list.filter(c => (c._risk >= 50 || c.limitOnly) && c.status !== 'delisted');
     if (query) { const q = query.toLowerCase(); list = list.filter(c => c.sym.toLowerCase().includes(q)); }
     // Status priority: online=0, limit-only=1, delisted=2
     const cbStatusOrder = c => c.status === 'delisted' ? 2 : c.limitOnly ? 1 : 0;
@@ -1521,9 +1568,10 @@ function cbRenderAll() {
         const ld = liveData[c.sym] || {};
         const rl = riskLabel(c._risk);
         const rc = riskColor(c._risk);
-        const cgIconFallbackCb = ld.icon || '';
-        const ghIconUrlCb = `https://raw.githubusercontent.com/ErikThiart/cryptocurrency-icons/master/32/${c.sym.toLowerCase()}.png`;
-        const coinIconHtmlCb = `<div class="tk-ico"><img src="${ghIconUrlCb}" alt="${c.sym}" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'${cgIconFallbackCb ? `;this.src='${cgIconFallbackCb}';this.onerror=function(){this.style.display='none';this.nextElementSibling.style.display='flex';}` : ''}"><span class="coin-letter-icon" style="display:none">${c.sym.charAt(0)}</span></div>`;
+        const ghIconUrlCb = `https://cdn.jsdelivr.net/gh/ErikThiart/cryptocurrency-icons@master/32/${c.sym.toLowerCase()}.png`;
+        const primaryIconUrlCb = ld.icon || ghIconUrlCb;
+        const fallbackIconUrlCb = ld.icon ? ghIconUrlCb : '';
+        const coinIconHtmlCb = `<div class="tk-ico"><img src="${primaryIconUrlCb}" alt="${c.sym}" data-fb="${fallbackIconUrlCb}" onerror="if(this.dataset.fb){var f=this.dataset.fb;this.dataset.fb='';this.src=f;return;}this.style.display='none';this.nextElementSibling.style.display='flex'"><span class="coin-letter-icon" style="display:none">${c.sym.charAt(0)}</span></div>`;
         const cgId = ld.cgId || getCgId(c.sym);
         const cmcSlug = getCmcSlug(c.sym);
 
