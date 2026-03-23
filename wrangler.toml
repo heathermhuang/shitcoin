@@ -1,0 +1,11 @@
+name = "shitcoin"
+main = "worker.dist.js"
+compatibility_date = "2024-01-01"
+workers_dev = true
+
+[build]
+command = "node build.js"
+
+[[routes]]
+pattern = "shitcoin.io/*"
+zone_name = "shitcoin.io"

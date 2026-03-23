@@ -1,0 +1,8 @@
+node_modules/
+cache/
+.wrangler/
+.gstack/
+.claude/
+worker.dist.js
+*.log
+.DS_Store
