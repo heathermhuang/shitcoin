@@ -5,15 +5,15 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Crypto Monitor · Binance & Coinbase</title>
 <meta name="description" content="Real-time monitoring of Binance and Coinbase coins under delisting watch — risk scores, order book depth, and cross-exchange data.">
-<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚡</text></svg>">
-<!-- Google tag (gtag.js) -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-4MY2VXRGJJ"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-  gtag('config', 'G-4MY2VXRGJJ');
-</script>
+<meta property="og:title" content="Crypto Monitor · shitcoin.io">
+<meta property="og:description" content="Real-time Binance & Coinbase delisting monitor — risk scores, order book depth, and cross-exchange data.">
+<meta property="og:url" content="https://shitcoin.io">
+<meta property="og:type" content="website">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Crypto Monitor · shitcoin.io">
+<meta name="twitter:description" content="Real-time Binance & Coinbase delisting monitor with risk scores.">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="alternate icon" href="/favicon.ico">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=DM+Sans:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
@@ -180,6 +180,19 @@ tbody tr.limit-row{background:rgba(245,158,11,0.03)}
 .footer{margin-top:36px;text-align:center;font-size:11px;color:var(--text-3);font-family:'IBM Plex Mono',monospace;padding:20px 0;border-top:1px solid var(--border-1)}
 .footer a{color:var(--blue);text-decoration:none}
 
+/* COOKIE CONSENT */
+.cookie-bar{position:fixed;bottom:0;left:0;right:0;z-index:1000;background:var(--bg-2);border-top:1px solid var(--border-2);padding:14px 24px;display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;backdrop-filter:blur(12px);transition:transform 0.3s}
+.cookie-bar.hidden{transform:translateY(100%);pointer-events:none}
+.cookie-bar-left{display:flex;align-items:center;gap:10px;flex:1;min-width:0}
+.cookie-bar-text{font-size:11px;color:var(--text-2);font-family:'IBM Plex Mono',monospace;line-height:1.5}
+.cookie-bar-text a{color:var(--blue);text-decoration:none}
+.cookie-bar-actions{display:flex;gap:8px;flex-shrink:0}
+.cookie-btn{padding:7px 16px;border-radius:6px;font-size:11px;font-weight:600;cursor:pointer;font-family:'IBM Plex Mono',monospace;transition:all 0.15s;border:1px solid transparent}
+.cookie-btn.accept{background:var(--green);color:#000;border-color:var(--green)}
+.cookie-btn.accept:hover{opacity:0.88}
+.cookie-btn.decline{background:transparent;color:var(--text-3);border-color:var(--border-2)}
+.cookie-btn.decline:hover{color:var(--text-2)}
+
 /* PAGINATION */
 .pagination{display:flex;align-items:center;justify-content:center;gap:8px;margin-top:16px;font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--text-3)}
 .pagination button{background:var(--bg-3);border:1px solid var(--border-1);color:var(--text-2);padding:5px 12px;border-radius:5px;cursor:pointer;font-family:'IBM Plex Mono',monospace;font-size:11px;transition:all 0.15s}
@@ -302,7 +315,12 @@ tbody tr.limit-row{background:rgba(245,158,11,0.03)}
     <div class="sec-title">📅 Upcoming Events</div>
     <div class="timeline" id="bn-timeline"></div>
 </div>
-<div class="footer">Data from Binance API + CoinGecko · Risk scores based on historical delisting patterns · Auto-refresh every 5 min<br>Monitoring tag program started 2023-07-26 · <span id="bn-tokenCount"></span> tokens tracked</div>
+<div class="footer">
+  Data from Binance API + CoinGecko · Risk scores based on historical delisting patterns · Auto-refresh every 5 min<br>
+  Monitoring tag program started 2023-07-26 · <span id="bn-tokenCount"></span> tokens tracked<br><br>
+  <strong style="color:var(--amber)">⚠ Not financial advice.</strong> Data is for informational purposes only. Always do your own research.<br><br>
+  <a href="/terms">Terms of Use</a> &nbsp;·&nbsp; <a href="/privacy">Privacy Policy</a> &nbsp;·&nbsp; <a href="https://stablecoin.io">Stablecoin Monitor</a>
+</div>
 </div>
 
 </div>
@@ -362,10 +380,10 @@ tbody tr.limit-row{background:rgba(245,158,11,0.03)}
 </div>
 <div class="pagination" id="cb-pagination"></div>
 <div class="footer">
-    Coinbase Monitor &middot; Live data from Coinbase Exchange API &middot; Risk scores are computed, not financial advice<br>
-    <a href="https://www.coinbase.com" target="_blank">Coinbase</a> &middot;
-    <a href="https://coinmarketcap.com" target="_blank">CoinMarketCap</a> &middot;
-    <a href="https://www.coingecko.com" target="_blank">CoinGecko</a>
+  Data from Coinbase Exchange API + CoinGecko · Risk scores based on trading status and volume patterns<br>
+  <span id="cb-tokenCount"></span><br><br>
+  <strong style="color:var(--amber)">⚠ Not financial advice.</strong> Data is for informational purposes only. Always do your own research.<br><br>
+  <a href="/terms">Terms of Use</a> &nbsp;·&nbsp; <a href="/privacy">Privacy Policy</a> &nbsp;·&nbsp; <a href="https://stablecoin.io">Stablecoin Monitor</a>
 </div>
 </div>
 </div>
@@ -1808,5 +1826,57 @@ document.addEventListener('keydown', e => {
     }
 });
 
+</script>
+
+<!-- COOKIE CONSENT BAR -->
+<div class="cookie-bar hidden" id="cookie-bar">
+  <div class="cookie-bar-left">
+    <div class="cookie-bar-text">🍪 We use Google Analytics (only with consent) to understand traffic. No personal data collected. <a href="/privacy">Privacy Policy</a></div>
+  </div>
+  <div class="cookie-bar-actions">
+    <button class="cookie-btn accept" onclick="acceptCookies()">Accept Analytics</button>
+    <button class="cookie-btn decline" onclick="declineCookies()">Reject</button>
+  </div>
+</div>
+
+<script>
+// ===== COOKIE CONSENT + ANALYTICS =====
+(function() {
+  const KEY = 'cm_consent_v1';
+  const GA_ID = 'G-4MY2VXRGJJ';
+
+  function loadGA() {
+    if (window._gaLoaded) return;
+    window._gaLoaded = true;
+    const s = document.createElement('script');
+    s.async = true;
+    s.src = 'https://www.googletagmanager.com/gtag/js?id=' + GA_ID;
+    document.head.appendChild(s);
+    window.dataLayer = window.dataLayer || [];
+    window.gtag = function(){dataLayer.push(arguments);};
+    window.gtag('js', new Date());
+    window.gtag('config', GA_ID);
+  }
+
+  window.acceptCookies = function() {
+    localStorage.setItem(KEY, 'granted');
+    document.getElementById('cookie-bar').classList.add('hidden');
+    loadGA();
+  };
+
+  window.declineCookies = function() {
+    localStorage.setItem(KEY, 'denied');
+    document.getElementById('cookie-bar').classList.add('hidden');
+  };
+
+  const stored = localStorage.getItem(KEY);
+  if (stored === 'granted') {
+    loadGA();
+  } else if (!stored) {
+    setTimeout(function() {
+      document.getElementById('cookie-bar').classList.remove('hidden');
+    }, 2000);
+  }
+})();
 </script>
 </body></html>
