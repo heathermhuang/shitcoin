@@ -1,4 +1,170 @@
-<!DOCTYPE html>
+/**
+ * Cloudflare Worker for shitcoin.io
+ * Serves index.html and proxies API calls to Binance/Coinbase/CoinGecko/exchanges.
+ * Uses Cloudflare Cache API for stale-while-revalidate.
+ */
+
+const BINANCE_BASE  = 'https://data-api.binance.vision/api/v3';
+const COINBASE_BASE = 'https://api.exchange.coinbase.com';
+const COINGECKO_BASE = 'https://api.coingecko.com/api/v3';
+
+const EXCHANGE_URLS = {
+  coinbase: 'https://api.exchange.coinbase.com/products',
+  binance:  'https://data-api.binance.vision/api/v3/exchangeInfo',
+  okx:      'https://www.okx.com/api/v5/public/instruments?instType=SPOT',
+  kraken:   'https://api.kraken.com/0/public/AssetPairs',
+};
+
+const TTL_MAP = [
+  ['ticker/24hr',  120],
+  ['depth',        300],
+  ['exchangeInfo', 900],
+  ['/products',    300],
+  ['/stats',       120],
+  ['/book',        300],
+  ['/cg/',         300],
+  ['/ex/',        1800],
+];
+
+function getTTL(path) {
+  for (const [k, v] of TTL_MAP) if (path.includes(k)) return v;
+  return 120;
+}
+
+async function cachedProxy(request, upstream, ttl) {
+  const cache = caches.default;
+  // CoinGecko: store cached entries for 24h so stale-while-revalidate survives rate-limit windows
+  const isCoinGecko = upstream.includes('coingecko.com');
+  const storageTtl = isCoinGecko ? 86400 : ttl * 10;
+  const cacheKey = new Request(upstream, { headers: { 'Cache-Control': 'no-transform' } });
+
+  const cached = await cache.match(cacheKey);
+  if (cached) {
+    // Stale-while-revalidate: return cached, refresh in background
+    const age = Date.now()/1000 - new Date(cached.headers.get('X-Cached-At') || 0).getTime()/1000;
+    if (age > ttl) {
+      // Background refresh — don't await
+      fetch(upstream, { headers: { 'User-Agent': 'CryptoMonitor/1.0' } })
+        .then(r => r.ok ? r.blob().then(b => {
+          const fresh = new Response(b, { headers: {
+            'Content-Type': r.headers.get('Content-Type') || 'application/json',
+            'Access-Control-Allow-Origin': '*',
+            'X-Cached-At': new Date().toUTCString(),
+            'Cache-Control': `public, max-age=${storageTtl}`,
+          }});
+          cache.put(cacheKey, fresh.clone());
+        }) : null)
+        .catch(() => null);
+    }
+    // Return cached with CORS header
+    const headers = new Headers(cached.headers);
+    headers.set('Access-Control-Allow-Origin', '*');
+    return new Response(cached.body, { status: 200, headers });
+  }
+
+  // Cache miss — fetch upstream
+  try {
+    const upstream_resp = await fetch(upstream, {
+      headers: { 'User-Agent': 'CryptoMonitor/1.0' },
+      cf: { cacheTtl: ttl, cacheEverything: true },
+    });
+    if (!upstream_resp.ok) {
+      // CoinGecko rate-limited: return empty array so the client shows '—' gracefully
+      if (isCoinGecko) {
+        return new Response('[]', {
+          status: 200,
+          headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
+        });
+      }
+      return new Response('{"error":"upstream error"}', {
+        status: 502,
+        headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
+      });
+    }
+    const body = await upstream_resp.arrayBuffer();
+    const ct = upstream_resp.headers.get('Content-Type') || 'application/json';
+    const response = new Response(body, {
+      headers: {
+        'Content-Type': ct,
+        'Access-Control-Allow-Origin': '*',
+        'X-Cached-At': new Date().toUTCString(),
+        'Cache-Control': `public, max-age=${storageTtl}`,
+      },
+    });
+    await cache.put(cacheKey, response.clone());
+    return response;
+  } catch (e) {
+    // CoinGecko fetch error: return empty array rather than 502
+    if (isCoinGecko) {
+      return new Response('[]', {
+        status: 200,
+        headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
+      });
+    }
+    return new Response('{"error":"fetch failed"}', {
+      status: 502,
+      headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
+    });
+  }
+}
+
+export default {
+  async fetch(request, env) {
+    const url = new URL(request.url);
+    const path = url.pathname + url.search;
+    const ttl = getTTL(path);
+
+    // Force HTTPS — check both url.protocol and CF-Visitor header
+    const cfVisitor = request.headers.get('CF-Visitor');
+    const originalScheme = cfVisitor ? JSON.parse(cfVisitor).scheme : url.protocol.replace(':', '');
+    if (originalScheme === 'http') {
+      const httpsUrl = request.url.replace(/^http:/, 'https:');
+      return Response.redirect(httpsUrl, 301);
+    }
+
+    // CORS preflight
+    if (request.method === 'OPTIONS') {
+      return new Response(null, { headers: {
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Methods': 'GET',
+        'Access-Control-Max-Age': '86400',
+      }});
+    }
+
+    // /api/* → Binance
+    if (path.startsWith('/api/')) {
+      return cachedProxy(request, BINANCE_BASE + path.slice(4), ttl);
+    }
+
+    // /cb/* → Coinbase
+    if (path.startsWith('/cb/')) {
+      return cachedProxy(request, COINBASE_BASE + path.slice(3), ttl);
+    }
+
+    // /cg/* → CoinGecko
+    if (path.startsWith('/cg/')) {
+      return cachedProxy(request, COINGECKO_BASE + path.slice(3), ttl);
+    }
+
+    // /ex/<exchange> → exchange info
+    if (path.startsWith('/ex/')) {
+      const ex = path.slice(4).split('?')[0];
+      const upstream = EXCHANGE_URLS[ex];
+      if (!upstream) return new Response('{"error":"unknown exchange"}', { status: 404 });
+      return cachedProxy(request, upstream, 1800);
+    }
+
+    // Everything else → serve index.html
+    return new Response(HTML, {
+      headers: {
+        'Content-Type': 'text/html; charset=utf-8',
+        'Cache-Control': 'no-cache',
+      },
+    });
+  },
+};
+
+const HTML = `<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -665,7 +831,7 @@ async function fetchMarketCaps() {
         for (const batch of batches) {
             const ids = batch.map(getGeckoId).join(',');
             try {
-                const resp = await fetch(`/cg/coins/markets?vs_currency=usd&ids=${ids}&per_page=250`);
+                const resp = await fetch(\`/cg/coins/markets?vs_currency=usd&ids=\${ids}&per_page=250\`);
                 if (!resp.ok) continue;
                 const data = await resp.json();
                 data.forEach(coin => {
@@ -701,7 +867,7 @@ async function fetchDepthData() {
         const batch = candidates.slice(i, i + 5);
         await Promise.all(batch.map(async tk => {
             try {
-                const resp = await fetch(BINANCE_API + `/depth?symbol=${tk.sym}USDT&limit=1000`);
+                const resp = await fetch(BINANCE_API + \`/depth?symbol=\${tk.sym}USDT&limit=1000\`);
                 if (!resp.ok) return;
                 const ob = await resp.json();
                 const price = liveData[tk.sym].price;
@@ -973,15 +1139,15 @@ function renderStats() {
     const active = allCoins.filter(t => t.status === 'active').length;
     const highRisk = allCoins.filter(t => t.status === 'active' && t._risk >= 50).length;
     const medDays = getMedianMonToDelist();
-    document.getElementById('bn-stats').innerHTML = `
-        <div class="stat"><div class="stat-label">Active Coins</div><div class="stat-val b">${active}</div><div class="stat-sub">trading on Binance</div></div>
-        <div class="stat"><div class="stat-label">⚠ High Risk</div><div class="stat-val r">${highRisk}</div><div class="stat-sub">risk score ≥ 50</div></div>
-        <div class="stat"><div class="stat-label">Monitoring</div><div class="stat-val a">${mon}</div><div class="stat-sub">tagged by Binance</div></div>
-        <div class="stat"><div class="stat-label">Delisting</div><div class="stat-val r">${deling}</div><div class="stat-sub">scheduled removal</div></div>
-        <div class="stat"><div class="stat-label">Restored</div><div class="stat-val g">${rest}</div><div class="stat-sub">tag removed</div></div>
-        <div class="stat"><div class="stat-label">Delisted</div><div class="stat-val">${deled}</div><div class="stat-sub">since Jul 2023</div></div>
-        <div class="stat"><div class="stat-label">Median to Delist</div><div class="stat-val p">${medDays||'—'}d</div><div class="stat-sub">tag → removal</div></div>
-    `;
+    document.getElementById('bn-stats').innerHTML = \`
+        <div class="stat"><div class="stat-label">Active Coins</div><div class="stat-val b">\${active}</div><div class="stat-sub">trading on Binance</div></div>
+        <div class="stat"><div class="stat-label">⚠ High Risk</div><div class="stat-val r">\${highRisk}</div><div class="stat-sub">risk score ≥ 50</div></div>
+        <div class="stat"><div class="stat-label">Monitoring</div><div class="stat-val a">\${mon}</div><div class="stat-sub">tagged by Binance</div></div>
+        <div class="stat"><div class="stat-label">Delisting</div><div class="stat-val r">\${deling}</div><div class="stat-sub">scheduled removal</div></div>
+        <div class="stat"><div class="stat-label">Restored</div><div class="stat-val g">\${rest}</div><div class="stat-sub">tag removed</div></div>
+        <div class="stat"><div class="stat-label">Delisted</div><div class="stat-val">\${deled}</div><div class="stat-sub">since Jul 2023</div></div>
+        <div class="stat"><div class="stat-label">Median to Delist</div><div class="stat-val p">\${medDays||'—'}d</div><div class="stat-sub">tag → removal</div></div>
+    \`;
 }
 
 function renderPredBar() {
@@ -1006,14 +1172,14 @@ function renderPredBar() {
             nextWave = 'Due soon';
         }
     }
-    document.getElementById('bn-predBar').innerHTML = `
+    document.getElementById('bn-predBar').innerHTML = \`
         <span class="pred-label">🔮 Pattern Analysis</span>
-        <span class="pred-val">Next tag wave: ${nextWave}</span>
+        <span class="pred-val">Next tag wave: \${nextWave}</span>
         <span class="pred-sep"></span>
-        <span class="pred-val">Delist rate: ${Math.round(TRACKED_TOKENS.filter(t=>t.status==='delisted').length / TRACKED_TOKENS.length * 100)}%</span>
+        <span class="pred-val">Delist rate: \${Math.round(TRACKED_TOKENS.filter(t=>t.status==='delisted').length / TRACKED_TOKENS.length * 100)}%</span>
         <span class="pred-sep"></span>
-        <span class="pred-val">Restore rate: ${Math.round(TRACKED_TOKENS.filter(t=>t.status==='restored').length / TRACKED_TOKENS.length * 100)}%</span>
-    `;
+        <span class="pred-val">Restore rate: \${Math.round(TRACKED_TOKENS.filter(t=>t.status==='restored').length / TRACKED_TOKENS.length * 100)}%</span>
+    \`;
 }
 
 function renderFilters() {
@@ -1035,8 +1201,8 @@ function renderFilters() {
         ['all', '📋 All', all],
     ];
     document.getElementById('bn-filters').innerHTML = tabs.map(([k,l,c]) =>
-        `<button class="ftab ${filter===k?'active':''}" onclick="bnSetFilter('${k}')">${l}<span class="cnt">${c}</span></button>`
-    ).join('') + `<input class="search" type="text" placeholder="Search token... ( / )" value="${query}" oninput="bnSetQuery(this.value)">`;
+        \`<button class="ftab \${filter===k?'active':''}" onclick="bnSetFilter('\${k}')">\${l}<span class="cnt">\${c}</span></button>\`
+    ).join('') + \`<input class="search" type="text" placeholder="Search token... ( / )" value="\${query}" oninput="bnSetQuery(this.value)">\`;
 }
 
 function renderTable() {
@@ -1056,20 +1222,20 @@ function renderTable() {
             let domClass = 'ok';
             if (dom > 90) domClass = 'over';
             else if (dom > 45) domClass = 'near';
-            domHtml = `<span class="days-ref ${domClass}">${dom}d</span>`;
+            domHtml = \`<span class="days-ref \${domClass}">\${dom}d</span>\`;
         }
 
         // "NEW" label for tokens recently added to monitoring (within 30 days)
         const isNew = t.monDate && daysBetween(t.monDate, today) <= 30 && (t.status === 'monitoring' || t.status === 'delisting');
-        const newBadge = isNew ? `<span class="badge new-tag">NEW</span> ` : '';
+        const newBadge = isNew ? \`<span class="badge new-tag">NEW</span> \` : '';
 
         // Status badge
         const badges = {
-            monitoring: `${newBadge}<span class="badge monitoring"><span class="bdot a"></span>MON</span>`,
-            delisting: `${newBadge}<span class="badge delisting"><span class="bdot r"></span>DELIST</span>`,
-            delisted: `<span class="badge delisted">DELISTED</span>`,
-            restored: `<span class="badge restored"><span class="bdot g"></span>RESTORED</span>`,
-            active: `<span class="badge active">ACTIVE</span>`,
+            monitoring: \`\${newBadge}<span class="badge monitoring"><span class="bdot a"></span>MON</span>\`,
+            delisting: \`\${newBadge}<span class="badge delisting"><span class="bdot r"></span>DELIST</span>\`,
+            delisted: \`<span class="badge delisted">DELISTED</span>\`,
+            restored: \`<span class="badge restored"><span class="bdot g"></span>RESTORED</span>\`,
+            active: \`<span class="badge active">ACTIVE</span>\`,
         };
 
         // Risk score
@@ -1082,28 +1248,28 @@ function renderTable() {
             else if (t._riskLabel === 'LOW') cls = 'low';
 
             const fillColor = cls === 'critical' ? 'var(--red)' : cls === 'high' ? '#f87171' : cls === 'medium' ? 'var(--amber)' : cls === 'low' ? '#6ee7b7' : 'var(--green)';
-            riskHtml = `<span class="risk-score ${cls}">${t._risk}<div class="risk-bar"><div class="risk-fill" style="width:${t._risk}%;background:${fillColor}"></div></div></span>`;
+            riskHtml = \`<span class="risk-score \${cls}">\${t._risk}<div class="risk-bar"><div class="risk-fill" style="width:\${t._risk}%;background:\${fillColor}"></div></div></span>\`;
         }
 
         // Delist date
         let delistHtml = '<span class="na">—</span>';
         if (t.delistDate) {
             const dl = daysUntil(t.delistDate);
-            if (dl <= 0) delistHtml = `<span class="past">${fmtDate(t.delistDate)}</span>`;
-            else delistHtml = `${fmtDate(t.delistDate)}<div class="cd" style="font-size:10px;color:var(--red)">${dl}d left</div>`;
+            if (dl <= 0) delistHtml = \`<span class="past">\${fmtDate(t.delistDate)}</span>\`;
+            else delistHtml = \`\${fmtDate(t.delistDate)}<div class="cd" style="font-size:10px;color:var(--red)">\${dl}d left</div>\`;
         }
 
         // Price change
         let changeHtml = '—';
         if (ld.change !== undefined) {
             const cls = ld.change >= 0 ? 'up' : 'dn';
-            changeHtml = `<span class="pct ${cls}">${ld.change >= 0 ? '+' : ''}${ld.change.toFixed(2)}%</span>`;
+            changeHtml = \`<span class="pct \${cls}">\${ld.change >= 0 ? '+' : ''}\${ld.change.toFixed(2)}%</span>\`;
         }
 
         const rowClass = t.status === 'delisting' ? 'delisting-row' : t.status === 'delisted' ? 'delisted-row' : t.status === 'restored' ? 'restored-row' : (t.status === 'active' && t._risk >= 70) ? 'highrisk-row' : '';
 
-        const iconUrl = ld.icon || `https://bin.bnbstatic.com/image/admin_mgs_image/20201110/${t.sym}.png`;
-        const iconStyle = ld.icon ? `background-image:url('${ld.icon}')` : '';
+        const iconUrl = ld.icon || \`https://bin.bnbstatic.com/image/admin_mgs_image/20201110/\${t.sym}.png\`;
+        const iconStyle = ld.icon ? \`background-image:url('\${ld.icon}')\` : '';
         const bnIcon = '<img src="https://bin.bnbstatic.com/static/images/common/favicon.ico" alt="Binance">';
         const cgIcon = '<img src="https://www.coingecko.com/favicon.ico" alt="CoinGecko">';
         const cmcIcon = '<img src="https://coinmarketcap.com/apple-touch-icon.png" alt="CMC">';
@@ -1116,21 +1282,21 @@ function renderTable() {
         const cmcLink = cmcSlug ? 'https://coinmarketcap.com/currencies/' + cmcSlug + '/' : '';
         const cmcHtml = cmcLink ? '<a href="' + cmcLink + '" target="_blank" title="CoinMarketCap"><img src="https://coinmarketcap.com/apple-touch-icon.png" alt="CMC"></a>' : '';
 
-        return `<tr class="${rowClass}">
-            <td><div class="tk"><div class="tk-ico" style="${iconStyle}">${ld.icon ? '' : t.sym.slice(0,2)}</div><div><div class="tk-sym">${t.sym}</div><div class="tk-name">${t.name||t.sym}</div><div class="tk-links"><a href="${binanceLink}" target="_blank" title="${linkTitle}">${linkPrimaryIcon}</a>${cmcHtml}</div></div></div></td>
-            <td>${badges[t.status]||''}</td>
-            <td>${riskHtml}</td>
-            <td class="col-days">${domHtml}</td>
-            <td class="col-mon"><span class="dt">${t.monDate ? fmtDate(t.monDate) : '<span class="na">—</span>'}</span></td>
-            <td><div class="dt">${delistHtml}</div></td>
-            <td><span class="vol">${fmtPrice(ld.price)}</span></td>
-            <td>${changeHtml}</td>
-            <td class="col-vol"><span class="vol">${ld.vol ? fmtNum(ld.vol,1) : '—'}</span></td>
-            <td class="col-mcap"><span class="mcap">${ld.mcap ? fmtNum(ld.mcap,0) : '—'}</span></td>
-            <td class="col-bid"><span class="depth">${ld.bidDepth ? fmtNum(ld.bidDepth,0) : '—'}</span></td>
-            <td class="col-ask"><span class="depth">${ld.askDepth ? fmtNum(ld.askDepth,0) : '—'}</span></td>
-            <td class="col-also">${getExchangeIcons(t.sym)}</td>
-        </tr>`;
+        return \`<tr class="\${rowClass}">
+            <td><div class="tk"><div class="tk-ico" style="\${iconStyle}">\${ld.icon ? '' : t.sym.slice(0,2)}</div><div><div class="tk-sym">\${t.sym}</div><div class="tk-name">\${t.name||t.sym}</div><div class="tk-links"><a href="\${binanceLink}" target="_blank" title="\${linkTitle}">\${linkPrimaryIcon}</a>\${cmcHtml}</div></div></div></td>
+            <td>\${badges[t.status]||''}</td>
+            <td>\${riskHtml}</td>
+            <td class="col-days">\${domHtml}</td>
+            <td class="col-mon"><span class="dt">\${t.monDate ? fmtDate(t.monDate) : '<span class="na">—</span>'}</span></td>
+            <td><div class="dt">\${delistHtml}</div></td>
+            <td><span class="vol">\${fmtPrice(ld.price)}</span></td>
+            <td>\${changeHtml}</td>
+            <td class="col-vol"><span class="vol">\${ld.vol ? fmtNum(ld.vol,1) : '—'}</span></td>
+            <td class="col-mcap"><span class="mcap">\${ld.mcap ? fmtNum(ld.mcap,0) : '—'}</span></td>
+            <td class="col-bid"><span class="depth">\${ld.bidDepth ? fmtNum(ld.bidDepth,0) : '—'}</span></td>
+            <td class="col-ask"><span class="depth">\${ld.askDepth ? fmtNum(ld.askDepth,0) : '—'}</span></td>
+            <td class="col-also">\${getExchangeIcons(t.sym)}</td>
+        </tr>\`;
     }).join('');
 
     // Sort indicators
@@ -1145,11 +1311,11 @@ function renderTable() {
     // Pagination
     const total = list.length;
     const pages = Math.ceil(total / PAGE_SIZE);
-    document.getElementById('bn-pagination').innerHTML = pages > 1 ? `
-        <button onclick="bnSetPage(${page-1})" ${page===0?'disabled':''}>← Prev</button>
-        <span class="pg-info">Page ${page+1} of ${pages} (${total} tokens)</span>
-        <button onclick="bnSetPage(${page+1})" ${page>=pages-1?'disabled':''}>Next →</button>
-    ` : `<span class="pg-info">${total} tokens</span>`;
+    document.getElementById('bn-pagination').innerHTML = pages > 1 ? \`
+        <button onclick="bnSetPage(\${page-1})" \${page===0?'disabled':''}>← Prev</button>
+        <span class="pg-info">Page \${page+1} of \${pages} (\${total} tokens)</span>
+        <button onclick="bnSetPage(\${page+1})" \${page>=pages-1?'disabled':''}>Next →</button>
+    \` : \`<span class="pg-info">\${total} tokens</span>\`;
 }
 
 function renderTimeline() {
@@ -1170,11 +1336,11 @@ function renderTimeline() {
     document.getElementById('bn-timeline').innerHTML = Object.entries(grouped).map(([date, evts]) => {
         const dl = daysUntil(date);
         const urgent = dl <= 14;
-        return `<div class="tcard ${urgent?'urgent':''}">
-            <div class="tdate">${fmtDate(date)} (${dl}d)</div>
-            <div class="tevt">Delisting ${evts.length} token${evts.length>1?'s':''}</div>
-            <div class="ttokens">${evts.map(e => `<span class="ttk">${e.sym}</span>`).join('')}</div>
-        </div>`;
+        return \`<div class="tcard \${urgent?'urgent':''}">
+            <div class="tdate">\${fmtDate(date)} (\${dl}d)</div>
+            <div class="tevt">Delisting \${evts.length} token\${evts.length>1?'s':''}</div>
+            <div class="ttokens">\${evts.map(e => \`<span class="ttk">\${e.sym}</span>\`).join('')}</div>
+        </div>\`;
     }).join('') || '<div style="color:var(--text-3);font-size:13px">No upcoming events</div>';
 
     document.getElementById('bn-tokenCount').textContent = allCoins.length;
@@ -1219,7 +1385,7 @@ setInterval(() => {
     if (!el) return;
     const elapsed = (Date.now() - (window._lastRefresh || Date.now())) / 1000;
     const remaining = Math.max(0, 300 - elapsed);
-    el.textContent = `next: ${Math.floor(remaining/60)}:${String(Math.floor(remaining%60)).padStart(2,'0')}`;
+    el.textContent = \`next: \${Math.floor(remaining/60)}:\${String(Math.floor(remaining%60)).padStart(2,'0')}\`;
 }, 1000);
 window._lastRefresh = Date.now();
 
@@ -1296,7 +1462,7 @@ function getCmcSlug(sym) { return CMC_SLUGS[sym] || sym.toLowerCase(); }
 
 // ===== FORMAT =====
 function fmtNum(n, d) {
-    if (!n || n === 0) return '\u2014';
+    if (!n || n === 0) return '\\u2014';
     if (n >= 1e12) return '$' + (n/1e12).toFixed(2) + 'T';
     if (n >= 1e9) return '$' + (n/1e9).toFixed(2) + 'B';
     if (n >= 1e6) return '$' + (n/1e6).toFixed(2) + 'M';
@@ -1304,12 +1470,12 @@ function fmtNum(n, d) {
     return '$' + n.toFixed(d);
 }
 function fmtPrice(p) {
-    if (!p || p === 0) return '\u2014';
+    if (!p || p === 0) return '\\u2014';
     if (p >= 1000) return '$' + p.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
     if (p >= 1) return '$' + p.toFixed(4);
     if (p >= 0.01) return '$' + p.toFixed(6);
     if (p >= 0.0001) return '$' + p.toFixed(8);
-    const s = p.toFixed(20), m = s.match(/0\.(0*)/), z = m ? m[1].length : 0;
+    const s = p.toFixed(20), m = s.match(/0\\.(0*)/), z = m ? m[1].length : 0;
     if (z >= 4) return '$0.0{' + z + '}' + s.slice(z+2, z+6);
     return '$' + p.toPrecision(4);
 }
@@ -1381,7 +1547,7 @@ function getExchangeIcons(sym) {
     if (exchangeData.binance.has(sym)) icons.push('<a href="https://www.binance.com/en/trade/' + sym + '_USDT" target="_blank" title="Binance"><img src="https://bin.bnbstatic.com/static/images/common/favicon.ico" alt="Binance"></a>');
     if (exchangeData.okx.has(sym)) icons.push('<a href="https://www.okx.com/trade-spot/' + sym.toLowerCase() + '-usdt" target="_blank" title="OKX"><img src="https://www.okx.com/favicon.ico" alt="OKX"></a>');
     if (exchangeData.kraken.has(sym)) icons.push('<a href="https://www.kraken.com/prices/' + sym.toLowerCase() + '" target="_blank" title="Kraken"><img src="https://www.kraken.com/favicon.ico" alt="KR"></a>');
-    return icons.length ? '<div class="ex-icons">' + icons.join('') + '</div>' : '<span class="na" style="color:var(--text-3)">\u2014</span>';
+    return icons.length ? '<div class="ex-icons">' + icons.join('') + '</div>' : '<span class="na" style="color:var(--text-3)">\\u2014</span>';
 }
 
 // ===== RENDER =====
@@ -1432,14 +1598,14 @@ function cbRenderAll() {
         const ld = liveData[c.sym] || {};
         const rl = riskLabel(c._risk);
         const rc = riskColor(c._risk);
-        const iconStyle = ld.icon ? `background-image:url('${ld.icon}')` : '';
+        const iconStyle = ld.icon ? \`background-image:url('\${ld.icon}')\` : '';
         const cgId = ld.cgId || getCgId(c.sym);
         const cmcSlug = getCmcSlug(c.sym);
 
         // Links
-        const cbLink = c.status === 'delisted' ? `https://www.coingecko.com/en/coins/${cgId}` : `https://www.coinbase.com/price/${c.sym.toLowerCase()}`;
+        const cbLink = c.status === 'delisted' ? \`https://www.coingecko.com/en/coins/\${cgId}\` : \`https://www.coinbase.com/price/\${c.sym.toLowerCase()}\`;
         const primaryIcon = c.status === 'delisted' ? cgIcon : cbIcon;
-        const cmcHtml = `<a href="https://coinmarketcap.com/currencies/${cmcSlug}/" target="_blank" title="CoinMarketCap">${cmcIcon}</a>`;
+        const cmcHtml = \`<a href="https://coinmarketcap.com/currencies/\${cmcSlug}/" target="_blank" title="CoinMarketCap">\${cmcIcon}</a>\`;
 
         // Status badge
         let badge;
@@ -1448,37 +1614,37 @@ function cbRenderAll() {
         else badge = '<span class="badge online"><span class="bdot g"></span>ONLINE</span>';
 
         // Risk
-        const riskHtml = `<span class="risk-score ${rl}">${c._risk}<div class="risk-bar"><div class="risk-fill" style="width:${c._risk}%;background:${rc}"></div></div></span>`;
+        const riskHtml = \`<span class="risk-score \${rl}">\${c._risk}<div class="risk-bar"><div class="risk-fill" style="width:\${c._risk}%;background:\${rc}"></div></div></span>\`;
 
         // Change
-        let changeHtml = '\u2014';
+        let changeHtml = '\\u2014';
         if (ld.change !== undefined && ld.change !== null) {
             const cls = ld.change >= 0 ? 'up' : 'dn';
-            changeHtml = `<span class="pct ${cls}">${ld.change >= 0 ? '+' : ''}${ld.change.toFixed(2)}%</span>`;
+            changeHtml = \`<span class="pct \${cls}">\${ld.change >= 0 ? '+' : ''}\${ld.change.toFixed(2)}%</span>\`;
         }
 
         const rowClass = c.status === 'delisted' ? 'delisted-row' : c.limitOnly ? 'limit-row' : (c._risk >= 60 ? 'highrisk-row' : '');
 
-        return `<tr class="${rowClass}">
-            <td><div class="tk"><div class="tk-ico" style="${iconStyle}">${ld.icon ? '' : c.sym.slice(0,2)}</div><div><div class="tk-sym">${c.sym}</div><div class="tk-name">${c.pairs.length} pair${c.pairs.length > 1 ? 's' : ''}</div><div class="tk-links"><a href="${cbLink}" target="_blank" title="${c.status==='delisted'?'CoinGecko':'Coinbase'}">${primaryIcon}</a>${cmcHtml}</div></div></div></td>
-            <td>${badge}</td>
-            <td>${riskHtml}</td>
-            <td><span class="vol">${fmtPrice(ld.price)}</span></td>
-            <td>${changeHtml}</td>
-            <td class="col-vol"><span class="vol">${ld.vol ? fmtNum(ld.vol,1) : '\u2014'}</span></td>
-            <td class="col-mcap"><span class="mcap">${ld.mcap ? fmtNum(ld.mcap,0) : '\u2014'}</span></td>
-            <td class="col-bid"><span class="depth">${ld.bidDepth ? fmtNum(ld.bidDepth,0) : '\u2014'}</span></td>
-            <td class="col-ask"><span class="depth">${ld.askDepth ? fmtNum(ld.askDepth,0) : '\u2014'}</span></td>
-            <td class="col-also">${getExchangeIcons(c.sym)}</td>
-        </tr>`;
+        return \`<tr class="\${rowClass}">
+            <td><div class="tk"><div class="tk-ico" style="\${iconStyle}">\${ld.icon ? '' : c.sym.slice(0,2)}</div><div><div class="tk-sym">\${c.sym}</div><div class="tk-name">\${c.pairs.length} pair\${c.pairs.length > 1 ? 's' : ''}</div><div class="tk-links"><a href="\${cbLink}" target="_blank" title="\${c.status==='delisted'?'CoinGecko':'Coinbase'}">\${primaryIcon}</a>\${cmcHtml}</div></div></div></td>
+            <td>\${badge}</td>
+            <td>\${riskHtml}</td>
+            <td><span class="vol">\${fmtPrice(ld.price)}</span></td>
+            <td>\${changeHtml}</td>
+            <td class="col-vol"><span class="vol">\${ld.vol ? fmtNum(ld.vol,1) : '\\u2014'}</span></td>
+            <td class="col-mcap"><span class="mcap">\${ld.mcap ? fmtNum(ld.mcap,0) : '\\u2014'}</span></td>
+            <td class="col-bid"><span class="depth">\${ld.bidDepth ? fmtNum(ld.bidDepth,0) : '\\u2014'}</span></td>
+            <td class="col-ask"><span class="depth">\${ld.askDepth ? fmtNum(ld.askDepth,0) : '\\u2014'}</span></td>
+            <td class="col-also">\${getExchangeIcons(c.sym)}</td>
+        </tr>\`;
     }).join('');
 
     // Pagination
-    document.getElementById('cb-pagination').innerHTML = pages > 1 ? `
-        <button onclick="cbSetPage(${page-1})" ${page===0?'disabled':''}>← Prev</button>
-        <span>${page+1} / ${pages} (${list.length} coins)</span>
-        <button onclick="cbSetPage(${page+1})" ${page>=pages-1?'disabled':''}>Next →</button>
-    ` : `<span>${list.length} coins</span>`;
+    document.getElementById('cb-pagination').innerHTML = pages > 1 ? \`
+        <button onclick="cbSetPage(\${page-1})" \${page===0?'disabled':''}>← Prev</button>
+        <span>\${page+1} / \${pages} (\${list.length} coins)</span>
+        <button onclick="cbSetPage(\${page+1})" \${page>=pages-1?'disabled':''}>Next →</button>
+    \` : \`<span>\${list.length} coins</span>\`;
 
     // Sort indicators
     document.querySelectorAll('#cb-section th[data-sort]').forEach(th => {
@@ -1532,7 +1698,7 @@ async function fetchExchanges() {
 
 async function fetchDepth(sym) {
     try {
-        const r = await fetch(`/cb/products/${sym}-USD/book?level=2`);
+        const r = await fetch(\`/cb/products/\${sym}-USD/book?level=2\`);
         if (!r.ok) return;
         const d = await r.json();
         if (!liveData[sym]) liveData[sym] = {};
@@ -1565,7 +1731,7 @@ async function fetchCoinGeckoData() {
         for (const batch of batches) {
             const ids = batch.map(getGeckoId).join(',');
             try {
-                const resp = await fetch(`/cg/coins/markets?vs_currency=usd&ids=${ids}&per_page=250`);
+                const resp = await fetch(\`/cg/coins/markets?vs_currency=usd&ids=\${ids}&per_page=250\`);
                 if (!resp.ok) continue;
                 const data = await resp.json();
                 data.forEach(coin => {
@@ -1672,7 +1838,7 @@ async function init() {
         if (lastRefresh) {
             const rem = Math.max(0, 180 - Math.floor((Date.now() - lastRefresh) / 1000));
             const m = Math.floor(rem / 60), s = rem % 60;
-            document.getElementById('cb-refreshTimer').textContent = `next: ${m}:${String(s).padStart(2, '0')}`;
+            document.getElementById('cb-refreshTimer').textContent = \`next: \${m}:\${String(s).padStart(2, '0')}\`;
         }
     }, 1000);
 }
@@ -1785,3 +1951,4 @@ document.addEventListener('keydown', e => {
 
 </script>
 </body></html>
+`;
