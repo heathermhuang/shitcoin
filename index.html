@@ -116,7 +116,9 @@ tbody tr.limit-row{background:rgba(245,158,11,0.04)}
 
 /* CELLS */
 .tk{display:flex;align-items:center;gap:10px}
-.tk-ico{width:28px;height:28px;border-radius:50%;background:var(--bg-3);border:1px solid var(--border-2);display:flex;align-items:center;justify-content:center;font-family:'IBM Plex Mono',monospace;font-size:9px;font-weight:700;color:var(--text-2);flex-shrink:0;background-size:cover;background-position:center;overflow:hidden;box-shadow:0 0 0 1px rgba(255,255,255,0.05)}
+.tk-ico{width:28px;height:28px;border-radius:50%;background:var(--bg-3);border:1px solid var(--border-2);display:flex;align-items:center;justify-content:center;font-family:'IBM Plex Mono',monospace;font-size:9px;font-weight:700;color:var(--text-2);flex-shrink:0;overflow:hidden;box-shadow:0 0 0 1px rgba(255,255,255,0.05);position:relative}
+.tk-ico img{width:28px;height:28px;border-radius:50%;object-fit:cover;display:block}
+.coin-letter-icon{width:28px;height:28px;border-radius:50%;background:linear-gradient(135deg,var(--bg-4),var(--bg-3));border:1px solid var(--border-2);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:var(--text-2);font-family:'IBM Plex Mono',monospace;flex-shrink:0}
 .tk-sym{font-weight:700;font-size:13px;letter-spacing:-0.2px;color:var(--text-1)}
 .tk-name{font-size:10px;color:var(--text-3);max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .tk-links{display:flex;gap:4px;margin-top:2px;align-items:center}
@@ -290,7 +292,7 @@ tbody tr.limit-row{background:rgba(245,158,11,0.04)}
                     <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><rect width="14" height="14" rx="3.5" fill="#0052FF"/><circle cx="7" cy="7" r="3.5" fill="#0052FF"/><circle cx="7" cy="7" r="3.5" stroke="white" stroke-width="1.5" fill="none"/><rect x="3.5" y="5.9" width="7" height="2.2" fill="#0052FF"/></svg>
                     Coinbase
                 </button>
-                <a class="tnav-tab stablecoins" href="https://stablecoin.io" target="_blank">
+                <a class="tnav-tab stablecoins" href="https://stablecoin.io">
                     <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><circle cx="7" cy="7" r="6.5" stroke="#22c55e" stroke-width="1"/><text x="7" y="10.5" text-anchor="middle" font-size="8" font-weight="700" fill="#22c55e" font-family="IBM Plex Mono,monospace">$</text></svg>
                     Stablecoins
                 </a>
@@ -1188,14 +1190,15 @@ function renderTable() {
 
         const rowClass = t.status === 'delisting' ? 'delisting-row' : t.status === 'delisted' ? 'delisted-row' : t.status === 'restored' ? 'restored-row' : (t.status === 'active' && t._risk >= 70) ? 'highrisk-row' : '';
 
-        const iconUrl = ld.icon || `https://bin.bnbstatic.com/image/admin_mgs_image/20201110/${t.sym}.png`;
-        const iconStyle = ld.icon ? `background-image:url('${ld.icon}')` : '';
+        const ghIconUrl = `https://raw.githubusercontent.com/ErikThiart/cryptocurrency-icons/master/32/${t.sym.toLowerCase()}.png`;
+        const cgIconFallback = ld.icon || '';
+        const coinIconHtml = `<div class="tk-ico"><img src="${ghIconUrl}" alt="${t.sym}" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'${cgIconFallback ? `;this.src='${cgIconFallback}';this.onerror=function(){this.style.display='none';this.nextElementSibling.style.display='flex';}` : ''}"><span class="coin-letter-icon" style="display:none">${t.sym.charAt(0)}</span></div>`;
         const bnIcon = '<img src="https://www.google.com/s2/favicons?domain=binance.com&sz=32" alt="Binance">';
         const cgIcon = '<img src="https://www.google.com/s2/favicons?domain=coingecko.com&sz=32" alt="CoinGecko">';
         const cmcIcon = '<img src="https://www.google.com/s2/favicons?domain=coinmarketcap.com&sz=32" alt="CMC">';
         const linkTitle = t.status === 'delisted' ? 'CoinGecko' : 'Binance Trade';
         const linkPrimaryIcon = t.status === 'delisted' ? cgIcon : bnIcon;
-        const binanceLink = (t.status === 'delisted') 
+        const binanceLink = (t.status === 'delisted')
             ? 'https://www.coingecko.com/en/coins/' + (liveData[t.sym]?.cgId || t.sym.toLowerCase())
             : 'https://www.binance.com/en/trade/' + t.sym + '_USDT?type=spot';
         const cmcSlug = getCMCSlug(t.sym);
@@ -1203,7 +1206,7 @@ function renderTable() {
         const cmcHtml = cmcLink ? '<a href="' + cmcLink + '" target="_blank" title="CoinMarketCap"><img src="https://coinmarketcap.com/apple-touch-icon.png" alt="CMC"></a>' : '';
 
         return `<tr class="${rowClass}">
-            <td><div class="tk"><div class="tk-ico" style="${iconStyle}">${ld.icon ? '' : t.sym.slice(0,2)}</div><div><div class="tk-sym">${t.sym}</div><div class="tk-name">${t.name||t.sym}</div><div class="tk-links"><a href="${binanceLink}" target="_blank" title="${linkTitle}">${linkPrimaryIcon}</a>${cmcHtml}</div></div></div></td>
+            <td><div class="tk">${coinIconHtml}<div><div class="tk-sym">${t.sym}</div><div class="tk-name">${t.name||t.sym}</div><div class="tk-links"><a href="${binanceLink}" target="_blank" title="${linkTitle}">${linkPrimaryIcon}</a>${cmcHtml}</div></div></div></td>
             <td>${badges[t.status]||''}</td>
             <td>${riskHtml}</td>
             <td class="col-days">${domHtml}</td>
@@ -1518,7 +1521,9 @@ function cbRenderAll() {
         const ld = liveData[c.sym] || {};
         const rl = riskLabel(c._risk);
         const rc = riskColor(c._risk);
-        const iconStyle = ld.icon ? `background-image:url('${ld.icon}')` : '';
+        const cgIconFallbackCb = ld.icon || '';
+        const ghIconUrlCb = `https://raw.githubusercontent.com/ErikThiart/cryptocurrency-icons/master/32/${c.sym.toLowerCase()}.png`;
+        const coinIconHtmlCb = `<div class="tk-ico"><img src="${ghIconUrlCb}" alt="${c.sym}" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'${cgIconFallbackCb ? `;this.src='${cgIconFallbackCb}';this.onerror=function(){this.style.display='none';this.nextElementSibling.style.display='flex';}` : ''}"><span class="coin-letter-icon" style="display:none">${c.sym.charAt(0)}</span></div>`;
         const cgId = ld.cgId || getCgId(c.sym);
         const cmcSlug = getCmcSlug(c.sym);
 
@@ -1546,7 +1551,7 @@ function cbRenderAll() {
         const rowClass = c.status === 'delisted' ? 'delisted-row' : c.limitOnly ? 'limit-row' : (c._risk >= 60 ? 'highrisk-row' : '');
 
         return `<tr class="${rowClass}">
-            <td><div class="tk"><div class="tk-ico" style="${iconStyle}">${ld.icon ? '' : c.sym.slice(0,2)}</div><div><div class="tk-sym">${c.sym}</div><div class="tk-name">${c.pairs.length} pair${c.pairs.length > 1 ? 's' : ''}</div><div class="tk-links"><a href="${cbLink}" target="_blank" title="${c.status==='delisted'?'CoinGecko':'Coinbase'}">${primaryIcon}</a>${cmcHtml}</div></div></div></td>
+            <td><div class="tk">${coinIconHtmlCb}<div><div class="tk-sym">${c.sym}</div><div class="tk-name">${c.pairs.length} pair${c.pairs.length > 1 ? 's' : ''}</div><div class="tk-links"><a href="${cbLink}" target="_blank" title="${c.status==='delisted'?'CoinGecko':'Coinbase'}">${primaryIcon}</a>${cmcHtml}</div></div></div></td>
             <td>${badge}</td>
             <td>${riskHtml}</td>
             <td><span class="vol">${fmtPrice(ld.price)}</span></td>
