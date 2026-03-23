@@ -50,8 +50,8 @@ body::after{content:'';position:fixed;top:0;left:0;width:100%;height:100%;opacit
 /* HEADER */
 .hdr{display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:16px;margin-bottom:28px}
 .hdr-left{display:flex;align-items:center;gap:14px}
-.logo{width:42px;height:42px;background:linear-gradient(135deg,var(--red),var(--amber));border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:800;color:#000;font-family:'IBM Plex Mono',monospace;box-shadow:0 0 24px rgba(239,68,68,0.2)}
-.hdr h1{font-size:24px;font-weight:800;letter-spacing:-0.5px}
+.logo{width:38px;height:38px;background:var(--bg-3);border:1px solid var(--border-2);border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:800;color:var(--amber);font-family:'IBM Plex Mono',monospace}
+.hdr h1{font-size:22px;font-weight:800;letter-spacing:-0.5px}
 .hdr .sub{font-size:12px;color:var(--text-3);font-family:'IBM Plex Mono',monospace;margin-top:2px}
 .hdr-right{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
 .live{display:flex;align-items:center;gap:6px;font-size:11px;font-family:'IBM Plex Mono',monospace;color:var(--green);background:var(--green-soft);padding:5px 12px;border-radius:16px;border:1px solid rgba(34,197,94,0.2)}
@@ -64,12 +64,13 @@ body::after{content:'';position:fixed;top:0;left:0;width:100%;height:100%;opacit
 @keyframes spin{from{transform:rotate(0)}to{transform:rotate(360deg)}}
 
 /* STATS */
-.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(145px,1fr));gap:10px;margin-bottom:24px}
-.stat{background:var(--bg-2);border:1px solid var(--border-1);border-radius:10px;padding:16px}
-.stat-label{font-size:10px;text-transform:uppercase;letter-spacing:1.5px;color:var(--text-3);font-family:'IBM Plex Mono',monospace;margin-bottom:6px}
-.stat-val{font-size:26px;font-weight:800;letter-spacing:-1px}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:8px;margin-bottom:20px}
+.stat{background:var(--bg-2);border:1px solid var(--border-1);border-radius:10px;padding:14px 16px;transition:border-color 0.15s}
+.stat:hover{border-color:var(--border-2)}
+.stat-label{font-size:10px;text-transform:uppercase;letter-spacing:1.2px;color:var(--text-3);font-family:'IBM Plex Mono',monospace;margin-bottom:5px}
+.stat-val{font-size:28px;font-weight:800;letter-spacing:-1.5px;line-height:1}
 .stat-val.r{color:var(--red)}.stat-val.a{color:var(--amber)}.stat-val.g{color:var(--green)}.stat-val.b{color:var(--blue)}.stat-val.p{color:var(--purple)}
-.stat-sub{font-size:10px;color:var(--text-3);font-family:'IBM Plex Mono',monospace;margin-top:2px}
+.stat-sub{font-size:10px;color:var(--text-3);font-family:'IBM Plex Mono',monospace;margin-top:3px}
 
 /* PREDICTION */
 .pred-bar{background:var(--bg-2);border:1px solid var(--border-1);border-radius:10px;padding:14px 18px;margin-bottom:24px;display:flex;align-items:center;gap:16px;flex-wrap:wrap}
@@ -187,11 +188,15 @@ tbody tr.limit-row{background:rgba(245,158,11,0.03)}
 .pagination .pg-info{color:var(--text-3)}
 
 /* Loading */
-.loading-overlay{position:fixed;top:0;left:0;width:100%;height:100%;background:var(--bg-0);display:flex;align-items:center;justify-content:center;z-index:100;transition:opacity 0.3s}
+.loading-overlay{position:fixed;top:0;left:0;width:100%;height:100%;background:var(--bg-0);display:flex;align-items:center;justify-content:center;z-index:100;transition:opacity 0.4s}
 .loading-overlay.hidden{opacity:0;pointer-events:none;visibility:hidden}
-.loader{text-align:center}
-.loader .spinner{width:32px;height:32px;border:3px solid var(--border-2);border-top-color:var(--amber);border-radius:50%;animation:spin 0.8s linear infinite;margin:0 auto 12px}
-.loader .ltxt{font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--text-3)}
+.loader{text-align:center;padding:32px}
+.loader .lname{font-size:28px;font-weight:800;letter-spacing:-1px;margin-bottom:24px;color:var(--text-1)}
+.loader .lname span{color:var(--amber)}
+.loader .spinner{width:36px;height:36px;border:2px solid var(--border-2);border-top-color:var(--amber);border-radius:50%;animation:spin 0.7s linear infinite;margin:0 auto 16px}
+.loader .ltxt{font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--text-3);margin-bottom:20px}
+.loader .lprog{width:200px;height:2px;background:var(--border-1);border-radius:1px;margin:0 auto;overflow:hidden}
+.loader .lprog-fill{height:100%;width:0%;background:var(--amber);border-radius:1px;transition:width 0.5s ease}
 
 @media(max-width:900px){.wrap{padding:16px 12px}.hdr{flex-direction:column}.search{width:100%;margin-left:0}.stats{grid-template-columns:repeat(2,1fr)}}
 @media(max-width:480px){.stats{grid-template-columns:1fr}}
@@ -199,13 +204,14 @@ tbody tr.limit-row{background:rgba(245,158,11,0.03)}
 ::-webkit-scrollbar{width:5px;height:5px}::-webkit-scrollbar-track{background:var(--bg-1)}::-webkit-scrollbar-thumb{background:var(--border-2);border-radius:3px}::-webkit-scrollbar-thumb:hover{background:var(--text-3)}
 
 /* EXCHANGE SWITCHER */
-.ex-switcher{display:flex;align-items:center;justify-content:center;gap:4px;padding:20px 20px 0;position:relative;z-index:2}
-.ex-tab{padding:10px 28px;border-radius:8px;font-size:14px;font-weight:700;cursor:pointer;transition:all 0.2s;border:1px solid var(--border-1);background:var(--bg-2);color:var(--text-3);font-family:'DM Sans',sans-serif;display:flex;align-items:center;gap:8px;letter-spacing:-0.3px}
-.ex-tab:hover{background:var(--bg-3);color:var(--text-2);border-color:var(--border-2)}
+.ex-switcher{display:flex;align-items:center;justify-content:center;gap:0;padding:24px 20px 0;position:relative;z-index:2}
+.ex-switcher-inner{display:flex;background:var(--bg-2);border:1px solid var(--border-1);border-radius:10px;padding:3px;gap:3px}
+.ex-tab{padding:9px 24px;border-radius:7px;font-size:13px;font-weight:600;cursor:pointer;transition:all 0.2s;border:1px solid transparent;background:transparent;color:var(--text-3);font-family:'DM Sans',sans-serif;display:flex;align-items:center;gap:7px;letter-spacing:-0.2px}
+.ex-tab:hover{color:var(--text-2)}
 .ex-tab.active{color:#fff;border-color:transparent}
-.ex-tab.active.binance{background:linear-gradient(135deg,#F0B90B,#d4a20a);color:#000;box-shadow:0 0 20px rgba(240,185,11,0.25)}
-.ex-tab.active.coinbase{background:linear-gradient(135deg,#0052FF,#3d7bff);color:#fff;box-shadow:0 0 20px rgba(0,82,255,0.25)}
-.ex-tab-icon{width:20px;height:20px;border-radius:4px;display:flex;align-items:center;justify-content:center;font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:800}
+.ex-tab.active.binance{background:linear-gradient(135deg,#F0B90B,#c89209);color:#000;box-shadow:0 2px 12px rgba(240,185,11,0.3)}
+.ex-tab.active.coinbase{background:linear-gradient(135deg,#0052FF,#2d6fff);color:#fff;box-shadow:0 2px 12px rgba(0,82,255,0.3)}
+.ex-tab-icon{font-size:14px;font-family:'IBM Plex Mono',monospace;font-weight:800}
 .ex-section{display:none}
 .ex-section.active{display:block}
 </style>
@@ -214,17 +220,19 @@ tbody tr.limit-row{background:rgba(245,158,11,0.03)}
 
 <!-- EXCHANGE TABS -->
 <div class="ex-switcher">
-    <button class="ex-tab binance active" id="ex-tab-binance" onclick="switchExchange('binance')">
-        <span class="ex-tab-icon">₿</span> Binance
-    </button>
-    <button class="ex-tab coinbase" id="ex-tab-coinbase" onclick="switchExchange('coinbase')">
-        <span class="ex-tab-icon">CB</span> Coinbase
-    </button>
+    <div class="ex-switcher-inner">
+        <button class="ex-tab binance active" id="ex-tab-binance" onclick="switchExchange('binance')">
+            <span class="ex-tab-icon">₿</span> Binance
+        </button>
+        <button class="ex-tab coinbase" id="ex-tab-coinbase" onclick="switchExchange('coinbase')">
+            <span class="ex-tab-icon">CB</span> Coinbase
+        </button>
+    </div>
 </div>
 
 <!-- BINANCE SECTION -->
 <div class="ex-section active" id="bn-section">
-<div class="loading-overlay" id="bn-loader"><div class="loader"><div class="spinner"></div><div class="ltxt">Loading live data from Binance...</div></div></div>
+<div class="loading-overlay" id="bn-loader"><div class="loader"><div class="lname">⚡ <span>Binance</span> Monitor</div><div class="spinner"></div><div class="ltxt" id="bn-ltxt">Connecting to Binance...</div><div class="lprog"><div class="lprog-fill" id="bn-lprog"></div></div></div></div>
 <div class="wrap">
 <div class="hdr">
     <div class="hdr-left">
@@ -276,7 +284,7 @@ tbody tr.limit-row{background:rgba(245,158,11,0.03)}
 
 <!-- COINBASE SECTION -->
 <div class="ex-section" id="cb-section">
-<div class="loading-overlay" id="cb-loader" style="display:none"><div class="loader"><div class="spinner"></div><div class="ltxt">Loading live data from Coinbase...</div></div></div>
+<div class="loading-overlay" id="cb-loader" style="display:none"><div class="loader"><div class="lname">CB <span>Coinbase</span> Monitor</div><div class="spinner"></div><div class="ltxt" id="cb-ltxt">Connecting to Coinbase...</div><div class="lprog"><div class="lprog-fill" id="cb-lprog"></div></div></div></div>
 <div class="wrap">
 <div class="hdr">
     <div class="hdr-left">
@@ -506,29 +514,26 @@ const fmtPrice = p => {
 
 // ============ DATA FETCHING ============
 async function fetchAllData() {
-    // Step 0: Fetch exchangeInfo to know which pairs are actually TRADING
+    // Step 0+1: Fetch exchangeInfo and ticker in parallel
     let tradingPairs = null;
-    try {
-        const eiResp = await fetch(BINANCE_API + '/exchangeInfo');
-        if (eiResp.ok) {
-            const ei = await eiResp.json();
+    let _tickerJson = null;
+    await Promise.all([
+        fetch(BINANCE_API + '/exchangeInfo').then(r => r.ok ? r.json() : null).then(ei => {
+            if (!ei) return;
             tradingPairs = new Set();
             ei.symbols.forEach(s => {
-                if (s.quoteAsset === 'USDT' && s.status === 'TRADING') {
-                    tradingPairs.add(s.baseAsset);
-                }
+                if (s.quoteAsset === 'USDT' && s.status === 'TRADING') tradingPairs.add(s.baseAsset);
             });
             console.log('ExchangeInfo: ' + tradingPairs.size + ' active USDT pairs');
-        }
-    } catch(e) { console.warn('ExchangeInfo failed:', e.message); }
+        }).catch(e => console.warn('ExchangeInfo failed:', e.message)),
+        fetch(BINANCE_API + '/ticker/24hr').then(r => r.ok ? r.json() : null).then(j => { _tickerJson = j; }).catch(() => {}),
+    ]);
 
-    // Step 1: Fetch all 24hr tickers (this also discovers all active coins)
+    // Step 1: Process ticker data
     let tickerOk = false;
     try {
-        const resp = await fetch(BINANCE_API + '/ticker/24hr');
-        if (!resp.ok) throw new Error('Ticker HTTP ' + resp.status);
-        const all = await resp.json();
-        if (!Array.isArray(all) || all.length === 0) throw new Error('Empty ticker response');
+        if (!_tickerJson || !Array.isArray(_tickerJson) || _tickerJson.length === 0) throw new Error('Empty ticker response');
+        const all = _tickerJson;
         const activePairs = new Set();
         all.forEach(t => {
             if (!t.symbol.endsWith('USDT')) return;
@@ -576,12 +581,20 @@ async function fetchAllData() {
         if (allCoins.length === 0) allCoins = [...TRACKED_TOKENS];
     }
 
+    const lprog = document.getElementById('bn-lprog');
+    const ltxt = document.getElementById('bn-ltxt');
+    if (lprog) lprog.style.width = '40%';
+    if (ltxt) ltxt.textContent = 'Processing ' + allCoins.length + ' coins...';
+
     // Step 3: Compute risk scores (volume-based first pass)
     computeRiskScores();
 
     // Render immediately with volume data
+    if (lprog) lprog.style.width = '70%';
+    if (ltxt) ltxt.textContent = 'Rendering table...';
     bnRenderAll();
-    document.getElementById('bn-loader').classList.add('hidden');
+    if (lprog) lprog.style.width = '100%';
+    setTimeout(() => document.getElementById('bn-loader').classList.add('hidden'), 200);
 
     // Step 4: Fetch market caps from CoinGecko (async, renders update when done)
     fetchMarketCaps();
@@ -599,16 +612,6 @@ async function fetchMarketCaps() {
         const activeSyms = allCoins
             .filter(t => t.status !== 'delisted' && liveData[t.sym])
             .map(t => t.sym);
-
-        // Build symbol->coingecko_id map
-        const cgResp = await fetch('/cg/coins/list');
-        if (!cgResp.ok) return;
-        const cgList = await cgResp.json();
-        const cgBySym = {};
-        cgList.forEach(c => {
-            const s = c.symbol.toUpperCase();
-            if (!cgBySym[s]) cgBySym[s] = c.id;
-        });
 
         // Manual overrides for ambiguous symbols
         const overrides = {
@@ -656,7 +659,7 @@ async function fetchMarketCaps() {
             'PENDLE':'pendle','TAO':'bittensor','HBAR':'hedera-hashgraph',
         };
 
-        const getGeckoId = sym => overrides[sym] || cgBySym[sym] || sym.toLowerCase();
+        const getGeckoId = sym => overrides[sym] || sym.toLowerCase();
 
         // Batch fetch from CoinGecko markets API (100 at a time)
         const batches = [];
@@ -682,7 +685,7 @@ async function fetchMarketCaps() {
                     }
                 });
             } catch(e) { /* continue */ }
-            await new Promise(r => setTimeout(r, 1500)); // CoinGecko rate limit
+            await new Promise(r => setTimeout(r, 200)); // Cloudflare worker caches these
         }
 
         // Recompute risk scores with market cap data
@@ -694,10 +697,10 @@ async function fetchMarketCaps() {
 async function fetchDepthData() {
     // Only fetch depth for monitoring + delisting + top 30 high-risk active tokens
     const candidates = allCoins.filter(t => {
-        if (t.status === 'monitoring' || t.status === 'delisting' || t.status === 'restored') return true;
-        if (t.status === 'active' && t._risk >= 30) return true;
+        if (t.status === 'monitoring' || t.status === 'delisting') return true;
+        if (t.status === 'active' && t._risk >= 70) return true;
         return false;
-    }).filter(t => liveData[t.sym]?.price);
+    }).filter(t => liveData[t.sym]?.price).slice(0, 20);
 
     for (let i = 0; i < candidates.length; i += 5) {
         const batch = candidates.slice(i, i + 5);
@@ -1551,13 +1554,7 @@ async function fetchDepth(sym) {
 
 async function fetchCoinGeckoData() {
     try {
-        // Get CoinGecko coin list for ID lookup
-        const listResp = await fetch('/cg/coins/list');
-        if (!listResp.ok) return;
-        const cgList = await listResp.json();
-        const cgBySym = {};
-        cgList.forEach(c => { const s = c.symbol.toUpperCase(); if (!cgBySym[s]) cgBySym[s] = c.id; });
-        const getGeckoId = sym => CG_OVERRIDES[sym] || cgBySym[sym] || sym.toLowerCase();
+        const getGeckoId = sym => CG_OVERRIDES[sym] || sym.toLowerCase();
 
         // Batch fetch from CoinGecko markets API
         const activeSyms = allCoins.filter(c => c.status !== 'delisted').map(c => c.sym);
@@ -1580,7 +1577,7 @@ async function fetchCoinGeckoData() {
                     }
                 });
             } catch(e) {}
-            await new Promise(r => setTimeout(r, 1500));
+            await new Promise(r => setTimeout(r, 200));
         }
 
         // Recompute risks with mcap data
