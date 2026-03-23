@@ -319,7 +319,8 @@ tbody tr.limit-row{background:rgba(245,158,11,0.03)}
   Data from Binance API + CoinGecko · Risk scores based on historical delisting patterns · Auto-refresh every 5 min<br>
   Monitoring tag program started 2023-07-26 · <span id="bn-tokenCount"></span> tokens tracked<br><br>
   <strong style="color:var(--amber)">⚠ Not financial advice.</strong> Data is for informational purposes only. Always do your own research.<br><br>
-  <a href="/terms">Terms of Use</a> &nbsp;·&nbsp; <a href="/privacy">Privacy Policy</a> &nbsp;·&nbsp; <a href="https://stablecoin.io">Stablecoin Monitor</a>
+  <a href="/terms">Terms of Use</a> &nbsp;·&nbsp; <a href="/privacy">Privacy Policy</a> &nbsp;·&nbsp; <a href="https://stablecoin.io">Stablecoin Monitor</a><br><br>
+  Maintained by <a href="https://mdt.io" target="_blank" rel="noopener">Measurable Data Token</a>
 </div>
 </div>
 
@@ -383,7 +384,8 @@ tbody tr.limit-row{background:rgba(245,158,11,0.03)}
   Data from Coinbase Exchange API + CoinGecko · Risk scores based on trading status and volume patterns<br>
   <span id="cb-tokenCount"></span><br><br>
   <strong style="color:var(--amber)">⚠ Not financial advice.</strong> Data is for informational purposes only. Always do your own research.<br><br>
-  <a href="/terms">Terms of Use</a> &nbsp;·&nbsp; <a href="/privacy">Privacy Policy</a> &nbsp;·&nbsp; <a href="https://stablecoin.io">Stablecoin Monitor</a>
+  <a href="/terms">Terms of Use</a> &nbsp;·&nbsp; <a href="/privacy">Privacy Policy</a> &nbsp;·&nbsp; <a href="https://stablecoin.io">Stablecoin Monitor</a><br><br>
+  Maintained by <a href="https://mdt.io" target="_blank" rel="noopener">Measurable Data Token</a>
 </div>
 </div>
 </div>
@@ -1858,24 +1860,31 @@ document.addEventListener('keydown', e => {
     window.gtag('config', GA_ID);
   }
 
+  function showBar() {
+    document.getElementById('cookie-bar').classList.remove('hidden');
+    document.body.style.paddingBottom = '70px';
+  }
+  function hideBar() {
+    document.getElementById('cookie-bar').classList.add('hidden');
+    document.body.style.paddingBottom = '';
+  }
+
   window.acceptCookies = function() {
     localStorage.setItem(KEY, 'granted');
-    document.getElementById('cookie-bar').classList.add('hidden');
+    hideBar();
     loadGA();
   };
 
   window.declineCookies = function() {
     localStorage.setItem(KEY, 'denied');
-    document.getElementById('cookie-bar').classList.add('hidden');
+    hideBar();
   };
 
   const stored = localStorage.getItem(KEY);
   if (stored === 'granted') {
     loadGA();
   } else if (!stored) {
-    setTimeout(function() {
-      document.getElementById('cookie-bar').classList.remove('hidden');
-    }, 2000);
+    setTimeout(showBar, 2000);
   }
 })();
 </script>
