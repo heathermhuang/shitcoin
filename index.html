@@ -16,19 +16,20 @@
 <link rel="alternate icon" href="/favicon.ico">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=DM+Sans:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
 <style>
 :root {
-    --bg-0: #07080c;
-    --bg-1: #0d0f14;
-    --bg-2: #13151c;
-    --bg-3: #191c25;
-    --bg-4: #1f222e;
-    --border-1: #1c1f2b;
-    --border-2: #252938;
-    --text-1: #e4e6ef;
-    --text-2: #9498ad;
-    --text-3: #5d6178;
+    --bg-0: #020408;
+    --bg-1: #080c14;
+    --bg-2: #0d1320;
+    --bg-3: #131b2e;
+    --bg-4: #1a2540;
+    --border-1: rgba(255,255,255,0.06);
+    --border-2: rgba(255,255,255,0.10);
+    --border-3: rgba(255,255,255,0.15);
+    --text-1: #f1f5f9;
+    --text-2: #94a3b8;
+    --text-3: #475569;
     --red: #ef4444;
     --red-soft: rgba(239,68,68,0.12);
     --amber: #f59e0b;
@@ -37,81 +38,86 @@
     --green-soft: rgba(34,197,94,0.12);
     --blue: #3b82f6;
     --blue-soft: rgba(59,130,246,0.12);
-    --purple: #a78bfa;
-    --purple-soft: rgba(167,139,250,0.12);
+    --purple: #a855f7;
+    --purple-soft: rgba(168,85,247,0.12);
     --cyan: #06b6d4;
 }
 *{margin:0;padding:0;box-sizing:border-box}
-body{background:var(--bg-0);color:var(--text-1);font-family:'DM Sans',sans-serif;min-height:100vh;overflow-x:hidden}
+body{background:var(--bg-0);color:var(--text-1);font-family:'Inter',sans-serif;min-height:100vh;overflow-x:hidden;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale}
 body::after{content:'';position:fixed;top:0;left:0;width:100%;height:100%;opacity:0.025;background:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");pointer-events:none;z-index:0}
 .wrap{position:relative;z-index:1;max-width:1700px;margin:0 auto;padding:28px 24px}
 .mono{font-family:'IBM Plex Mono',monospace}
 
 /* HEADER */
-.hdr{display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:16px;margin-bottom:20px}
+.hdr{display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:16px;margin-bottom:24px}
 .hdr-left{display:flex;align-items:center;gap:14px}
-.logo{width:38px;height:38px;background:var(--bg-3);border:1px solid var(--border-2);border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:800;color:var(--amber);font-family:'IBM Plex Mono',monospace}
-.hdr h1{font-size:22px;font-weight:800;letter-spacing:-0.5px}
-.hdr .sub{font-size:12px;color:var(--text-3);font-family:'IBM Plex Mono',monospace;margin-top:2px}
+.logo{width:38px;height:38px;background:linear-gradient(135deg,#f59e0b,#ea580c);border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:800;color:#fff;font-family:'IBM Plex Mono',monospace;box-shadow:0 4px 12px rgba(245,158,11,0.25)}
+.hdr h1{font-size:22px;font-weight:800;letter-spacing:-0.5px;color:var(--text-1)}
+.hdr .sub{font-size:12px;color:var(--text-3);font-family:'IBM Plex Mono',monospace;margin-top:3px;letter-spacing:0.01em}
 .hdr-right{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
-.live{display:flex;align-items:center;gap:6px;font-size:11px;font-family:'IBM Plex Mono',monospace;color:var(--green);background:var(--green-soft);padding:5px 12px;border-radius:16px;border:1px solid rgba(34,197,94,0.2)}
-.live-dot{width:5px;height:5px;background:var(--green);border-radius:50%;animation:blink 1.4s ease-in-out infinite}
-@keyframes blink{0%,100%{opacity:1}50%{opacity:0.2}}
+.live{display:flex;align-items:center;gap:6px;font-size:11px;font-family:'IBM Plex Mono',monospace;color:var(--green);background:rgba(34,197,94,0.08);padding:5px 12px;border-radius:20px;border:1px solid rgba(34,197,94,0.2);letter-spacing:0.05em;font-weight:600}
+.live-dot{width:6px;height:6px;background:var(--green);border-radius:50%;animation:blink 1.4s ease-in-out infinite;box-shadow:0 0 6px rgba(34,197,94,0.6)}
+@keyframes blink{0%,100%{opacity:1;transform:scale(1)}50%{opacity:0.3;transform:scale(0.8)}}
 .meta-text{font-size:11px;font-family:'IBM Plex Mono',monospace;color:var(--text-3)}
-.btn{background:var(--bg-3);border:1px solid var(--border-1);color:var(--text-2);padding:6px 14px;border-radius:7px;font-family:'IBM Plex Mono',monospace;font-size:11px;cursor:pointer;transition:all 0.15s;display:flex;align-items:center;gap:5px}
-.btn:hover{background:var(--bg-4);border-color:var(--border-2);color:var(--text-1)}
+.btn{background:var(--bg-3);border:1px solid var(--border-2);color:var(--text-2);padding:7px 14px;border-radius:8px;font-family:'IBM Plex Mono',monospace;font-size:11px;cursor:pointer;transition:all 0.2s cubic-bezier(0.16,1,0.3,1);display:flex;align-items:center;gap:5px}
+.btn:hover{background:var(--bg-4);border-color:var(--border-3);color:var(--text-1);transform:translateY(-1px);box-shadow:0 4px 12px rgba(0,0,0,0.3)}
+.btn:active{transform:translateY(0)}
 .btn.spinning svg{animation:spin 0.8s linear infinite}
 @keyframes spin{from{transform:rotate(0)}to{transform:rotate(360deg)}}
 
 /* STATS */
-.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:8px;margin-bottom:20px}
-.stat{background:var(--bg-2);border:1px solid var(--border-1);border-radius:10px;padding:14px 16px;transition:border-color 0.15s}
-.stat:hover{border-color:var(--border-2)}
-.stat-label{font-size:10px;text-transform:uppercase;letter-spacing:1.2px;color:var(--text-3);font-family:'IBM Plex Mono',monospace;margin-bottom:5px}
-.stat-val{font-size:28px;font-weight:800;letter-spacing:-1.5px;line-height:1}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px;margin-bottom:24px}
+.stat{background:linear-gradient(135deg,var(--bg-2) 0%,var(--bg-1) 100%);border:1px solid var(--border-1);border-radius:12px;padding:20px 24px;transition:all 0.2s;position:relative;overflow:hidden}
+.stat::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;border-radius:12px 12px 0 0}
+.stat.r::before{background:var(--red)}.stat.a::before{background:var(--amber)}.stat.g::before{background:var(--green)}.stat.b::before{background:var(--blue)}.stat.p::before{background:var(--purple)}
+.stat:hover{border-color:var(--border-2);transform:translateY(-1px);box-shadow:0 8px 24px rgba(0,0,0,0.3)}
+.stat-label{font-size:11px;text-transform:uppercase;letter-spacing:0.08em;color:var(--text-3);font-family:'IBM Plex Mono',monospace;margin-bottom:8px;font-weight:500}
+.stat-val{font-size:28px;font-weight:700;letter-spacing:-0.5px;line-height:1;font-family:'IBM Plex Mono',monospace}
 .stat-val.r{color:var(--red)}.stat-val.a{color:var(--amber)}.stat-val.g{color:var(--green)}.stat-val.b{color:var(--blue)}.stat-val.p{color:var(--purple)}
-.stat-sub{font-size:10px;color:var(--text-3);font-family:'IBM Plex Mono',monospace;margin-top:3px}
+.stat-sub{font-size:10px;color:var(--text-3);font-family:'IBM Plex Mono',monospace;margin-top:6px}
 
 /* PREDICTION */
-.pred-bar{background:var(--bg-2);border:1px solid var(--border-1);border-radius:10px;padding:14px 18px;margin-bottom:24px;display:flex;align-items:center;gap:16px;flex-wrap:wrap}
-.pred-bar .pred-label{font-size:11px;font-family:'IBM Plex Mono',monospace;color:var(--text-3);text-transform:uppercase;letter-spacing:1px}
+.pred-bar{background:linear-gradient(135deg,var(--bg-2) 0%,var(--bg-1) 100%);border:1px solid var(--border-1);border-radius:12px;padding:14px 20px;margin-bottom:24px;display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+.pred-bar .pred-label{font-size:11px;font-family:'IBM Plex Mono',monospace;color:var(--text-3);text-transform:uppercase;letter-spacing:0.08em;font-weight:500}
 .pred-bar .pred-val{font-size:13px;font-weight:600;color:var(--cyan);font-family:'IBM Plex Mono',monospace}
-.pred-bar .pred-sep{width:1px;height:20px;background:var(--border-2)}
+.pred-bar .pred-sep{width:1px;height:20px;background:var(--border-1)}
 
 /* FILTERS */
 .filters{display:flex;align-items:center;gap:6px;margin-bottom:16px;flex-wrap:wrap}
-.ftab{padding:6px 14px;border-radius:6px;font-size:12px;font-weight:500;cursor:pointer;transition:all 0.15s;border:1px solid var(--border-1);background:transparent;color:var(--text-2);font-family:'DM Sans',sans-serif;white-space:nowrap}
-.ftab:hover{background:var(--bg-3);border-color:var(--border-2)}
+.ftab{padding:6px 16px;border-radius:20px;font-size:12px;font-weight:500;cursor:pointer;transition:all 0.2s;border:1px solid var(--border-1);background:transparent;color:var(--text-2);font-family:'Inter',sans-serif;white-space:nowrap;min-height:32px}
+.ftab:hover{background:var(--bg-3);border-color:var(--border-2);color:var(--text-1);transform:translateY(-1px)}
 .ftab.active{background:var(--text-1);color:var(--bg-0);border-color:var(--text-1);font-weight:600}
 .ftab .cnt{font-family:'IBM Plex Mono',monospace;font-size:10px;margin-left:4px;opacity:0.6}
-.search{margin-left:auto;background:var(--bg-2);border:1px solid var(--border-1);border-radius:7px;padding:6px 14px;color:var(--text-1);font-family:'IBM Plex Mono',monospace;font-size:12px;width:200px;outline:none;transition:all 0.15s}
+.search{margin-left:auto;background:rgba(255,255,255,0.04);border:1px solid var(--border-2);border-radius:8px;padding:0 14px;color:var(--text-1);font-family:'IBM Plex Mono',monospace;font-size:12px;width:200px;outline:none;transition:all 0.2s;height:36px}
 .search::placeholder{color:var(--text-3)}
-.search:focus{border-color:var(--blue);box-shadow:0 0 0 2px rgba(59,130,246,0.1)}
+.search:focus{border-color:var(--blue);box-shadow:0 0 0 2px rgba(59,130,246,0.15);background:rgba(255,255,255,0.06)}
 
 /* TABLE */
-.tbl-wrap{background:var(--bg-1);border:1px solid var(--border-1);border-radius:12px;overflow-x:auto}
+.tbl-wrap{background:var(--bg-1);border:1px solid var(--border-1);border-radius:14px;overflow-x:auto;box-shadow:0 4px 24px rgba(0,0,0,0.4)}
 table{width:100%;border-collapse:collapse;min-width:1200px}
-thead{background:var(--bg-2)}
-th{padding:10px 12px;text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:1.2px;color:var(--text-3);font-family:'IBM Plex Mono',monospace;font-weight:500;border-bottom:1px solid var(--border-1);white-space:nowrap;cursor:pointer;user-select:none;transition:color 0.15s}
+thead{background:rgba(255,255,255,0.02)}
+th{padding:12px 14px;text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:0.08em;color:var(--text-3);font-family:'IBM Plex Mono',monospace;font-weight:600;border-bottom:1px solid var(--border-1);white-space:nowrap;cursor:pointer;user-select:none;transition:color 0.15s}
 th:hover{color:var(--text-2)}
 th.sorted{color:var(--blue)}
 th[data-sort]::after{content:'';margin-left:3px;opacity:0.3;font-size:9px}
 th[data-sort].sorted::after{content:' ▼';opacity:1}
 th[data-sort].sorted.asc-dir::after{content:' ▲';opacity:1}
-td{padding:10px 12px;border-bottom:1px solid var(--border-1);font-size:13px;vertical-align:middle}
-tr{transition:background 0.1s}
-tbody tr:hover{background:var(--bg-3)}
+td{padding:12px 14px;border-bottom:1px solid rgba(255,255,255,0.04);font-size:13px;vertical-align:middle}
+tr{transition:background 0.15s,border-left 0.15s}
+tbody tr:nth-child(even){background:rgba(255,255,255,0.012)}
+tbody tr:hover{background:rgba(255,255,255,0.025);border-left:2px solid rgba(59,130,246,0.4)}
+tbody tr:hover td:first-child{padding-left:12px}
 tbody tr:last-child td{border-bottom:none}
-tbody tr.delisting-row{background:rgba(239,68,68,0.03)}
-tbody tr.delisted-row{opacity:0.45}
-tbody tr.restored-row{background:rgba(34,197,94,0.03)}
-tbody tr.highrisk-row{background:rgba(239,68,68,0.02)}
-tbody tr.limit-row{background:rgba(245,158,11,0.03)}
+tbody tr.delisting-row{background:rgba(239,68,68,0.04)}
+tbody tr.delisted-row{opacity:0.4}
+tbody tr.restored-row{background:rgba(34,197,94,0.04)}
+tbody tr.highrisk-row{background:rgba(239,68,68,0.03)}
+tbody tr.limit-row{background:rgba(245,158,11,0.04)}
 
 /* CELLS */
 .tk{display:flex;align-items:center;gap:10px}
-.tk-ico{width:30px;height:30px;border-radius:50%;background:var(--bg-3);border:1px solid var(--border-1);display:flex;align-items:center;justify-content:center;font-family:'IBM Plex Mono',monospace;font-size:9px;font-weight:700;color:var(--text-2);flex-shrink:0;background-size:cover;background-position:center;overflow:hidden}
-.tk-sym{font-weight:700;font-size:13px}
+.tk-ico{width:28px;height:28px;border-radius:50%;background:var(--bg-3);border:1px solid var(--border-2);display:flex;align-items:center;justify-content:center;font-family:'IBM Plex Mono',monospace;font-size:9px;font-weight:700;color:var(--text-2);flex-shrink:0;background-size:cover;background-position:center;overflow:hidden;box-shadow:0 0 0 1px rgba(255,255,255,0.05)}
+.tk-sym{font-weight:700;font-size:13px;letter-spacing:-0.2px;color:var(--text-1)}
 .tk-name{font-size:10px;color:var(--text-3);max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .tk-links{display:flex;gap:4px;margin-top:2px;align-items:center}
 .tk-links a{display:flex;align-items:center;justify-content:center;width:14px;height:14px;opacity:0.5;transition:opacity 0.15s;border-radius:2px}
@@ -122,7 +128,7 @@ tbody tr.limit-row{background:rgba(245,158,11,0.03)}
 .ex-icons a:hover{opacity:1}
 .ex-icons a img{width:16px;height:16px;border-radius:3px;display:block}
 
-.badge{display:inline-flex;align-items:center;gap:4px;padding:3px 8px;border-radius:4px;font-size:10px;font-weight:600;font-family:'IBM Plex Mono',monospace;text-transform:uppercase;letter-spacing:0.3px}
+.badge{display:inline-flex;align-items:center;gap:4px;padding:3px 9px;border-radius:20px;font-size:10px;font-weight:600;font-family:'IBM Plex Mono',monospace;text-transform:uppercase;letter-spacing:0.04em}
 .badge.monitoring{background:var(--amber-soft);color:var(--amber);border:1px solid rgba(245,158,11,0.15)}
 .badge.delisting{background:var(--red-soft);color:var(--red);border:1px solid rgba(239,68,68,0.15);animation:dpulse 2s ease-in-out infinite}
 .badge.delisted{background:rgba(100,100,130,0.08);color:var(--text-3);border:1px solid rgba(100,100,130,0.1)}
@@ -164,34 +170,37 @@ tbody tr.limit-row{background:rgba(245,158,11,0.03)}
 .lnk:hover{background:rgba(59,130,246,0.08);border-color:rgba(59,130,246,0.3)}
 
 /* TIMELINE */
-.timeline-section{margin-top:36px}
-.sec-title{font-size:18px;font-weight:700;margin-bottom:16px;display:flex;align-items:center;gap:8px}
-.timeline{display:flex;gap:12px;overflow-x:auto;padding-bottom:8px}
-.tcard{flex-shrink:0;background:var(--bg-2);border:1px solid var(--border-1);border-radius:10px;padding:16px;min-width:240px;transition:all 0.2s}
-.tcard:hover{border-color:var(--border-2);transform:translateY(-1px)}
-.tcard.urgent{border-color:rgba(239,68,68,0.25);background:linear-gradient(135deg,var(--bg-2),rgba(239,68,68,0.02))}
+.timeline-section{margin-top:40px}
+.sec-title{font-size:16px;font-weight:700;margin-bottom:16px;display:flex;align-items:center;gap:8px;color:var(--text-1);letter-spacing:-0.3px}
+.timeline{display:flex;gap:12px;overflow-x:auto;padding-bottom:12px;scrollbar-width:thin;scrollbar-color:var(--border-2) transparent}
+.tcard{flex-shrink:0;background:linear-gradient(135deg,var(--bg-2) 0%,var(--bg-1) 100%);border:1px solid var(--border-1);border-radius:12px;padding:18px;min-width:240px;transition:all 0.2s cubic-bezier(0.16,1,0.3,1)}
+.tcard:hover{border-color:var(--border-2);transform:translateY(-2px);box-shadow:0 8px 24px rgba(0,0,0,0.4)}
+.tcard.urgent{border-color:rgba(239,68,68,0.2);background:linear-gradient(135deg,var(--bg-2),rgba(239,68,68,0.03))}
 .tcard .tdate{font-family:'IBM Plex Mono',monospace;font-size:12px;font-weight:600;color:var(--amber);margin-bottom:6px}
 .tcard.urgent .tdate{color:var(--red)}
-.tcard .tevt{font-size:13px;font-weight:500;margin-bottom:6px;line-height:1.3}
-.ttokens{display:flex;flex-wrap:wrap;gap:3px}
-.ttk{font-family:'IBM Plex Mono',monospace;font-size:10px;padding:2px 6px;border-radius:3px;background:var(--bg-0);border:1px solid var(--border-1);color:var(--text-2)}
+.tcard .tevt{font-size:13px;font-weight:500;margin-bottom:8px;line-height:1.4;color:var(--text-1)}
+.ttokens{display:flex;flex-wrap:wrap;gap:4px}
+.ttk{font-family:'IBM Plex Mono',monospace;font-size:10px;padding:2px 7px;border-radius:20px;background:var(--bg-0);border:1px solid var(--border-1);color:var(--text-2)}
 
 /* FOOTER */
-.footer{margin-top:36px;text-align:center;font-size:11px;color:var(--text-3);font-family:'IBM Plex Mono',monospace;padding:20px 0;border-top:1px solid var(--border-1)}
-.footer a{color:var(--blue);text-decoration:none}
+.footer{margin-top:48px;text-align:center;font-size:12px;color:var(--text-3);font-family:'IBM Plex Mono',monospace;padding:28px 0;border-top:1px solid var(--border-1);background:linear-gradient(to bottom,transparent,rgba(2,4,8,0.5))}
+.footer a{color:var(--text-2);text-decoration:none;transition:color 0.15s}
+.footer a:hover{color:var(--blue);text-decoration:underline}
 
 /* COOKIE CONSENT */
-.cookie-bar{position:fixed;bottom:0;left:0;right:0;z-index:1000;background:var(--bg-2);border-top:1px solid var(--border-2);padding:14px 24px;display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;backdrop-filter:blur(12px);transition:transform 0.3s}
+.cookie-bar{position:fixed;bottom:0;left:0;right:0;z-index:1000;background:rgba(8,12,20,0.97);border-top:1px solid var(--border-2);padding:14px 24px;display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);transition:transform 0.35s cubic-bezier(0.16,1,0.3,1)}
 .cookie-bar.hidden{transform:translateY(100%);pointer-events:none}
+.cookie-bar-inner{max-width:1700px;margin:0 auto;width:100%;display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap}
 .cookie-bar-left{display:flex;align-items:center;gap:10px;flex:1;min-width:0}
-.cookie-bar-text{font-size:11px;color:var(--text-2);font-family:'IBM Plex Mono',monospace;line-height:1.5}
+.cookie-bar-text{font-size:11px;color:var(--text-2);font-family:'IBM Plex Mono',monospace;line-height:1.6}
 .cookie-bar-text a{color:var(--blue);text-decoration:none}
+.cookie-bar-text a:hover{text-decoration:underline}
 .cookie-bar-actions{display:flex;gap:8px;flex-shrink:0}
-.cookie-btn{padding:7px 16px;border-radius:6px;font-size:11px;font-weight:600;cursor:pointer;font-family:'IBM Plex Mono',monospace;transition:all 0.15s;border:1px solid transparent}
-.cookie-btn.accept{background:var(--green);color:#000;border-color:var(--green)}
-.cookie-btn.accept:hover{opacity:0.88}
+.cookie-btn{padding:8px 18px;border-radius:8px;font-size:11px;font-weight:600;cursor:pointer;font-family:'IBM Plex Mono',monospace;transition:all 0.2s;border:1px solid transparent;min-height:36px}
+.cookie-btn.accept{background:var(--blue);color:#fff;border-color:var(--blue)}
+.cookie-btn.accept:hover{background:#2563eb;transform:translateY(-1px);box-shadow:0 4px 12px rgba(59,130,246,0.3)}
 .cookie-btn.decline{background:transparent;color:var(--text-3);border-color:var(--border-2)}
-.cookie-btn.decline:hover{color:var(--text-2)}
+.cookie-btn.decline:hover{color:var(--text-2);border-color:var(--border-3)}
 
 /* PAGINATION */
 .pagination{display:flex;align-items:center;justify-content:center;gap:8px;margin-top:16px;font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--text-3)}
@@ -211,27 +220,51 @@ tbody tr.limit-row{background:rgba(245,158,11,0.03)}
 .loader .lprog{width:200px;height:2px;background:var(--border-1);border-radius:1px;margin:0 auto;overflow:hidden}
 .loader .lprog-fill{height:100%;width:0%;background:var(--amber);border-radius:1px;transition:width 0.5s ease}
 
-@media(max-width:900px){.wrap{padding:16px 12px}.hdr{flex-direction:column}.search{width:100%;margin-left:0}.stats{grid-template-columns:repeat(2,1fr)}}
-@media(max-width:640px){.tnav-name{display:none}.tnav-divider{display:none}.tnav-tabs{justify-content:flex-start}.tnav-tab{padding:6px 14px;font-size:12px}.topnav-inner{padding:0 14px}}
+@media(max-width:900px){.wrap{padding:16px 14px}.hdr{flex-direction:column}.search{width:100%;margin-left:0}.stats{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:640px){
+  .tnav-name{display:none}
+  .tnav-divider{display:none}
+  .tnav-tab{padding:6px 12px;font-size:12px;flex-shrink:0}
+  .topnav-inner{padding:0 12px;height:52px}
+  .stats{grid-template-columns:repeat(2,1fr);gap:8px}
+  .stat{padding:16px 18px}
+  .filters{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch;padding-bottom:4px}
+  .filters::-webkit-scrollbar{display:none}
+  .ftab{flex-shrink:0}
+  .search{min-width:160px}
+  .cookie-bar{padding:12px 16px}
+  .cookie-bar-inner{flex-direction:column;align-items:flex-start;gap:12px}
+  .cookie-bar-actions{align-self:flex-end}
+}
 @media(max-width:480px){.stats{grid-template-columns:1fr}}
 @media(max-width:640px){.col-days,.col-mon,.col-vol,.col-mcap,.col-bid,.col-ask,.col-also{display:none}table{min-width:380px}}
 ::-webkit-scrollbar{width:5px;height:5px}::-webkit-scrollbar-track{background:var(--bg-1)}::-webkit-scrollbar-thumb{background:var(--border-2);border-radius:3px}::-webkit-scrollbar-thumb:hover{background:var(--text-3)}
 
+/* SHIMMER LOADING */
+@keyframes shimmer{0%{background-position:-800px 0}100%{background-position:800px 0}}
+.shimmer-row td{background:linear-gradient(90deg,var(--bg-2) 25%,var(--bg-3) 50%,var(--bg-2) 75%);background-size:800px 100%;animation:shimmer 1.5s infinite;color:transparent!important;border-radius:4px}
+.shimmer-row td *{opacity:0}
+
 /* TOP NAV */
-.topnav{position:sticky;top:0;z-index:200;background:rgba(7,8,12,0.88);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);border-bottom:1px solid var(--border-1)}
-.topnav-inner{max-width:1700px;margin:0 auto;padding:0 24px;height:54px;display:flex;align-items:center;gap:0}
-.tnav-brand{display:flex;align-items:center;gap:9px;flex-shrink:0;text-decoration:none}
-.tnav-logo{width:30px;height:30px;background:var(--bg-3);border:1px solid var(--border-2);border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:15px;color:var(--amber);font-family:'IBM Plex Mono',monospace;font-weight:800}
-.tnav-name{font-size:13px;font-weight:700;letter-spacing:-0.3px;color:var(--text-2)}
-.tnav-divider{width:1px;height:20px;background:var(--border-1);margin:0 20px;flex-shrink:0}
-.tnav-tabs{display:flex;align-items:center;gap:2px;flex:1;justify-content:center}
-.tnav-tab{display:inline-flex;align-items:center;gap:8px;padding:7px 18px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;transition:all 0.18s;border:1px solid transparent;background:transparent;color:var(--text-3);font-family:'DM Sans',sans-serif;letter-spacing:-0.2px}
+.topnav{position:sticky;top:0;z-index:200;background:rgba(2,4,8,0.92);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-bottom:1px solid rgba(255,255,255,0.07);box-shadow:0 1px 0 rgba(255,255,255,0.03)}
+.topnav-inner{max-width:1700px;margin:0 auto;padding:0 24px;height:56px;display:flex;align-items:center;gap:0}
+.tnav-brand{display:flex;align-items:center;gap:10px;flex-shrink:0;text-decoration:none}
+.tnav-logo{width:32px;height:32px;background:linear-gradient(135deg,#f59e0b,#ea580c);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:16px;font-family:'IBM Plex Mono',monospace;font-weight:800;box-shadow:0 2px 8px rgba(245,158,11,0.3)}
+.tnav-name{font-size:14px;font-weight:700;letter-spacing:-0.3px;color:var(--text-2)}
+.tnav-divider{width:1px;height:20px;background:var(--border-1);margin:0 16px;flex-shrink:0}
+.tnav-scroll{flex:1;overflow-x:auto;scrollbar-width:none}
+.tnav-scroll::-webkit-scrollbar{display:none}
+.tnav-tabs{display:flex;align-items:center;gap:2px;flex-shrink:0;white-space:nowrap;padding:0 4px}
+.tnav-tab{display:inline-flex;align-items:center;gap:7px;padding:7px 16px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;transition:all 0.18s;border:1px solid transparent;background:transparent;color:var(--text-3);font-family:'Inter',sans-serif;letter-spacing:-0.2px;text-decoration:none;flex-shrink:0;position:relative}
 .tnav-tab:hover{background:var(--bg-3);color:var(--text-2)}
-.tnav-tab.active.binance{background:rgba(240,185,11,0.1);color:#F0B90B;border-color:rgba(240,185,11,0.18)}
-.tnav-tab.active.coinbase{background:rgba(0,82,255,0.1);color:#6b9fff;border-color:rgba(0,82,255,0.18)}
-.tnav-tab.stablecoins{color:var(--text-3);text-decoration:none}
+.tnav-tab.active{color:var(--text-1)}
+.tnav-tab.active.binance{background:rgba(240,185,11,0.08);color:#F0B90B;border-color:rgba(240,185,11,0.15)}
+.tnav-tab.active.binance::after{content:'';position:absolute;bottom:-1px;left:16px;right:16px;height:2px;background:#F0B90B;border-radius:2px 2px 0 0}
+.tnav-tab.active.coinbase{background:rgba(0,82,255,0.08);color:#6b9fff;border-color:rgba(0,82,255,0.15)}
+.tnav-tab.active.coinbase::after{content:'';position:absolute;bottom:-1px;left:16px;right:16px;height:2px;background:#6b9fff;border-radius:2px 2px 0 0}
+.tnav-tab.stablecoins{color:var(--text-3)}
 .tnav-tab.stablecoins:hover{background:rgba(34,197,94,0.07);color:#22c55e}
-.tnav-right{display:flex;align-items:center;gap:12px;flex-shrink:0;min-width:fit-content}
+.tnav-right{display:flex;align-items:center;gap:12px;flex-shrink:0;min-width:fit-content;margin-left:8px}
 /* EXCHANGE SECTIONS */
 .ex-section{display:none}
 .ex-section.active{display:block}
@@ -247,19 +280,21 @@ tbody tr.limit-row{background:rgba(245,158,11,0.03)}
             <span class="tnav-name">Crypto Monitor</span>
         </div>
         <div class="tnav-divider"></div>
-        <div class="tnav-tabs">
-            <button class="tnav-tab binance active" id="ex-tab-binance" onclick="switchExchange('binance')">
-                <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path fill="#F0B90B" d="M7 1 4.8 3.2 7 5.4 9.2 3.2z"/><path fill="#F0B90B" d="M1 7 3.2 4.8 5.4 7 3.2 9.2z"/><path fill="#F0B90B" d="M13 7 10.8 4.8 8.6 7 10.8 9.2z"/><path fill="#F0B90B" d="M7 8.6 4.8 10.8 7 13 9.2 10.8z"/><path fill="#F0B90B" d="M7 4.8 5.1 6.7 7 8.6 8.9 6.7z"/></svg>
-                Binance
-            </button>
-            <button class="tnav-tab coinbase" id="ex-tab-coinbase" onclick="switchExchange('coinbase')">
-                <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><rect width="14" height="14" rx="3.5" fill="#0052FF"/><circle cx="7" cy="7" r="3.5" fill="#0052FF"/><circle cx="7" cy="7" r="3.5" stroke="white" stroke-width="1.5" fill="none"/><rect x="3.5" y="5.9" width="7" height="2.2" fill="#0052FF"/></svg>
-                Coinbase
-            </button>
-            <a class="tnav-tab stablecoins" href="https://stablecoin.io" target="_blank">
-                <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><circle cx="7" cy="7" r="6.5" stroke="#22c55e" stroke-width="1"/><text x="7" y="10.5" text-anchor="middle" font-size="8" font-weight="700" fill="#22c55e" font-family="IBM Plex Mono,monospace">$</text></svg>
-                Stablecoins
-            </a>
+        <div class="tnav-scroll">
+            <div class="tnav-tabs">
+                <button class="tnav-tab binance active" id="ex-tab-binance" onclick="switchExchange('binance')">
+                    <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path fill="#F0B90B" d="M7 1 4.8 3.2 7 5.4 9.2 3.2z"/><path fill="#F0B90B" d="M1 7 3.2 4.8 5.4 7 3.2 9.2z"/><path fill="#F0B90B" d="M13 7 10.8 4.8 8.6 7 10.8 9.2z"/><path fill="#F0B90B" d="M7 8.6 4.8 10.8 7 13 9.2 10.8z"/><path fill="#F0B90B" d="M7 4.8 5.1 6.7 7 8.6 8.9 6.7z"/></svg>
+                    Binance
+                </button>
+                <button class="tnav-tab coinbase" id="ex-tab-coinbase" onclick="switchExchange('coinbase')">
+                    <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><rect width="14" height="14" rx="3.5" fill="#0052FF"/><circle cx="7" cy="7" r="3.5" fill="#0052FF"/><circle cx="7" cy="7" r="3.5" stroke="white" stroke-width="1.5" fill="none"/><rect x="3.5" y="5.9" width="7" height="2.2" fill="#0052FF"/></svg>
+                    Coinbase
+                </button>
+                <a class="tnav-tab stablecoins" href="https://stablecoin.io" target="_blank">
+                    <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><circle cx="7" cy="7" r="6.5" stroke="#22c55e" stroke-width="1"/><text x="7" y="10.5" text-anchor="middle" font-size="8" font-weight="700" fill="#22c55e" font-family="IBM Plex Mono,monospace">$</text></svg>
+                    Stablecoins
+                </a>
+            </div>
         </div>
         <div class="tnav-right">
             <div class="live" id="tnav-live" style="display:none"><span class="live-dot"></span>LIVE</div>
@@ -347,12 +382,12 @@ tbody tr.limit-row{background:rgba(245,158,11,0.03)}
     </div>
 </div>
 <div class="stats" id="cb-statsBar">
-    <div class="stat"><div class="stat-label">Online</div><div class="stat-val g" id="cb-sOnline">-</div><div class="stat-sub">trading on Coinbase</div></div>
-    <div class="stat"><div class="stat-label">Limit Only</div><div class="stat-val a" id="cb-sLimit">-</div><div class="stat-sub">post-only mode</div></div>
-    <div class="stat"><div class="stat-label">Delisted</div><div class="stat-val r" id="cb-sDelisted">-</div><div class="stat-sub">removed from trading</div></div>
-    <div class="stat"><div class="stat-label">Total Tracked</div><div class="stat-val b" id="cb-sTotal">-</div><div class="stat-sub">in our database</div></div>
-    <div class="stat"><div class="stat-label">High Risk</div><div class="stat-val r" id="cb-sHighRisk">-</div><div class="stat-sub">risk score ≥ 50</div></div>
-    <div class="stat"><div class="stat-label">Active Pairs</div><div class="stat-val p" id="cb-sPairs">-</div><div class="stat-sub">USD trading pairs</div></div>
+    <div class="stat g"><div class="stat-label">Online</div><div class="stat-val g" id="cb-sOnline">-</div><div class="stat-sub">trading on Coinbase</div></div>
+    <div class="stat a"><div class="stat-label">Limit Only</div><div class="stat-val a" id="cb-sLimit">-</div><div class="stat-sub">post-only mode</div></div>
+    <div class="stat r"><div class="stat-label">Delisted</div><div class="stat-val r" id="cb-sDelisted">-</div><div class="stat-sub">removed from trading</div></div>
+    <div class="stat b"><div class="stat-label">Total Tracked</div><div class="stat-val b" id="cb-sTotal">-</div><div class="stat-sub">in our database</div></div>
+    <div class="stat r"><div class="stat-label">High Risk</div><div class="stat-val r" id="cb-sHighRisk">-</div><div class="stat-sub">risk score ≥ 50</div></div>
+    <div class="stat p"><div class="stat-label">Active Pairs</div><div class="stat-val p" id="cb-sPairs">-</div><div class="stat-sub">USD trading pairs</div></div>
 </div>
 <div class="filters">
     <button class="ftab active" data-f="all" onclick="cbSetFilter('all')">📋 All <span class="cnt" id="cb-cAll"></span></button>
@@ -920,13 +955,13 @@ function getMedianMonToDelist() {
 function getExchangeIcons(sym) {
     const icons = [];
     if (exchangeData.coinbase.has(sym)) {
-        icons.push('<a href="https://www.coinbase.com/price/' + sym.toLowerCase() + '" target="_blank" title="Coinbase"><img src="https://www.coinbase.com/favicon.ico" alt="CB"></a>');
+        icons.push('<a href="https://www.coinbase.com/price/' + sym.toLowerCase() + '" target="_blank" title="Coinbase"><img src="https://www.google.com/s2/favicons?domain=coinbase.com&sz=32" alt="CB"></a>');
     }
     if (exchangeData.okx.has(sym)) {
-        icons.push('<a href="https://www.okx.com/trade-spot/' + sym.toLowerCase() + '-usdt" target="_blank" title="OKX"><img src="https://www.okx.com/favicon.ico" alt="OKX"></a>');
+        icons.push('<a href="https://www.okx.com/trade-spot/' + sym.toLowerCase() + '-usdt" target="_blank" title="OKX"><img src="https://www.google.com/s2/favicons?domain=okx.com&sz=32" alt="OKX"></a>');
     }
     if (exchangeData.kraken.has(sym)) {
-        icons.push('<a href="https://www.kraken.com/prices/' + sym.toLowerCase() + '" target="_blank" title="Kraken"><img src="https://www.kraken.com/favicon.ico" alt="KR"></a>');
+        icons.push('<a href="https://www.kraken.com/prices/' + sym.toLowerCase() + '" target="_blank" title="Kraken"><img src="https://www.google.com/s2/favicons?domain=kraken.com&sz=32" alt="KR"></a>');
     }
     return icons.length ? '<div class="ex-icons">' + icons.join('') + '</div>' : '<span class="na">—</span>';
 }
@@ -1155,9 +1190,9 @@ function renderTable() {
 
         const iconUrl = ld.icon || `https://bin.bnbstatic.com/image/admin_mgs_image/20201110/${t.sym}.png`;
         const iconStyle = ld.icon ? `background-image:url('${ld.icon}')` : '';
-        const bnIcon = '<img src="https://bin.bnbstatic.com/static/images/common/favicon.ico" alt="Binance">';
-        const cgIcon = '<img src="https://www.coingecko.com/favicon.ico" alt="CoinGecko">';
-        const cmcIcon = '<img src="https://coinmarketcap.com/apple-touch-icon.png" alt="CMC">';
+        const bnIcon = '<img src="https://www.google.com/s2/favicons?domain=binance.com&sz=32" alt="Binance">';
+        const cgIcon = '<img src="https://www.google.com/s2/favicons?domain=coingecko.com&sz=32" alt="CoinGecko">';
+        const cmcIcon = '<img src="https://www.google.com/s2/favicons?domain=coinmarketcap.com&sz=32" alt="CMC">';
         const linkTitle = t.status === 'delisted' ? 'CoinGecko' : 'Binance Trade';
         const linkPrimaryIcon = t.status === 'delisted' ? cgIcon : bnIcon;
         const binanceLink = (t.status === 'delisted') 
@@ -1429,9 +1464,9 @@ function riskColor(s) { return s >= 80 ? 'var(--red)' : s >= 60 ? '#f87171' : s 
 // ===== EXCHANGE ICONS =====
 function getExchangeIcons(sym) {
     const icons = [];
-    if (exchangeData.binance.has(sym)) icons.push('<a href="https://www.binance.com/en/trade/' + sym + '_USDT" target="_blank" title="Binance"><img src="https://bin.bnbstatic.com/static/images/common/favicon.ico" alt="Binance"></a>');
-    if (exchangeData.okx.has(sym)) icons.push('<a href="https://www.okx.com/trade-spot/' + sym.toLowerCase() + '-usdt" target="_blank" title="OKX"><img src="https://www.okx.com/favicon.ico" alt="OKX"></a>');
-    if (exchangeData.kraken.has(sym)) icons.push('<a href="https://www.kraken.com/prices/' + sym.toLowerCase() + '" target="_blank" title="Kraken"><img src="https://www.kraken.com/favicon.ico" alt="KR"></a>');
+    if (exchangeData.binance.has(sym)) icons.push('<a href="https://www.binance.com/en/trade/' + sym + '_USDT" target="_blank" title="Binance"><img src="https://www.google.com/s2/favicons?domain=binance.com&sz=32" alt="Binance"></a>');
+    if (exchangeData.okx.has(sym)) icons.push('<a href="https://www.okx.com/trade-spot/' + sym.toLowerCase() + '-usdt" target="_blank" title="OKX"><img src="https://www.google.com/s2/favicons?domain=okx.com&sz=32" alt="OKX"></a>');
+    if (exchangeData.kraken.has(sym)) icons.push('<a href="https://www.kraken.com/prices/' + sym.toLowerCase() + '" target="_blank" title="Kraken"><img src="https://www.google.com/s2/favicons?domain=kraken.com&sz=32" alt="KR"></a>');
     return icons.length ? '<div class="ex-icons">' + icons.join('') + '</div>' : '<span class="na" style="color:var(--text-3)">\u2014</span>';
 }
 
@@ -1475,9 +1510,9 @@ function cbRenderAll() {
     if (page >= pages) page = Math.max(0, pages - 1);
     const slice = list.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE);
 
-    const cbIcon = '<img src="https://www.coinbase.com/favicon.ico" alt="CB">';
-    const cmcIcon = '<img src="https://coinmarketcap.com/apple-touch-icon.png" alt="CMC">';
-    const cgIcon = '<img src="https://www.coingecko.com/favicon.ico" alt="CG">';
+    const cbIcon = '<img src="https://www.google.com/s2/favicons?domain=coinbase.com&sz=32" alt="CB">';
+    const cmcIcon = '<img src="https://www.google.com/s2/favicons?domain=coinmarketcap.com&sz=32" alt="CMC">';
+    const cgIcon = '<img src="https://www.google.com/s2/favicons?domain=coingecko.com&sz=32" alt="CG">';
 
     document.getElementById('cb-tBody').innerHTML = slice.map(c => {
         const ld = liveData[c.sym] || {};
@@ -1832,12 +1867,14 @@ document.addEventListener('keydown', e => {
 
 <!-- COOKIE CONSENT BAR -->
 <div class="cookie-bar hidden" id="cookie-bar">
-  <div class="cookie-bar-left">
-    <div class="cookie-bar-text">🍪 We use Google Analytics (only with consent) to understand traffic. No personal data collected. <a href="/privacy">Privacy Policy</a></div>
-  </div>
-  <div class="cookie-bar-actions">
-    <button class="cookie-btn accept" onclick="acceptCookies()">Accept Analytics</button>
-    <button class="cookie-btn decline" onclick="declineCookies()">Reject</button>
+  <div class="cookie-bar-inner">
+    <div class="cookie-bar-left">
+      <div class="cookie-bar-text">We use Google Analytics (only with consent) to understand traffic. No personal data collected. <a href="/privacy">Privacy Policy</a></div>
+    </div>
+    <div class="cookie-bar-actions">
+      <button class="cookie-btn decline" onclick="declineCookies()">Reject</button>
+      <button class="cookie-btn accept" onclick="acceptCookies()">Accept Analytics</button>
+    </div>
   </div>
 </div>
 
