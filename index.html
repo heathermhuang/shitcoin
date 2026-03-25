@@ -341,10 +341,10 @@ tbody tr.limit-row{background:rgba(245,158,11,0.04)}
                     <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><rect width="14" height="14" rx="3.5" fill="#0052FF"/><circle cx="7" cy="7" r="3.5" fill="#0052FF"/><circle cx="7" cy="7" r="3.5" stroke="white" stroke-width="1.5" fill="none"/><rect x="3.5" y="5.9" width="7" height="2.2" fill="#0052FF"/></svg>
                     Coinbase
                 </button>
-                <button class="tnav-tab stablecoins" id="ex-tab-stablecoins" onclick="switchExchange('stablecoins')">
+                <a class="tnav-tab stablecoins" id="ex-tab-stablecoins" href="https://stablecoin.io">
                     <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><circle cx="7" cy="7" r="6.5" stroke="#22c55e" stroke-width="1"/><text x="7" y="10.5" text-anchor="middle" font-size="8" font-weight="700" fill="#22c55e" font-family="IBM Plex Mono,monospace">$</text></svg>
                     Stablecoins
-                </button>
+                </a>
             </div>
         </div>
         <div class="tnav-right">
@@ -552,6 +552,26 @@ tbody tr.limit-row{background:rgba(245,158,11,0.04)}
 </div>
 
 <script>
+// Known differences between CoinGecko IDs and CoinMarketCap slugs
+const CG_TO_CMC = {
+    'avalanche-2':'avalanche','hedera-hashgraph':'hedera','near':'near-protocol',
+    'havven':'synthetix-network-token','binancecoin':'bnb',
+    'compound-governance-token':'compound','kyber-network-crystal':'kyber-network',
+    'melon':'enzyme','blockstack':'stacks','the-open-network':'toncoin',
+    'artificial-superintelligence-alliance':'fetch-ai',
+    'jito-governance-token':'jito','jupiter-exchange-solana':'jupiter-ag',
+    'gigachad-2':'gigachad','internet-computer':'internet-computer-icp',
+    'crypto-com-chain':'cronos','elrond-erd-2':'multiversx',
+    'orchid-protocol':'orchid','arpa-chain':'arpa',
+    'sushi':'sushiswap','pancakeswap-token':'pancakeswap',
+    'injective-protocol':'injective','render-token':'render',
+    'sei-network':'sei','threshold-network-token':'threshold',
+    'dogwifcoin':'dogwifhat','dydx-chain':'dydx','ripple':'xrp',
+    'immutable-x':'immutable','sonic-3':'sonic','story-protocol':'story',
+    'flare-networks':'flare-networks','holotoken':'holotoken',
+    'cosmos':'cosmos','uniswap':'uniswap','solana':'solana',
+};
+
 // ===== BINANCE MODULE =====
 let bnInitialized = false;
 let bnRefreshInterval = null;
@@ -1133,35 +1153,57 @@ function getExchangeIcons(sym) {
 
 
 function getCMCSlug(sym) {
+    // 1. Check explicit known slugs (highest confidence)
     const slugs = {
-        'JASMY':'jasmycoin','FTT':'ftx-token','ARK':'ark','ARDR':'ardor',
-        'PERP':'perpetual-protocol','MBL':'moviebloc','AWE':'stp-network',
-        'MOVE':'movement','BIFI':'beefy-finance','MDT':'measurable-data-token',
-        'PORTAL':'portal','WAN':'wanchain','DENT':'dent','D':'mines-of-dalarnia',
-        'COS':'contentos','DEGO':'dego-finance','FUN':'funfair','MBOX':'mobox',
-        'OXT':'orchid','WIF':'dogwifhat','ATA':'automata-network','FIO':'fio-protocol',
-        'GTC':'gitcoin','PHB':'phoenix-global','QI':'benqi','A2Z':'arena-z',
-        'FORTH':'ampleforth-governance-token','HOOK':'hooked-protocol','IDEX':'idex',
-        'LRC':'loopring','NTRN':'neutron','RDNT':'radiant-capital','SXP':'solar-sxp',
         'BTC':'bitcoin','ETH':'ethereum','BNB':'bnb','SOL':'solana','XRP':'xrp',
         'DOGE':'dogecoin','ADA':'cardano','AVAX':'avalanche','DOT':'polkadot',
         'LINK':'chainlink','SHIB':'shiba-inu','UNI':'uniswap','ATOM':'cosmos',
         'FIL':'filecoin','APT':'aptos','ARB':'arbitrum','OP':'optimism',
         'SUI':'sui','NEAR':'near-protocol','INJ':'injective','ONDO':'ondo-finance',
-        'RENDER':'render-token','FET':'artificial-superintelligence-alliance',
-        'PEPE':'pepe','BONK':'bonk','FLOKI':'floki','WLD':'worldcoin-wld',
+        'RENDER':'render','FET':'fetch-ai','PEPE':'pepe','BONK':'bonk',
+        'FLOKI':'floki','WLD':'worldcoin-wld','WIF':'dogwifhat',
         'MLN':'enzyme','ZEN':'horizen','ZEC':'zcash','CVX':'convex-finance',
-        'SUN':'sun-token','GPS':'goplus-security','FLOW':'flow',
-        'ALPHA':'stella','BSW':'biswap','KMD':'komodo','LEVER':'leverfi','LTO':'lto-network',
-        'FLM':'flamingo','HIFI':'hifi-finance','FIS':'stafi','REI':'rei-network',
+        'BAL':'balancer','GRT':'the-graph','IMX':'immutable','SAND':'the-sandbox',
+        'MANA':'decentraland','AAVE':'aave','CRV':'curve-dao-token','LDO':'lido-dao',
+        'ENS':'ethereum-name-service','SNX':'synthetix-network-token','SUSHI':'sushiswap',
+        'HBAR':'hedera','ALGO':'algorand','TAO':'bittensor','FLOW':'flow',
+        'JASMY':'jasmycoin','FTT':'ftx-token','ARK':'ark','ARDR':'ardor',
+        'PERP':'perpetual-protocol','MBL':'moviebloc','AWE':'stp-network',
+        'MOVE':'movement','BIFI':'beefy-finance','MDT':'measurable-data-token',
+        'PORTAL':'portal-gaming','WAN':'wanchain','DENT':'dent',
+        'COS':'contentos','DEGO':'dego-finance','FUN':'funfair','MBOX':'mobox',
+        'OXT':'orchid','ATA':'automata','FIO':'fio-protocol','GTC':'gitcoin',
+        'PHB':'phoenix-global','QI':'benqi','A2Z':'arena-z',
+        'FORTH':'ampleforth-governance-token','HOOK':'hooked-protocol','IDEX':'idex',
+        'LRC':'loopring','NTRN':'neutron-3','RDNT':'radiant-capital','SXP':'swipe',
+        'GPS':'goplus-security','SUN':'sun-token',
+        'BSW':'biswap','KMD':'komodo','LEVER':'leverfi','LTO':'lto-network',
+        'FLM':'flamingo-finance','HIFI':'hifi-finance','FIS':'stafi','REI':'rei-network',
         'NKN':'nkn','ACA':'acala','CHESS':'tranchess','DATA':'streamr',
-        'DF':'dforce','GHST':'aavegotchi','BETA':'beta-finance',
-        'AERGO':'aergo','AST':'airswap','BADGER':'badger-dao',
-        'NULS':'nuls','VOXEL':'voxies','WING':'wing-finance','BAL':'balancer',
+        'DF':'dforce-token','GHST':'aavegotchi','BETA':'beta-finance',
+        'AERGO':'aergo','AST':'airswap','BADGER':'badger-dao','D':'mines-of-dalarnia',
+        'NULS':'nuls','VOXEL':'voxies','WING':'wing-finance',
         'XMR':'monero','ALPACA':'alpaca-finance','STMX':'stormx',
-        'AKRO':'akropolis','BLZ':'bluzelle','REEF':'reef',
+        'AKRO':'akropolis','BLZ':'bluzelle','REEF':'reef-finance',
+        'TIA':'celestia','SEI':'sei','STX':'stacks','STRK':'starknet',
+        'TRUMP':'official-trump','KSM':'kusama','EGLD':'multiversx',
+        'DASH':'dash','MINA':'mina-protocol','RSR':'reserve-rights-token',
+        'SKL':'skale','ANKR':'ankr','STORJ':'storj','CHZ':'chiliz',
+        'BAT':'basic-attention-token','QNT':'quant-network','TON':'toncoin',
+        'HNT':'helium','PENDLE':'pendle','ROSE':'oasis-network',
+        'KAVA':'kava','GRT':'the-graph','COMP':'compound',
+        'MKR':'maker','ENA':'ethena','W':'wormhole','PYTH':'pyth-network',
+        'JTO':'jito','EIGEN':'eigenlayer','MORPHO':'morpho','KAITO':'kaito',
+        'HYPE':'hyperliquid','BERA':'berachain','S':'sonic','IP':'story',
+        'PENGU':'pengu','FARTCOIN':'fartcoin','SPX':'spx6900','MOG':'mog-coin',
+        'GIGA':'gigachad','POPCAT':'popcat',
     };
-    return slugs[sym] || sym.toLowerCase();
+    if (slugs[sym]) return slugs[sym];
+    // 2. Use CoinGecko ID (fetched from API) with known CG→CMC corrections
+    const cgId = liveData[sym]?.cgId;
+    if (cgId) return CG_TO_CMC[cgId] || cgId;
+    // 3. Unknown — return null so caller skips the CMC link
+    return null;
 }
 function getFiltered() {
     let list = [...allCoins];
@@ -1535,25 +1577,35 @@ const CG_OVERRIDES = {
     'LPT':'livepeer','BAL':'balancer','FARM':'harvest-finance','MLN':'melon','RPL':'rocket-pool',
     'CVX':'convex-finance','T':'threshold-network-token','LQTY':'liquity','FORTH':'ampleforth-governance-token',
     'LRC':'loopring','GTC':'gitcoin','OCEAN':'ocean-protocol','IDEX':'idex',
-};
-
-// CMC slug overrides
-const CMC_SLUGS = {
-    'JASMY':'jasmycoin','FORTH':'ampleforth-governance-token','LRC':'loopring','IDEX':'idex',
-    'BTC':'bitcoin','ETH':'ethereum','SOL':'solana','DOGE':'dogecoin','ADA':'cardano',
-    'AVAX':'avalanche','DOT':'polkadot','LINK':'chainlink','SHIB':'shiba-inu','UNI':'uniswap',
-    'ATOM':'cosmos','FIL':'filecoin','ARB':'arbitrum','OP':'optimism','SUI':'sui',
-    'NEAR':'near-protocol','INJ':'injective','ONDO':'ondo-finance','RENDER':'render-token',
-    'FET':'artificial-superintelligence-alliance','PEPE':'pepe','BONK':'bonk','FLOKI':'floki',
-    'WLD':'worldcoin-wld','WIF':'dogwifhat','GTC':'gitcoin','MLN':'enzyme','CVX':'convex-finance',
-    'FLOW':'flow','BAL':'balancer','GRT':'the-graph','IMX':'immutable-x','SAND':'the-sandbox',
-    'MANA':'decentraland','AAVE':'aave','CRV':'curve-dao-token','LDO':'lido-dao',
-    'ENS':'ethereum-name-service','SNX':'synthetix-network-token','SUSHI':'sushiswap',
-    'HBAR':'hedera','ALGO':'algorand','TAO':'bittensor','BNB':'bnb',
+    // Additional Coinbase coins
+    'XRP':'ripple','ZRX':'0x','BAT':'basic-attention-token','MKR':'maker','ZEC':'zcash',
+    'XTZ':'tezos','BAND':'band-protocol','OMG':'omisego','OGN':'origin-protocol',
+    'SUSHI':'sushi','UMA':'uma','YFI':'yearn-finance','YFII':'yfii','COMP':'compound-governance-token',
+    'REN':'republic-protocol','CVC':'civic','WBTC':'wrapped-bitcoin','RUNE':'thorchain',
+    'AUDIO':'audius','ANC':'anchor-protocol','ALICE':'my-neighbor-alice','CELR':'celer-network',
+    'CLV':'clover-finance','CTX':'cryptex-finance','DYDX':'dydx-chain','ERN':'ethernity-chain',
+    'POND':'marlin','QUICK':'quickswap','SHPING':'shping','WCFG':'wrapped-centrifuge',
+    'BTRST':'braintrust','AGLD':'adventure-gold','RBN':'ribbon-finance','UNFI':'unifi-protocol-dao',
+    'GODS':'gods-unchained','ARPA':'arpa-chain','DREP':'drep-new','TVK':'terra-virtua-kolect',
+    'DEXT':'dextools','POLS':'polkastarter','XYO':'xyo-network','SUPER':'superfarm',
+    'FLY':'franklin','BOBA':'boba-network','RARE':'superrare','POWR':'power-ledger',
+    'GNS':'gains-network','SYN':'synapse-2','COVAL':'circuits-of-value',
+    'MAGIC':'magic','DYP':'defi-yield-protocol','FORT':'forta',
+    'STPT':'stp-network','VELO':'velo','LCNX':'lightcoin','BLUR':'blur',
+    'PRIME':'echelon-prime','ZETA':'zetachain','PYUSD':'paypal-usd',
 };
 
 function getCgId(sym) { return CG_OVERRIDES[sym] || sym.toLowerCase(); }
-function getCmcSlug(sym) { return CMC_SLUGS[sym] || sym.toLowerCase(); }
+function getCmcSlug(sym) {
+    // 1. Use CoinGecko ID from API (correct after data loads) with CG→CMC corrections
+    const cgId = liveData[sym]?.cgId;
+    if (cgId) return CG_TO_CMC[cgId] || cgId;
+    // 2. Use static CG override with corrections
+    const staticCgId = CG_OVERRIDES[sym];
+    if (staticCgId) return CG_TO_CMC[staticCgId] || staticCgId;
+    // 3. Unknown — return null so caller skips CMC link
+    return null;
+}
 
 // ===== FORMAT =====
 function fmtNum(n, d) {
@@ -1703,7 +1755,7 @@ function cbRenderAll() {
         // Links
         const cbLink = c.status === 'delisted' ? `https://www.coingecko.com/en/coins/${cgId}` : `https://www.coinbase.com/price/${c.sym.toLowerCase()}`;
         const primaryIcon = c.status === 'delisted' ? cgIcon : cbIcon;
-        const cmcHtml = `<a href="https://coinmarketcap.com/currencies/${cmcSlug}/" target="_blank" title="CoinMarketCap">${cmcIcon}</a>`;
+        const cmcHtml = cmcSlug ? `<a href="https://coinmarketcap.com/currencies/${cmcSlug}/" target="_blank" title="CoinMarketCap">${cmcIcon}</a>` : '';
 
         // Status badge
         let badge;
