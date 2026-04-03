@@ -92,6 +92,23 @@ body::after{content:'';position:fixed;top:0;left:0;width:100%;height:100%;opacit
 
 /* PREDICTION */
 .pred-bar{background:linear-gradient(135deg,var(--bg-2) 0%,var(--bg-1) 100%);border:1px solid var(--border-1);border-radius:12px;padding:14px 20px;margin-bottom:24px;display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+.recovery-guide{background:linear-gradient(135deg,rgba(34,197,94,0.04) 0%,rgba(16,185,129,0.02) 100%);border:1px solid rgba(34,197,94,0.18);border-radius:12px;padding:20px 24px;margin-bottom:20px;display:none}
+.recovery-guide.visible{display:block}
+.recovery-guide-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;gap:12px}
+.recovery-guide-title{font-size:13px;font-weight:700;color:#22c55e;font-family:'IBM Plex Mono',monospace;letter-spacing:0.04em;display:flex;align-items:center;gap:8px}
+.recovery-guide-stat{font-size:11px;font-family:'IBM Plex Mono',monospace;color:var(--text-3);background:rgba(34,197,94,0.08);border:1px solid rgba(34,197,94,0.15);border-radius:20px;padding:3px 10px}
+.recovery-guide-intro{font-size:13px;color:var(--text-2);line-height:1.6;margin-bottom:16px}
+.recovery-guide-intro strong{color:var(--text-1)}
+.recovery-steps{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px}
+.recovery-step{background:rgba(255,255,255,0.02);border:1px solid var(--border-1);border-radius:8px;padding:12px 14px}
+.recovery-step-icon{font-size:16px;margin-bottom:6px}
+.recovery-step-title{font-size:12px;font-weight:600;color:var(--text-1);margin-bottom:4px}
+.recovery-step-desc{font-size:11px;color:var(--text-3);line-height:1.5}
+.recovery-guide-toggle{background:none;border:none;font-size:11px;color:var(--text-3);cursor:pointer;font-family:'IBM Plex Mono',monospace;padding:0;display:flex;align-items:center;gap:4px}
+.recovery-guide-toggle:hover{color:var(--text-2)}
+.recovery-guide-body{transition:opacity 0.2s}
+.recovery-guide.collapsed .recovery-guide-body{display:none}
+.recovery-guide.collapsed #rg-chevron{transform:rotate(180deg)}
 .pred-bar .pred-label{font-size:11px;font-family:'IBM Plex Mono',monospace;color:var(--text-3);text-transform:uppercase;letter-spacing:0.08em;font-weight:500}
 .pred-bar .pred-val{font-size:13px;font-weight:600;color:var(--cyan);font-family:'IBM Plex Mono',monospace}
 .pred-bar .pred-sep{width:1px;height:20px;background:var(--border-1)}
@@ -452,6 +469,58 @@ tbody tr.limit-row{background:rgba(245,158,11,0.04)}
 <div class="stats" id="bn-stats"></div>
 <div class="pred-bar" id="bn-predBar"></div>
 <div class="filters" id="bn-filters"></div>
+<div class="recovery-guide" id="bn-recovery-guide">
+  <div class="recovery-guide-header">
+    <div class="recovery-guide-title">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2.5"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+      Recovery Playbook — How Monitored Coins Get Restored
+    </div>
+    <div style="display:flex;align-items:center;gap:8px">
+      <div class="recovery-guide-stat" id="bn-restore-rate">loading…</div>
+      <button class="recovery-guide-toggle" onclick="document.getElementById('bn-recovery-guide').classList.toggle('collapsed')">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" id="rg-chevron"><polyline points="18 15 12 9 6 15"/></svg>
+        collapse
+      </button>
+    </div>
+  </div>
+  <div class="recovery-guide-body">
+    <div class="recovery-guide-intro">
+      Monitoring status is a warning, not a verdict. Binance reviews tagged coins regularly — <strong>projects that demonstrate improving fundamentals have gotten restored</strong>. Here's what the data shows matters most:
+    </div>
+    <div class="recovery-steps">
+      <div class="recovery-step">
+        <div class="recovery-step-icon">📈</div>
+        <div class="recovery-step-title">Grow trading volume</div>
+        <div class="recovery-step-desc">Sustain consistent daily volume above $500K–$1M USDT. Sudden spikes don't count — Binance looks for sustained organic growth over weeks.</div>
+      </div>
+      <div class="recovery-step">
+        <div class="recovery-step-icon">💧</div>
+        <div class="recovery-step-title">Improve liquidity depth</div>
+        <div class="recovery-step-desc">Engage market makers to tighten spreads and deepen order book. Bid/ask depth within 2% of price is a key signal this monitor tracks.</div>
+      </div>
+      <div class="recovery-step">
+        <div class="recovery-step-icon">🌐</div>
+        <div class="recovery-step-title">List on more exchanges</div>
+        <div class="recovery-step-desc">Cross-listings on OKX, Kraken, or Coinbase demonstrate market demand beyond a single venue. Multi-exchange presence reduces delisting risk.</div>
+      </div>
+      <div class="recovery-step">
+        <div class="recovery-step-icon">⛓</div>
+        <div class="recovery-step-title">Show on-chain activity</div>
+        <div class="recovery-step-desc">Growing active addresses, transaction counts, TVL, or protocol usage show real utility beyond speculation.</div>
+      </div>
+      <div class="recovery-step">
+        <div class="recovery-step-icon">📣</div>
+        <div class="recovery-step-title">Maintain community health</div>
+        <div class="recovery-step-desc">Regular project updates, active social channels, GitHub commits, and roadmap progress signal a live team. Dead comms is a red flag.</div>
+      </div>
+      <div class="recovery-step">
+        <div class="recovery-step-icon">📬</div>
+        <div class="recovery-step-title">Engage the exchange</div>
+        <div class="recovery-step-desc">Respond promptly to any exchange communications. Proactively submit evidence of improvements — exchanges do review appeals and project submissions.</div>
+      </div>
+    </div>
+  </div>
+</div>
 <div class="tbl-wrap">
     <table>
         <thead><tr>
@@ -1569,7 +1638,27 @@ function bnSortBy(key) {
     page = 0;
     renderTable();
 }
-function bnSetFilter(f) { filter = f; page = 0; bnRenderAll(); }
+function bnSetFilter(f) {
+    filter = f;
+    page = 0;
+    bnRenderAll();
+    const guide = document.getElementById('bn-recovery-guide');
+    if (guide) {
+        const show = (f === 'monitoring' || f === 'highrisk');
+        guide.classList.toggle('visible', show);
+        if (show) {
+            // populate restore rate stat from live data
+            const mon = allCoins.filter(t => t.status === 'monitoring').length;
+            const rest = allCoins.filter(t => t.status === 'restored').length;
+            const everTagged = allCoins.filter(t => t.monDate).length;
+            const rateEl = document.getElementById('bn-restore-rate');
+            if (rateEl && everTagged > 0) {
+                const pct = Math.round(rest / everTagged * 100);
+                rateEl.textContent = `${pct}% of tagged coins restored`;
+            }
+        }
+    }
+}
 function bnSetQuery(q) { query = q; page = 0; renderTable(); }
 function bnSetPage(p) { page = Math.max(0, p); renderTable(); window.scrollTo({top: document.querySelector('.tbl-wrap').offsetTop - 80, behavior:'smooth'}); }
 
