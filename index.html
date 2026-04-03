@@ -1717,7 +1717,15 @@ function bnBuildDetailItems(t, ld, dom) {
         else                 items.push({ ok:true,  icon:'💪', title:`${dom}d — still listed past the median`,   desc:`The median delist timeline is 195 days — you're past it and Binance has still kept you active. That's a signal they're watching for improvement. Keep delivering: consistent volume growth and transparent team updates now could tip the decision in your favor.` });
     }
 
-    // 2. Volume
+    // 2. Project-specific resources (positive signals already in place)
+    if (t.resources && t.resources.length > 0) {
+        t.resources.forEach(r => {
+            items.push({ ok:true, icon:'🔗', title:`✅ ${r.label}`,
+                desc:`${r.note} — <a href="${r.url}" target="_blank" style="color:#4ade80;text-decoration:underline">${r.url.replace('https://','')}</a>` });
+        });
+    }
+
+    // 3. Volume
     if (vol > 0) {
         if (vol < 100000)        items.push({ ok:false, urgent:true, icon:'📉', title:`Volume critical — ${fmtNum(vol,0)}/day`,     desc:`Far below the $500K–$1M threshold. Priority #1. Organic community trading, ecosystem integrations, and liquidity mining can help — avoid wash trading.` });
         else if (vol < 500000)   items.push({ ok:false, icon:'📈', title:`Volume low — ${fmtNum(vol,0)}/day`,                       desc:`Below $500K. Sustained growth over weeks counts more than spikes. Target organic drivers: new exchange listings, product launches, community campaigns.` });
@@ -1725,14 +1733,14 @@ function bnBuildDetailItems(t, ld, dom) {
         else                     items.push({ ok:true,  icon:'✅', title:`Volume healthy — ${fmtNum(vol,0)}/day`,                   desc:`Strong volume. Focus on liquidity depth and cross-exchange presence as the next priorities.` });
     }
 
-    // 3. Order book depth
+    // 4. Order book depth
     if (bid !== undefined && bid !== null) {
         if (bid < 10000)        items.push({ ok:false, urgent:true, icon:'🔴', title:`Order book empty — ${bid>0?fmtNum(bid,0):'$0'} bid depth`,  desc:`Near-empty book signals poor price discovery. Engage a professional market maker immediately — this is the fastest fix available.` });
         else if (bid < 50000)   items.push({ ok:false, icon:'💧', title:`Order book thin — ${fmtNum(bid,0)} bid depth`,                           desc:`Thin books amplify volatility and concern exchanges. A market maker providing consistent 2% depth can move this metric within days.` });
         else                    items.push({ ok:true,  icon:'✅', title:`Liquidity acceptable — ${fmtNum(bid,0)} bid depth`,                       desc:`Bid/ask depth looks reasonable. Keep it consistent and focus on volume and exchange presence.` });
     }
 
-    // 4. Cross-exchange presence
+    // 5. Cross-exchange presence
     if (crossCount === 0) {
         items.push({ ok:false, icon:'🌐', title:'Only on Binance',
             desc:`Single-venue coins carry the highest delisting risk. Pursue Coinbase, OKX, or Kraken listings to demonstrate broader market demand — each listing is evidence in your favor.` });
@@ -1746,18 +1754,10 @@ function bnBuildDetailItems(t, ld, dom) {
             desc:`Listed on Coinbase, OKX, and Kraken — excellent. Mention this prominently in any exchange appeal or status update submission.` });
     }
 
-    // 5. Market cap context (only flag if very low)
+    // 6. Market cap context (only flag if very low)
     if (mcap > 0 && mcap < 5000000) {
         items.push({ ok:false, icon:'💎', title:`Market cap low — ${fmtNum(mcap,0)}`,
             desc:`Low market cap signals limited adoption. Prioritize demonstrating real utility: DeFi integrations, active on-chain usage, and meaningful partnerships help build organic value.` });
-    }
-
-    // 6. Project-specific resources (positive signals already in place)
-    if (t.resources && t.resources.length > 0) {
-        t.resources.forEach(r => {
-            items.push({ ok:true, icon:'🔗', title:`✅ ${r.label}`,
-                desc:`${r.note} — <a href="${r.url}" target="_blank" style="color:#4ade80;text-decoration:underline">${r.url.replace('https://','')}</a>` });
-        });
     }
 
     return { items, restoreCount };
