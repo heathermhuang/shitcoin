@@ -319,6 +319,26 @@ body::after{content:'';position:fixed;top:0;left:0;width:100%;height:100%;opacit
 .recovery-guide-body{transition:opacity 0.2s}
 .recovery-guide.collapsed .recovery-guide-body{display:none}
 .recovery-guide.collapsed #rg-chevron{transform:rotate(180deg)}
+/* Coin-level recovery detail rows */
+tbody tr.mon-clickable{cursor:pointer}
+tbody tr.mon-clickable:hover{background:rgba(34,197,94,0.05)!important;border-left:2px solid rgba(34,197,94,0.4)!important}
+tbody tr.mon-clickable.expanded{background:rgba(34,197,94,0.05)!important;border-left:2px solid rgba(34,197,94,0.5)!important}
+.coin-detail-row td{padding:0!important;border:none!important}
+.coin-detail-panel{background:linear-gradient(180deg,rgba(34,197,94,0.05) 0%,transparent 100%);border-bottom:1px solid rgba(34,197,94,0.12);padding:14px 20px 18px 20px}
+.cdr-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+.cdr-title{font-size:11px;font-family:'IBM Plex Mono',monospace;color:#22c55e;font-weight:600;letter-spacing:0.04em}
+.cdr-hint{font-size:10px;font-family:'IBM Plex Mono',monospace;color:var(--text-3)}
+.cdr-close{background:none;border:none;font-size:10px;color:var(--text-3);cursor:pointer;font-family:'IBM Plex Mono',monospace;padding:0;margin-left:12px}
+.cdr-close:hover{color:var(--text-1)}
+.cdr-items{display:flex;gap:8px;flex-wrap:wrap}
+.cdr-item{flex:1;min-width:170px;max-width:270px;background:rgba(255,255,255,0.025);border:1px solid var(--border-1);border-radius:8px;padding:10px 12px}
+.cdr-item.urgent{border-color:rgba(239,68,68,0.3);background:rgba(239,68,68,0.05)}
+.cdr-item.good{border-color:rgba(34,197,94,0.2);background:rgba(34,197,94,0.04)}
+.cdr-item-title{font-size:11px;font-weight:600;color:var(--text-1);margin-bottom:3px}
+.cdr-item.urgent .cdr-item-title{color:#f87171}
+.cdr-item.good .cdr-item-title{color:#4ade80}
+.cdr-item-desc{font-size:10.5px;color:var(--text-3);line-height:1.5}
+.cdr-footer{font-size:10px;color:var(--text-3);font-family:'IBM Plex Mono',monospace;margin-top:12px;padding-top:10px;border-top:1px solid var(--border-1)}
 .pred-bar .pred-label{font-size:11px;font-family:'IBM Plex Mono',monospace;color:var(--text-3);text-transform:uppercase;letter-spacing:0.08em;font-weight:500}
 .pred-bar .pred-val{font-size:13px;font-weight:600;color:var(--cyan);font-family:'IBM Plex Mono',monospace}
 .pred-bar .pred-sep{width:1px;height:20px;background:var(--border-1)}
@@ -1751,6 +1771,9 @@ function renderTable() {
         }
 
         const rowClass = t.status === 'delisting' ? 'delisting-row' : t.status === 'delisted' ? 'delisted-row' : t.status === 'restored' ? 'restored-row' : (t.status === 'active' && t._risk >= 70) ? 'highrisk-row' : '';
+        const isClickable = t.status === 'monitoring' || t.status === 'delisting';
+        const domVal = t.monDate ? daysBetween(t.monDate, t.status === 'delisting' ? today : today) : null;
+        if (isClickable) bnDetailStore.set(t.sym, { t, ld, dom: domVal });
 
         const ghIconUrl = \`https://cdn.jsdelivr.net/gh/ErikThiart/cryptocurrency-icons@master/32/\${t.sym.toLowerCase()}.png\`;
         const primaryIconUrl = ld.icon || ghIconUrl;
@@ -1768,8 +1791,11 @@ function renderTable() {
         const cmcLink = cmcSlug ? 'https://coinmarketcap.com/currencies/' + cmcSlug + '/' : '';
         const cmcHtml = cmcLink ? '<a href="' + cmcLink + '" target="_blank" title="CoinMarketCap"><img src="https://www.google.com/s2/favicons?domain=coinmarketcap.com&sz=32" alt="CMC"></a>' : '';
 
-        return \`<tr class="\${rowClass}">
-            <td><div class="tk">\${coinIconHtml}<div><div class="tk-sym">\${t.sym}</div><div class="tk-name">\${t.name||t.sym}</div><div class="tk-links"><a href="\${binanceLink}" target="_blank" title="\${linkTitle}">\${linkPrimaryIcon}</a>\${cmcHtml}</div></div></div></td>
+        const clickAttr = isClickable ? \`onclick="bnToggleDetail('\${t.sym}',this)"\` : '';
+        const expandHint = isClickable ? \`<span style="float:right;font-size:9px;font-family:'IBM Plex Mono',monospace;color:var(--text-3);opacity:0.5;margin-top:2px">▶ actions</span>\` : '';
+
+        return \`<tr class="\${rowClass}\${isClickable?' mon-clickable':''}" \${clickAttr}>
+            <td><div class="tk">\${coinIconHtml}<div><div class="tk-sym">\${t.sym}\${expandHint}</div><div class="tk-name">\${t.name||t.sym}</div><div class="tk-links"><a href="\${binanceLink}" target="_blank" title="\${linkTitle}" onclick="event.stopPropagation()">\${linkPrimaryIcon}</a>\${cmcHtml ? cmcHtml.replace('href=', 'onclick="event.stopPropagation()" href=') : ''}</div></div></div></td>
             <td>\${badges[t.status]||''}</td>
             <td>\${riskHtml}</td>
             <td class="col-days">\${domHtml}</td>
@@ -1841,6 +1867,104 @@ function bnRenderAll() {
     document.getElementById('bn-updTime').textContent = new Date().toLocaleTimeString();
 }
 
+// ============ COIN DETAIL EXPAND ============
+const bnDetailStore = new Map();
+
+function bnToggleDetail(sym, rowEl) {
+    const next = rowEl.nextElementSibling;
+    if (next && next.classList.contains('coin-detail-row')) {
+        next.remove();
+        rowEl.classList.remove('expanded');
+        return;
+    }
+    document.querySelectorAll('.coin-detail-row').forEach(r => r.remove());
+    document.querySelectorAll('.mon-clickable.expanded').forEach(r => r.classList.remove('expanded'));
+
+    const data = bnDetailStore.get(sym);
+    if (!data) return;
+    rowEl.classList.add('expanded');
+
+    const { items, restoreCount } = bnBuildDetailItems(data.t, data.ld, data.dom);
+    const itemsHtml = items.map(item =>
+        \`<div class="cdr-item \${item.urgent?'urgent':item.ok?'good':''}">
+            <div class="cdr-item-title">\${item.icon} \${item.title}</div>
+            <div class="cdr-item-desc">\${item.desc}</div>
+        </div>\`
+    ).join('');
+
+    const tr = document.createElement('tr');
+    tr.className = 'coin-detail-row';
+    tr.innerHTML = \`<td colspan="13"><div class="coin-detail-panel">
+        <div class="cdr-head">
+            <div class="cdr-title">📋 RECOVERY ACTIONS — \${sym}</div>
+            <div style="display:flex;align-items:center;gap:8px">
+                <span class="cdr-hint">click row again to close</span>
+                <button class="cdr-close" onclick="event.stopPropagation();this.closest('tr').previousElementSibling.click()">✕</button>
+            </div>
+        </div>
+        <div class="cdr-items">\${itemsHtml}</div>
+        <div class="cdr-footer">💡 \${restoreCount} coins have recovered from monitoring status — consistent improvement gets results.</div>
+    </div></td>\`;
+    rowEl.after(tr);
+}
+
+function bnBuildDetailItems(t, ld, dom) {
+    const vol = ld.vol || 0;
+    const bid = ld.bidDepth;
+    const mcap = ld.mcap || 0;
+    const onCB  = exchangeData.coinbase.has(t.sym);
+    const onOKX = exchangeData.okx.has(t.sym);
+    const onKR  = exchangeData.kraken.has(t.sym);
+    const crossCount = [onCB, onOKX, onKR].filter(Boolean).length;
+    const restoreCount = allCoins.filter(c => c.status === 'restored').length;
+    const items = [];
+
+    // 1. Time window
+    if (dom !== null && dom !== undefined) {
+        if (dom < 30)        items.push({ ok:true,  icon:'🟢', title:\`\${dom}d on monitoring — still early\`,       desc:\`The 195-day median to delist means you have time. Start immediately — early consistent improvement has the highest recovery rate.\` });
+        else if (dom < 90)   items.push({ ok:false, icon:'⏱',  title:\`\${dom}d on monitoring — keep up momentum\`,  desc:\`Past one month. Exchanges review tagged coins regularly. Demonstrate measurable improvement every 30 days to show a positive trend.\` });
+        else if (dom < 150)  items.push({ ok:false, urgent:true, icon:'⚠️', title:\`\${dom}d — past halfway\`,       desc:\`Past the halfway point of the 195-day median. Urgently prioritize volume and order book depth — they're the fastest metrics to visibly move.\` });
+        else                 items.push({ ok:false, urgent:true, icon:'🚨', title:\`\${dom}d — final window\`,        desc:\`Near or past the 195-day median. Contact the exchange directly with a concrete evidence package: volume trends, team activity, roadmap delivery.\` });
+    }
+
+    // 2. Volume
+    if (vol > 0) {
+        if (vol < 100000)        items.push({ ok:false, urgent:true, icon:'📉', title:\`Volume critical — \${fmtNum(vol,0)}/day\`,     desc:\`Far below the $500K–$1M threshold. Priority #1. Organic community trading, ecosystem integrations, and liquidity mining can help — avoid wash trading.\` });
+        else if (vol < 500000)   items.push({ ok:false, icon:'📈', title:\`Volume low — \${fmtNum(vol,0)}/day\`,                       desc:\`Below $500K. Sustained growth over weeks counts more than spikes. Target organic drivers: new exchange listings, product launches, community campaigns.\` });
+        else if (vol < 1000000)  items.push({ ok:false, icon:'📈', title:\`Volume near threshold — \${fmtNum(vol,0)}/day\`,            desc:\`Getting close. Sustain $1M+ consistently for several weeks — that trend is what the exchange sees as a positive signal.\` });
+        else                     items.push({ ok:true,  icon:'✅', title:\`Volume healthy — \${fmtNum(vol,0)}/day\`,                   desc:\`Strong volume. Focus on liquidity depth and cross-exchange presence as the next priorities.\` });
+    }
+
+    // 3. Order book depth
+    if (bid !== undefined && bid !== null) {
+        if (bid < 10000)        items.push({ ok:false, urgent:true, icon:'🔴', title:\`Order book empty — \${bid>0?fmtNum(bid,0):'$0'} bid depth\`,  desc:\`Near-empty book signals poor price discovery. Engage a professional market maker immediately — this is the fastest fix available.\` });
+        else if (bid < 50000)   items.push({ ok:false, icon:'💧', title:\`Order book thin — \${fmtNum(bid,0)} bid depth\`,                           desc:\`Thin books amplify volatility and concern exchanges. A market maker providing consistent 2% depth can move this metric within days.\` });
+        else                    items.push({ ok:true,  icon:'✅', title:\`Liquidity acceptable — \${fmtNum(bid,0)} bid depth\`,                       desc:\`Bid/ask depth looks reasonable. Keep it consistent and focus on volume and exchange presence.\` });
+    }
+
+    // 4. Cross-exchange presence
+    if (crossCount === 0) {
+        items.push({ ok:false, icon:'🌐', title:'Only on Binance',
+            desc:\`Single-venue coins carry the highest delisting risk. Pursue Coinbase, OKX, or Kraken listings to demonstrate broader market demand — each listing is evidence in your favor.\` });
+    } else if (crossCount < 3) {
+        const have = [onCB&&'Coinbase',onOKX&&'OKX',onKR&&'Kraken'].filter(Boolean).join(', ');
+        const missing = [!onCB&&'Coinbase',!onOKX&&'OKX',!onKR&&'Kraken'].filter(Boolean);
+        items.push({ ok:false, icon:'🌐', title:\`Listed on \${crossCount} other exchange\${crossCount>1?'s':''}\`,
+            desc:\`On \${have}. Adding \${missing[0]} would strengthen your multi-venue case. Use this in exchange communications as proof of market demand.\` });
+    } else {
+        items.push({ ok:true, icon:'✅', title:'Strong cross-exchange presence',
+            desc:\`Listed on Coinbase, OKX, and Kraken — excellent. Mention this prominently in any exchange appeal or status update submission.\` });
+    }
+
+    // 5. Market cap context (only flag if very low)
+    if (mcap > 0 && mcap < 5000000) {
+        items.push({ ok:false, icon:'💎', title:\`Market cap low — \${fmtNum(mcap,0)}\`,
+            desc:\`Low market cap signals limited adoption. Prioritize demonstrating real utility: DeFi integrations, active on-chain usage, and meaningful partnerships help build organic value.\` });
+    }
+
+    return { items, restoreCount };
+}
+
 // ============ INTERACTIONS ============
 function bnSortBy(key) {
     if (sort.key === key) sort.dir = sort.dir === 'desc' ? 'asc' : 'desc';
@@ -1901,6 +2025,7 @@ window.bnSortBy = bnSortBy;
 window.bnSetQuery = bnSetQuery;
 window.bnSetPage = bnSetPage;
 window.bnDoRefresh = bnDoRefresh;
+window.bnToggleDetail = bnToggleDetail;
 
 })();
 
