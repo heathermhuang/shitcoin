@@ -8,6 +8,16 @@ const BINANCE_BASE  = 'https://data-api.binance.vision/api/v3';
 const COINBASE_BASE = 'https://api.exchange.coinbase.com';
 const COINGECKO_BASE = 'https://api.coingecko.com/api/v3';
 
+// Endpoint allowlists — prevents open-proxy abuse of third-party API quotas.
+// Only paths the app actually needs are permitted; everything else returns 403.
+const BINANCE_ALLOWED  = ['/ticker/24hr', '/depth', '/exchangeInfo', '/ticker/price'];
+const COINBASE_ALLOWED = ['/products'];
+const COINGECKO_ALLOWED = ['/coins/markets', '/simple/price', '/coins/list'];
+
+function isAllowed(allowlist, subpath) {
+  return allowlist.some(p => subpath === p || subpath.startsWith(p + '?') || subpath.startsWith(p + '/'));
+}
+
 const EXCHANGE_URLS = {
   coinbase: 'https://api.exchange.coinbase.com/products',
   binance:  'https://data-api.binance.vision/api/v3/exchangeInfo',
@@ -131,19 +141,31 @@ export default {
       }});
     }
 
-    // /api/* → Binance
+    // /api/* → Binance (allowlisted endpoints only)
     if (path.startsWith('/api/')) {
-      return cachedProxy(request, BINANCE_BASE + path.slice(4), ttl);
+      const sub = path.slice(4) + url.search;
+      if (!isAllowed(BINANCE_ALLOWED, path.slice(4).split('?')[0])) {
+        return new Response('{"error":"not allowed"}', { status: 403, headers: { 'Content-Type': 'application/json' } });
+      }
+      return cachedProxy(request, BINANCE_BASE + sub, ttl);
     }
 
-    // /cb/* → Coinbase
+    // /cb/* → Coinbase (allowlisted endpoints only)
     if (path.startsWith('/cb/')) {
-      return cachedProxy(request, COINBASE_BASE + path.slice(3), ttl);
+      const sub = path.slice(3).split('?')[0];
+      if (!isAllowed(COINBASE_ALLOWED, sub)) {
+        return new Response('{"error":"not allowed"}', { status: 403, headers: { 'Content-Type': 'application/json' } });
+      }
+      return cachedProxy(request, COINBASE_BASE + path.slice(3) + url.search, ttl);
     }
 
-    // /cg/* → CoinGecko
+    // /cg/* → CoinGecko (allowlisted endpoints only)
     if (path.startsWith('/cg/')) {
-      return cachedProxy(request, COINGECKO_BASE + path.slice(3), ttl);
+      const sub = path.slice(3).split('?')[0];
+      if (!isAllowed(COINGECKO_ALLOWED, sub)) {
+        return new Response('{"error":"not allowed"}', { status: 403, headers: { 'Content-Type': 'application/json' } });
+      }
+      return cachedProxy(request, COINGECKO_BASE + path.slice(3) + url.search, ttl);
     }
 
     // /ex/<exchange> → exchange info
@@ -193,6 +215,10 @@ export default {
       headers: {
         'Content-Type': 'text/html; charset=utf-8',
         'Cache-Control': 'no-cache',
+        'X-Content-Type-Options': 'nosniff',
+        'X-Frame-Options': 'SAMEORIGIN',
+        'Referrer-Policy': 'strict-origin-when-cross-origin',
+        'Permissions-Policy': 'camera=(), microphone=(), geolocation=()',
       },
     });
   },
