@@ -968,7 +968,7 @@ const TRACKED_TOKENS = [
   {sym:'AWE', name:'AWE Network', status:'monitoring', monDate:'2025-04-03', delistDate:null, restoreDate:null},
   {sym:'MOVE', name:'Movement', status:'monitoring', monDate:'2025-06-05', delistDate:null, restoreDate:null},
   {sym:'BIFI', name:'Beefy Finance', status:'monitoring', monDate:'2025-06-05', delistDate:null, restoreDate:null},
-  {sym:'MDT', name:'Measurable Data', status:'monitoring', monDate:'2025-06-05', delistDate:null, restoreDate:null},
+  {sym:'MDT', name:'Measurable Data', status:'monitoring', monDate:'2025-06-05', delistDate:null, restoreDate:null, resources:[{label:'Transparency Portal', url:'https://mdt.io/transparency', note:'Public on-chain metrics & project health reporting — exactly what exchanges want to see'}]},
   {sym:'PORTAL', name:'Portal', status:'monitoring', monDate:'2025-06-05', delistDate:null, restoreDate:null},
   {sym:'WAN', name:'Wanchain', status:'monitoring', monDate:'2025-10-09', delistDate:null, restoreDate:null},
   {sym:'DENT', name:'Dent', status:'monitoring', monDate:'2025-12-01', delistDate:null, restoreDate:null},
@@ -1960,6 +1960,14 @@ function bnBuildDetailItems(t, ld, dom) {
     if (mcap > 0 && mcap < 5000000) {
         items.push({ ok:false, icon:'💎', title:\`Market cap low — \${fmtNum(mcap,0)}\`,
             desc:\`Low market cap signals limited adoption. Prioritize demonstrating real utility: DeFi integrations, active on-chain usage, and meaningful partnerships help build organic value.\` });
+    }
+
+    // 6. Project-specific resources (positive signals already in place)
+    if (t.resources && t.resources.length > 0) {
+        t.resources.forEach(r => {
+            items.push({ ok:true, icon:'🔗', title:\`✅ \${r.label}\`,
+                desc:\`\${r.note} — <a href="\${r.url}" target="_blank" style="color:#4ade80;text-decoration:underline">\${r.url.replace('https://','')}</a>\` });
+        });
     }
 
     return { items, restoreCount };
