@@ -159,6 +159,27 @@ export default {
       return new Response(FAVICON_SVG, { headers: { 'Content-Type': 'image/svg+xml', 'Cache-Control': 'public, max-age=86400' } });
     }
 
+    // SEO: robots.txt
+    if (url.pathname === '/robots.txt') {
+      return new Response(
+        'User-agent: *\nAllow: /\nDisallow: /api/\nDisallow: /cb/\nDisallow: /cg/\nDisallow: /ex/\nSitemap: https://shitcoin.io/sitemap.xml\n',
+        { headers: { 'Content-Type': 'text/plain; charset=utf-8', 'Cache-Control': 'public, max-age=86400' } }
+      );
+    }
+
+    // SEO: sitemap.xml
+    if (url.pathname === '/sitemap.xml') {
+      return new Response(
+        `<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"><url><loc>https://shitcoin.io/</loc><changefreq>hourly</changefreq><priority>1.0</priority></url><url><loc>https://shitcoin.io/terms</loc><changefreq>monthly</changefreq><priority>0.2</priority></url><url><loc>https://shitcoin.io/privacy</loc><changefreq>monthly</changefreq><priority>0.2</priority></url></urlset>`,
+        { headers: { 'Content-Type': 'application/xml; charset=utf-8', 'Cache-Control': 'public, max-age=86400' } }
+      );
+    }
+
+    // SEO: OG image
+    if (url.pathname === '/og-image.png' || url.pathname === '/og-image.svg') {
+      return new Response(OG_IMAGE_SVG, { headers: { 'Content-Type': 'image/svg+xml', 'Cache-Control': 'public, max-age=86400' } });
+    }
+
     // Legal pages
     if (url.pathname === '/terms') {
       return new Response(TERMS_HTML, { headers: { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'public, max-age=3600' } });
@@ -185,20 +206,30 @@ const TERMS_HTML = `<!DOCTYPE html><html lang="en"><head><title>Terms of Use · 
 
 const PRIVACY_HTML = `<!DOCTYPE html><html lang="en"><head><title>Privacy Policy · shitcoin.io</title>${SHARED_LEGAL_CSS}</head><body><nav class="topnav"><div class="topnav-inner"><a class="tnav-brand" href="/"><div class="tnav-logo">&#9889;</div><span class="tnav-name">shitcoin.io</span></a><a class="tnav-back" href="/">&#8592; Back to Monitor</a></div></nav><div class="legal-wrap"><h1>Privacy Policy</h1><div class="updated">Last updated: March 2026</div><p>shitcoin.io is committed to protecting your privacy. This policy explains what data we collect, how we use it, and your rights.</p><h2>1. Data We Collect</h2><p><strong>Analytics data (with consent only):</strong> If you accept cookies, we use Google Analytics to collect anonymized usage data including pages visited, session duration, general geographic region (country/city), browser type, and device type. We do not collect personally identifiable information.</p><p><strong>Local storage:</strong> We store your cookie consent preference and UI preferences (sort order, active filter) in your browser's localStorage. This data never leaves your device.</p><p><strong>No account data:</strong> We do not require accounts, logins, or any registration. We do not collect your name, email address, or payment information.</p><h2>2. Cookies</h2><p>We use cookies only if you consent. If you accept analytics cookies, Google Analytics sets the following cookies:</p><ul><li><strong>_ga</strong> &mdash; Distinguishes users (expires 2 years)</li><li><strong>_ga_*</strong> &mdash; Maintains session state (expires 2 years)</li></ul><p>You can withdraw consent at any time by clearing your browser cookies and localStorage, or by using browser privacy tools.</p><h2>3. How We Use Data</h2><p>Analytics data is used solely to understand how the service is used in aggregate &mdash; which features are popular, how many people visit, and general geographic distribution. We do not sell, share, or use this data for advertising targeting.</p><h2>4. Third-Party Services</h2><p>This site fetches data from the following third-party APIs. When your browser loads the page, it may make requests to these services:</p><ul><li><strong>Binance API</strong> (data-api.binance.vision) &mdash; Market data</li><li><strong>Coinbase API</strong> (api.exchange.coinbase.com) &mdash; Market data</li><li><strong>CoinGecko API</strong> (api.coingecko.com) &mdash; Market cap and price data</li><li><strong>Google Analytics</strong> (googletagmanager.com) &mdash; Analytics, consent-gated</li><li><strong>Google Fonts</strong> (fonts.googleapis.com) &mdash; Typography</li></ul><p>All API calls to Binance and CoinGecko are proxied through our Cloudflare Worker, so your IP is not directly exposed to those services. Fonts and Analytics are loaded directly from Google servers if you consent.</p><h2>5. Data Retention</h2><p>Analytics data in Google Analytics is retained for 14 months by default. Local storage data stays on your device until you clear it. We have no server-side database.</p><h2>6. Your Rights (GDPR)</h2><p>If you are in the European Economic Area, you have the right to:</p><ul><li>Access the data we hold about you (we hold none beyond anonymized analytics)</li><li>Request deletion (Google Analytics data can be deleted via Google's tools)</li><li>Withdraw consent at any time (decline cookies or clear localStorage)</li><li>Lodge a complaint with your local data protection authority</li></ul><h2>7. Children</h2><p>This service is not intended for users under 18. We do not knowingly collect data from minors.</p><h2>8. Changes</h2><p>We may update this policy. The date at the top of this page reflects the last update. Continued use after changes constitutes acceptance.</p><h2>9. Contact</h2><p>For privacy questions, you can reach us via the site footer links. We aim to respond within 30 days.</p></div><div class="footer"><a href="/">shitcoin.io</a> &nbsp;&middot;&nbsp; <a href="/terms">Terms</a> &nbsp;&middot;&nbsp; <a href="/privacy">Privacy</a></div></body></html>`;
 
+const OG_IMAGE_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630"><rect width="1200" height="630" fill="#020408"/><rect x="0" y="0" width="1200" height="630" fill="url(#grad)"/><defs><linearGradient id="grad" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#0d1320"/><stop offset="100%" stop-color="#020408"/></linearGradient></defs><rect x="60" y="60" width="1080" height="510" rx="16" fill="#080c14" stroke="#1a2540" stroke-width="1.5"/><polygon points="110,120 90,150 103,150 98,180 118,150 105,150" fill="#f59e0b"/><text x="130" y="152" font-family="monospace" font-weight="800" font-size="28" fill="#f59e0b">shitcoin.io</text><text x="90" y="230" font-family="monospace" font-weight="700" font-size="52" fill="#e4e6ef">Crypto Delisting</text><text x="90" y="295" font-family="monospace" font-weight="700" font-size="52" fill="#e4e6ef">Monitor</text><text x="90" y="370" font-family="sans-serif" font-size="26" fill="#5d6178">Real-time risk scores for Binance &amp; Coinbase coins</text><rect x="90" y="420" width="180" height="44" rx="8" fill="rgba(239,68,68,0.15)" stroke="rgba(239,68,68,0.3)" stroke-width="1"/><text x="180" y="448" font-family="monospace" font-size="16" fill="#f87171" text-anchor="middle">HIGH RISK</text><rect x="290" y="420" width="180" height="44" rx="8" fill="rgba(234,179,8,0.12)" stroke="rgba(234,179,8,0.3)" stroke-width="1"/><text x="380" y="448" font-family="monospace" font-size="16" fill="#eab308" text-anchor="middle">WATCH LIST</text><rect x="490" y="420" width="180" height="44" rx="8" fill="rgba(59,130,246,0.12)" stroke="rgba(59,130,246,0.3)" stroke-width="1"/><text x="580" y="448" font-family="monospace" font-size="16" fill="#3b82f6" text-anchor="middle">ORDER BOOK</text></svg>`;
+
 const HTML = `<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Crypto Monitor · Binance & Coinbase</title>
-<meta name="description" content="Real-time monitoring of Binance and Coinbase coins under delisting watch — risk scores, order book depth, and cross-exchange data.">
-<meta property="og:title" content="Crypto Monitor · shitcoin.io">
-<meta property="og:description" content="Real-time Binance & Coinbase delisting monitor — risk scores, order book depth, and cross-exchange data.">
-<meta property="og:url" content="https://shitcoin.io">
+<title>Crypto Delisting Monitor — Binance &amp; Coinbase Risk Scores | shitcoin.io</title>
+<meta name="description" content="Real-time crypto delisting monitor for Binance and Coinbase. Track coins under delisting watch with risk scores, order book depth, market cap, and cross-exchange data.">
+<link rel="canonical" href="https://shitcoin.io/">
+<meta property="og:title" content="Crypto Delisting Monitor — Binance &amp; Coinbase Risk Scores">
+<meta property="og:description" content="Track Binance and Coinbase coins under delisting watch. Real-time risk scores, order book depth, and market data for 100+ coins.">
+<meta property="og:url" content="https://shitcoin.io/">
 <meta property="og:type" content="website">
-<meta name="twitter:card" content="summary">
-<meta name="twitter:title" content="Crypto Monitor · shitcoin.io">
-<meta name="twitter:description" content="Real-time Binance & Coinbase delisting monitor with risk scores.">
+<meta property="og:site_name" content="shitcoin.io">
+<meta property="og:locale" content="en_US">
+<meta property="og:image" content="https://shitcoin.io/og-image.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:site" content="@shitcoinio">
+<meta name="twitter:title" content="Crypto Delisting Monitor — Binance &amp; Coinbase">
+<meta name="twitter:description" content="Track coins under delisting watch with real-time risk scores and order book depth.">
+<meta name="twitter:image" content="https://shitcoin.io/og-image.png">
 <link rel="icon" type="image/svg+xml" href="/favicon.svg">
 <link rel="alternate icon" href="/favicon.ico">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -512,6 +543,69 @@ tbody tr.limit-row{background:rgba(245,158,11,0.04)}
 .tnav-tab.active.stablecoins{background:rgba(34,197,94,0.08);color:#22c55e;border-color:rgba(34,197,94,0.15)}
 .tnav-tab.active.stablecoins::after{content:'';position:absolute;bottom:-1px;left:16px;right:16px;height:2px;background:#22c55e;border-radius:2px 2px 0 0}
 </style>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "WebApplication",
+      "@id": "https://shitcoin.io/#app",
+      "name": "shitcoin.io — Crypto Delisting Monitor",
+      "url": "https://shitcoin.io/",
+      "description": "Real-time monitoring dashboard tracking Binance and Coinbase coins under delisting watch, with algorithmic risk scores, order book depth, market cap data, and cross-exchange presence.",
+      "applicationCategory": "FinanceApplication",
+      "operatingSystem": "Web",
+      "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+      "featureList": [
+        "Real-time Binance delisting risk scores",
+        "Coinbase delisting risk scores",
+        "Order book depth analysis",
+        "Market cap tracking",
+        "Cross-exchange presence (OKX, Kraken)",
+        "Stablecoin peg health monitoring"
+      ]
+    },
+    {
+      "@type": "FAQPage",
+      "@id": "https://shitcoin.io/#faq",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "What is shitcoin.io?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "shitcoin.io is a free real-time monitoring dashboard that tracks cryptocurrencies listed on Binance and Coinbase that show signs of potential delisting. It displays risk scores, order book depth, 24-hour volume, market cap, and cross-exchange presence data."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "How are delisting risk scores calculated?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Risk scores are algorithmic calculations based on publicly available data including trading volume trends, order book depth, market cap, exchange monitoring tags, and cross-exchange availability. They are not financial advice."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Which exchanges does shitcoin.io monitor?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "shitcoin.io primarily monitors Binance and Coinbase for delisting risk. It also shows cross-exchange presence data from OKX and Kraken to assess coin liquidity health."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "How often is data updated?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Market data (prices, volume, order book depth) is refreshed every 2 minutes. Exchange info and coin lists are cached for up to 15 minutes. CoinGecko market cap data is cached for 5 minutes."
+          }
+        }
+      ]
+    }
+  ]
+}
+</script>
 </head>
 <body>
 
