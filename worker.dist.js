@@ -984,14 +984,14 @@ const TRACKED_TOKENS = [
   {sym:'GTC', name:'Gitcoin', status:'monitoring', monDate:'2026-03-13', delistDate:null, restoreDate:null},
   {sym:'PHB', name:'Phoenix', status:'monitoring', monDate:'2026-03-13', delistDate:null, restoreDate:null},
   {sym:'QI', name:'BENQI', status:'monitoring', monDate:'2026-03-13', delistDate:null, restoreDate:null},
-  {sym:'A2Z', name:'Arena-Z', status:'delisting', monDate:'2026-03-13', delistDate:'2026-04-01', restoreDate:null},
-  {sym:'FORTH', name:'Ampleforth Governance', status:'delisting', monDate:'2026-03-06', delistDate:'2026-04-01', restoreDate:null},
-  {sym:'HOOK', name:'Hooked Protocol', status:'delisting', monDate:'2026-03-06', delistDate:'2026-04-01', restoreDate:null},
-  {sym:'IDEX', name:'IDEX', status:'delisting', monDate:'2025-06-05', delistDate:'2026-04-01', restoreDate:null},
-  {sym:'LRC', name:'Loopring', status:'delisting', monDate:'2026-03-06', delistDate:'2026-04-01', restoreDate:null},
-  {sym:'NTRN', name:'Neutron', status:'delisting', monDate:'2026-03-13', delistDate:'2026-04-01', restoreDate:null},
-  {sym:'RDNT', name:'Radiant Capital', status:'delisting', monDate:'2026-03-13', delistDate:'2026-04-01', restoreDate:null},
-  {sym:'SXP', name:'Solar', status:'delisting', monDate:'2025-12-01', delistDate:'2026-04-01', restoreDate:null},
+  {sym:'A2Z', name:'Arena-Z', status:'delisted', monDate:'2026-03-13', delistDate:'2026-04-01', restoreDate:null},
+  {sym:'FORTH', name:'Ampleforth Governance', status:'delisted', monDate:'2026-03-06', delistDate:'2026-04-01', restoreDate:null},
+  {sym:'HOOK', name:'Hooked Protocol', status:'delisted', monDate:'2026-03-06', delistDate:'2026-04-01', restoreDate:null},
+  {sym:'IDEX', name:'IDEX', status:'delisted', monDate:'2025-06-05', delistDate:'2026-04-01', restoreDate:null},
+  {sym:'LRC', name:'Loopring', status:'delisted', monDate:'2026-03-06', delistDate:'2026-04-01', restoreDate:null},
+  {sym:'NTRN', name:'Neutron', status:'delisted', monDate:'2026-03-13', delistDate:'2026-04-01', restoreDate:null},
+  {sym:'RDNT', name:'Radiant Capital', status:'delisted', monDate:'2026-03-13', delistDate:'2026-04-01', restoreDate:null},
+  {sym:'SXP', name:'Solar', status:'delisted', monDate:'2025-12-01', delistDate:'2026-04-01', restoreDate:null},
   {sym:'BTS', name:'BitShares', status:'delisted', monDate:'2023-07-26', delistDate:'2023-12-07', restoreDate:null},
   {sym:'NBS', name:'New BitShares', status:'delisted', monDate:'2023-07-26', delistDate:'2023-12-07', restoreDate:null},
   {sym:'TORN', name:'Tornado Cash', status:'delisted', monDate:'2023-07-26', delistDate:'2023-12-07', restoreDate:null},
@@ -1923,8 +1923,8 @@ function bnBuildDetailItems(t, ld, dom) {
     if (dom !== null && dom !== undefined) {
         if (dom < 30)        items.push({ ok:true,  icon:'🟢', title:\`\${dom}d on monitoring — still early\`,       desc:\`The 195-day median to delist means you have time. Start immediately — early consistent improvement has the highest recovery rate.\` });
         else if (dom < 90)   items.push({ ok:false, icon:'⏱',  title:\`\${dom}d on monitoring — keep up momentum\`,  desc:\`Past one month. Exchanges review tagged coins regularly. Demonstrate measurable improvement every 30 days to show a positive trend.\` });
-        else if (dom < 150)  items.push({ ok:false, urgent:true, icon:'⚠️', title:\`\${dom}d — past halfway\`,       desc:\`Past the halfway point of the 195-day median. Urgently prioritize volume and order book depth — they're the fastest metrics to visibly move.\` });
-        else                 items.push({ ok:false, urgent:true, icon:'🚨', title:\`\${dom}d — final window\`,        desc:\`Near or past the 195-day median. Contact the exchange directly with a concrete evidence package: volume trends, team activity, roadmap delivery.\` });
+        else if (dom < 150)  items.push({ ok:false, urgent:true, icon:'⚠️', title:\`\${dom}d — past halfway\`,       desc:\`Past the halfway point of the 195-day median. Prioritize volume and order book depth — they're the fastest metrics to visibly move.\` });
+        else                 items.push({ ok:true,  icon:'💪', title:\`\${dom}d — still listed past the median\`,   desc:\`The median delist timeline is 195 days — you're past it and Binance has still kept you active. That's a signal they're watching for improvement. Keep delivering: consistent volume growth and transparent team updates now could tip the decision in your favor.\` });
     }
 
     // 2. Volume
