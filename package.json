@@ -1,15 +1,21 @@
 {
   "name": "shitcoin",
   "version": "1.0.0",
+  "description": "Real-time crypto delisting monitor for Binance and Coinbase — risk scores, monitoring tags, order book depth",
   "main": "server.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "node server.js"
+    "start": "node server.js",
+    "build": "node build.js",
+    "deploy": "node build.js && wrangler deploy"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "description": "",
+  "keywords": ["crypto", "binance", "coinbase", "delisting", "monitoring", "cloudflare-workers"],
+  "author": "heathermhuang",
+  "license": "MIT",
+  "homepage": "https://shitcoin.io",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/heathermhuang/shitcoin.git"
+  },
   "dependencies": {
     "wrangler": "^4.76.0"
   }
