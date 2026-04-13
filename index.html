@@ -2521,10 +2521,10 @@ document.addEventListener('keydown', e => {
 // ===== COOKIE CONSENT + ANALYTICS =====
 (function() {
   const KEY = 'cm_consent_v1';
-  const GA_ID = 'G-4MY2VXRGJJ';
+  const GA_ID = ''; // Replace with your Google Analytics 4 measurement ID (e.g. 'G-XXXXXXXXXX')
 
   function loadGA() {
-    if (window._gaLoaded) return;
+    if (!GA_ID || window._gaLoaded) return;
     window._gaLoaded = true;
     const s = document.createElement('script');
     s.async = true;

@@ -4,7 +4,7 @@ compatibility_date = "2024-01-01"
 workers_dev = true
 
 [build]
-command = "/usr/local/bin/node build.js"
+command = "node build.js"
 
 [[routes]]
 pattern = "shitcoin.io/*"
