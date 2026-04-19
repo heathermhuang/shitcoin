@@ -6,3 +6,4 @@ cache/
 worker.dist.js
 *.log
 .DS_Store
+CLAUDE.md
