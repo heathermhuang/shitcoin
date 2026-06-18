@@ -757,20 +757,21 @@ const TRACKED_TOKENS = [
   {sym:'MBL', name:'MovieBloc', status:'monitoring', monDate:'2024-07-01', delistDate:null, restoreDate:null},
   {sym:'AWE', name:'AWE Network', status:'monitoring', monDate:'2025-04-03', delistDate:null, restoreDate:null},
   {sym:'MOVE', name:'Movement', status:'monitoring', monDate:'2025-06-05', delistDate:null, restoreDate:null},
-  {sym:'BIFI', name:'Beefy Finance', status:'delisting', monDate:'2025-06-05', delistDate:'2026-04-23', restoreDate:null},
-  {sym:'MDT', name:'Measurable Data', status:'delisting', monDate:'2025-06-05', delistDate:'2026-04-23', restoreDate:null, resources:[{label:'Transparency Portal', url:'https://mdt.io/transparency', note:'5M+ users across 22 markets. Real data monetization revenue (food delivery, ride-hailing, e-commerce GMV). Live consumer apps: RewardMe, MailTime, PassportMe, RewardBox. Updated monthly — this is the level of transparency exchanges want to see'}]},
+  {sym:'BIFI', name:'Beefy Finance', status:'delisted', monDate:'2025-06-05', delistDate:'2026-04-23', restoreDate:null},
+  {sym:'MDT', name:'Measurable Data', status:'delisted', monDate:'2025-06-05', delistDate:'2026-04-23', restoreDate:null, resources:[{label:'Transparency Portal', url:'https://mdt.io/transparency', note:'5M+ users across 22 markets. Real data monetization revenue (food delivery, ride-hailing, e-commerce GMV). Live consumer apps: RewardMe, MailTime, PassportMe, RewardBox. Updated monthly — this is the level of transparency exchanges want to see'}]},
   {sym:'PORTAL', name:'Portal', status:'monitoring', monDate:'2025-06-05', delistDate:null, restoreDate:null},
-  {sym:'WAN', name:'Wanchain', status:'delisting', monDate:'2025-10-09', delistDate:'2026-04-23', restoreDate:null},
-  {sym:'DENT', name:'Dent', status:'monitoring', monDate:'2025-12-01', delistDate:null, restoreDate:null},
+  {sym:'WAN', name:'Wanchain', status:'delisted', monDate:'2025-10-09', delistDate:'2026-04-23', restoreDate:null},
+  {sym:'DENT', name:'Dent', status:'delisted', monDate:'2025-12-01', delistDate:'2026-04-28', restoreDate:null},
   {sym:'D', name:'DAR Open Network', status:'monitoring', monDate:'2026-01-02', delistDate:null, restoreDate:null},
   {sym:'COS', name:'Contentos', status:'monitoring', monDate:'2026-03-06', delistDate:null, restoreDate:null},
-  {sym:'DEGO', name:'Dego Finance', status:'monitoring', monDate:'2026-03-06', delistDate:null, restoreDate:null},
-  {sym:'FUN', name:'FUNToken', status:'delisting', monDate:'2026-03-06', delistDate:'2026-04-23', restoreDate:null},
+  {sym:'DEGO', name:'Dego Finance', status:'delisted', monDate:'2026-03-06', delistDate:'2026-04-28', restoreDate:null},
+  {sym:'TRU', name:'TrueFi', status:'delisted', monDate:'2026-04-17', delistDate:'2026-04-28', restoreDate:null},
+  {sym:'FUN', name:'FUNToken', status:'delisted', monDate:'2026-03-06', delistDate:'2026-04-23', restoreDate:null},
   {sym:'MBOX', name:'MOBOX', status:'monitoring', monDate:'2026-03-06', delistDate:null, restoreDate:null},
-  {sym:'OXT', name:'Orchid', status:'delisting', monDate:'2026-03-06', delistDate:'2026-04-23', restoreDate:null},
+  {sym:'OXT', name:'Orchid', status:'delisted', monDate:'2026-03-06', delistDate:'2026-04-23', restoreDate:null},
   {sym:'WIF', name:'dogwifhat', status:'monitoring', monDate:'2026-03-06', delistDate:null, restoreDate:null},
   {sym:'ATA', name:'Automata Network', status:'monitoring', monDate:'2026-03-13', delistDate:null, restoreDate:null},
-  {sym:'FIO', name:'FIO Protocol', status:'delisting', monDate:'2026-03-13', delistDate:'2026-04-23', restoreDate:null},
+  {sym:'FIO', name:'FIO Protocol', status:'delisted', monDate:'2026-03-13', delistDate:'2026-04-23', restoreDate:null},
   {sym:'GTC', name:'Gitcoin', status:'monitoring', monDate:'2026-03-13', delistDate:null, restoreDate:null},
   {sym:'PHB', name:'Phoenix', status:'monitoring', monDate:'2026-03-13', delistDate:null, restoreDate:null},
   {sym:'QI', name:'BENQI', status:'monitoring', monDate:'2026-03-13', delistDate:null, restoreDate:null},
@@ -859,11 +860,22 @@ const TRACKED_TOKENS = [
   {sym:'FLOW', name:'Flow', status:'restored', monDate:'2026-01-02', delistDate:null, restoreDate:'2026-03-06'},
 ];
 
-// Total: 108 tokens
-// delisted: 68
-// delisting: 8
-// monitoring: 25
+// Total: 109 tokens
+// delisted: 86
+// delisting: 0
+// monitoring: 16
 // restored: 7
+
+// Auto-transition: a coin still tagged 'delisting' after its delistDate has, in
+// reality, already been removed from the exchange. Promote it to 'delisted' at the
+// single source of truth so every view — tab filter, counts, badges, risk floor,
+// timeline — self-heals once a delist date passes, with no manual data edit needed.
+{
+  const todayISO = NOW.toISOString().slice(0, 10);
+  TRACKED_TOKENS.forEach(t => {
+    if (t.status === 'delisting' && t.delistDate && t.delistDate < todayISO) t.status = 'delisted';
+  });
+}
 
 // Build lookup from tracked tokens
 const trackedMap = {};
@@ -1014,15 +1026,18 @@ async function fetchAllData() {
 
 async function fetchMarketCaps() {
     try {
-        // Get active tokens for CoinGecko lookup (include delisted for icon-only fetch)
+        // Prioritize tagged coins first so they survive any CoinGecko rate-limit on later batches
+        const taggedSyms = allCoins
+            .filter(t => (t.status === 'monitoring' || t.status === 'delisting' || t.status === 'restored') && liveData[t.sym])
+            .map(t => t.sym);
         const activeSyms = allCoins
-            .filter(t => t.status !== 'delisted' && liveData[t.sym])
+            .filter(t => t.status === 'active' && liveData[t.sym])
             .map(t => t.sym);
         // Add delisted tracked tokens for icon fetch (no live data needed, just icons)
         const delistedSyms = TRACKED_TOKENS
             .filter(t => t.status === 'delisted' && !liveData[t.sym]?.icon)
             .map(t => t.sym);
-        const allSymsForIcons = [...new Set([...activeSyms, ...delistedSyms])];
+        const allSymsForIcons = [...new Set([...taggedSyms, ...activeSyms, ...delistedSyms])];
 
         // Manual overrides for ambiguous symbols
         const overrides = {
@@ -1035,7 +1050,7 @@ async function fetchMarketCaps() {
             'FLOW':'flow','FORTH':'ampleforth-governance-token','HOOK':'hooked-protocol',
             'LRC':'loopring','WIF':'dogwifcoin','GTC':'gitcoin','NTRN':'neutron-3',
             'RDNT':'radiant-capital','GPS':'goplus-security','D':'dar-open-network',
-            'DENT':'dent','SXP':'swipe','QI':'benqi','IDEX':'idex',
+            'DENT':'dent','SXP':'swipe','QI':'benqi','IDEX':'idex','TRU':'truefi',
             'AWE':'stp-network','OXT':'orchid-protocol','FUN':'funfair','ARDR':'ardor',
             'WAN':'wanchain','COS':'contentos','DEGO':'dego-finance','MBOX':'mobox',
             'ATA':'automata','FIO':'fio-protocol','PHB':'phoenix-global','A2Z':'arena-z',
@@ -1128,12 +1143,13 @@ async function fetchMarketCaps() {
 }
 
 async function fetchDepthData() {
-    // Only fetch depth for monitoring + delisting + top 30 high-risk active tokens
-    const candidates = allCoins.filter(t => {
-        if (t.status === 'monitoring' || t.status === 'delisting') return true;
-        if (t.status === 'active' && t._risk >= 70) return true;
-        return false;
-    }).filter(t => liveData[t.sym]?.price).slice(0, 20);
+    // Always fetch depth for ALL monitoring + delisting; cap active coins at top 20 by risk
+    const tagged = allCoins.filter(t => (t.status === 'monitoring' || t.status === 'delisting') && liveData[t.sym]?.price);
+    const activeHighRisk = allCoins
+        .filter(t => t.status === 'active' && t._risk >= 70 && liveData[t.sym]?.price)
+        .sort((a, b) => (b._risk || 0) - (a._risk || 0))
+        .slice(0, 20);
+    const candidates = [...tagged, ...activeHighRisk];
 
     for (let i = 0; i < candidates.length; i += 5) {
         const batch = candidates.slice(i, i + 5);
