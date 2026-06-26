@@ -752,7 +752,7 @@ const TRACKED_TOKENS = [
   {sym:'JASMY', name:'JasmyCoin', status:'monitoring', monDate:'2023-07-26', delistDate:null, restoreDate:null},
   {sym:'FTT', name:'FTX Token', status:'monitoring', monDate:'2023-07-26', delistDate:null, restoreDate:null},
   {sym:'ARK', name:'Ark', status:'monitoring', monDate:'2023-07-26', delistDate:null, restoreDate:null},
-  {sym:'ARDR', name:'Ardor', status:'monitoring', monDate:'2025-05-07', delistDate:null, restoreDate:null},
+  {sym:'ARDR', name:'Ardor', status:'delisting', monDate:'2025-05-07', delistDate:'2026-07-10', restoreDate:null},
   {sym:'PERP', name:'Perpetual Protocol', status:'delisted', monDate:'2025-05-07', delistDate:'2025-11-12', restoreDate:null},
   {sym:'MBL', name:'MovieBloc', status:'monitoring', monDate:'2024-07-01', delistDate:null, restoreDate:null},
   {sym:'AWE', name:'AWE Network', status:'monitoring', monDate:'2025-04-03', delistDate:null, restoreDate:null},
@@ -762,19 +762,42 @@ const TRACKED_TOKENS = [
   {sym:'PORTAL', name:'Portal', status:'monitoring', monDate:'2025-06-05', delistDate:null, restoreDate:null},
   {sym:'WAN', name:'Wanchain', status:'delisted', monDate:'2025-10-09', delistDate:'2026-04-23', restoreDate:null},
   {sym:'DENT', name:'Dent', status:'delisted', monDate:'2025-12-01', delistDate:'2026-04-28', restoreDate:null},
-  {sym:'D', name:'DAR Open Network', status:'monitoring', monDate:'2026-01-02', delistDate:null, restoreDate:null},
-  {sym:'COS', name:'Contentos', status:'monitoring', monDate:'2026-03-06', delistDate:null, restoreDate:null},
+  {sym:'D', name:'DAR Open Network', status:'delisted', monDate:'2026-01-02', delistDate:'2026-06-19', restoreDate:null},
+  {sym:'COS', name:'Contentos', status:'delisted', monDate:'2026-03-06', delistDate:'2026-06-19', restoreDate:null},
   {sym:'DEGO', name:'Dego Finance', status:'delisted', monDate:'2026-03-06', delistDate:'2026-04-28', restoreDate:null},
   {sym:'TRU', name:'TrueFi', status:'delisted', monDate:'2026-04-17', delistDate:'2026-04-28', restoreDate:null},
   {sym:'FUN', name:'FUNToken', status:'delisted', monDate:'2026-03-06', delistDate:'2026-04-23', restoreDate:null},
-  {sym:'MBOX', name:'MOBOX', status:'monitoring', monDate:'2026-03-06', delistDate:null, restoreDate:null},
+  {sym:'MBOX', name:'MOBOX', status:'delisted', monDate:'2026-03-06', delistDate:'2026-06-19', restoreDate:null},
   {sym:'OXT', name:'Orchid', status:'delisted', monDate:'2026-03-06', delistDate:'2026-04-23', restoreDate:null},
   {sym:'WIF', name:'dogwifhat', status:'monitoring', monDate:'2026-03-06', delistDate:null, restoreDate:null},
-  {sym:'ATA', name:'Automata Network', status:'monitoring', monDate:'2026-03-13', delistDate:null, restoreDate:null},
+  {sym:'ATA', name:'Automata Network', status:'delisted', monDate:'2026-03-13', delistDate:'2026-05-27', restoreDate:null},
   {sym:'FIO', name:'FIO Protocol', status:'delisted', monDate:'2026-03-13', delistDate:'2026-04-23', restoreDate:null},
   {sym:'GTC', name:'Gitcoin', status:'monitoring', monDate:'2026-03-13', delistDate:null, restoreDate:null},
-  {sym:'PHB', name:'Phoenix', status:'monitoring', monDate:'2026-03-13', delistDate:null, restoreDate:null},
+  {sym:'PHB', name:'Phoenix', status:'delisted', monDate:'2026-03-13', delistDate:'2026-05-27', restoreDate:null},
   {sym:'QI', name:'BENQI', status:'monitoring', monDate:'2026-03-13', delistDate:null, restoreDate:null},
+  {sym:'RESOLV', name:'Resolv', status:'monitoring', monDate:'2026-04-14', delistDate:null, restoreDate:null},
+  {sym:'VELODROME', name:'Velodrome Finance', status:'monitoring', monDate:'2026-04-14', delistDate:null, restoreDate:null},
+  {sym:'FARM', name:'Harvest Finance', status:'delisted', monDate:'2026-04-14', delistDate:'2026-05-27', restoreDate:null},
+  {sym:'SYS', name:'Syscoin', status:'delisted', monDate:'2026-04-14', delistDate:'2026-05-27', restoreDate:null},
+  {sym:'HIGH', name:'Highstreet', status:'delisted', monDate:'2026-04-14', delistDate:'2026-06-19', restoreDate:null},
+  {sym:'NOM', name:'Nomina', status:'monitoring', monDate:'2026-04-30', delistDate:null, restoreDate:null},
+  {sym:'QUICK', name:'QuickSwap', status:'monitoring', monDate:'2026-04-30', delistDate:null, restoreDate:null},
+  {sym:'VIC', name:'Viction', status:'monitoring', monDate:'2026-04-30', delistDate:null, restoreDate:null},
+  {sym:'COOKIE', name:'Cookie DAO', status:'monitoring', monDate:'2026-05-22', delistDate:null, restoreDate:null},
+  {sym:'DODO', name:'DODO', status:'monitoring', monDate:'2026-05-22', delistDate:null, restoreDate:null},
+  {sym:'EPIC', name:'Epic Cash', status:'monitoring', monDate:'2026-05-22', delistDate:null, restoreDate:null},
+  {sym:'HEI', name:'Heima', status:'monitoring', monDate:'2026-05-22', delistDate:null, restoreDate:null},
+  {sym:'HFT', name:'Hashflow', status:'monitoring', monDate:'2026-05-22', delistDate:null, restoreDate:null},
+  {sym:'STORJ', name:'Storj', status:'monitoring', monDate:'2026-05-22', delistDate:null, restoreDate:null},
+  {sym:'SYN', name:'Synapse', status:'monitoring', monDate:'2026-05-22', delistDate:null, restoreDate:null},
+  {sym:'TLM', name:'Alien Worlds', status:'monitoring', monDate:'2026-05-22', delistDate:null, restoreDate:null},
+  {sym:'ACT', name:'Act I: The AI Prophecy', status:'monitoring', monDate:'2026-06-18', delistDate:null, restoreDate:null},
+  {sym:'BLUR', name:'Blur', status:'monitoring', monDate:'2026-06-18', delistDate:null, restoreDate:null},
+  {sym:'PIVX', name:'PIVX', status:'monitoring', monDate:'2026-06-18', delistDate:null, restoreDate:null},
+  {sym:'QKC', name:'QuarkChain', status:'monitoring', monDate:'2026-06-18', delistDate:null, restoreDate:null},
+  {sym:'ALCX', name:'Alchemix', status:'delisting', monDate:'2026-05-22', delistDate:'2026-07-10', restoreDate:null},
+  {sym:'NFP', name:'NFPrompt', status:'delisting', monDate:'2026-04-30', delistDate:'2026-07-10', restoreDate:null},
+  {sym:'POND', name:'Marlin', status:'delisting', monDate:'2026-04-30', delistDate:'2026-07-10', restoreDate:null},
   {sym:'A2Z', name:'Arena-Z', status:'delisted', monDate:'2026-03-13', delistDate:'2026-04-01', restoreDate:null},
   {sym:'FORTH', name:'Ampleforth Governance', status:'delisted', monDate:'2026-03-06', delistDate:'2026-04-01', restoreDate:null},
   {sym:'HOOK', name:'Hooked Protocol', status:'delisted', monDate:'2026-03-06', delistDate:'2026-04-01', restoreDate:null},
@@ -851,7 +874,7 @@ const TRACKED_TOKENS = [
   {sym:'GHST', name:'Aavegotchi', status:'delisted', monDate:'2025-12-01', delistDate:'2026-02-13', restoreDate:null},
   {sym:'NKN', name:'NKN', status:'delisted', monDate:'2025-05-07', delistDate:'2026-02-13', restoreDate:null},
   {sym:'BETA', name:'Beta Finance', status:'delisted', monDate:'2023-10-04', delistDate:'2026-02-13', restoreDate:null},
-  {sym:'MLN', name:'Enzyme', status:'restored', monDate:'2023-07-26', delistDate:null, restoreDate:'2024-07-01'},
+  {sym:'MLN', name:'Enzyme', status:'delisted', monDate:'2026-04-14', delistDate:'2026-05-27', restoreDate:null},
   {sym:'ZEN', name:'Horizen', status:'restored', monDate:'2024-01-04', delistDate:null, restoreDate:'2024-07-01'},
   {sym:'ZEC', name:'Zcash', status:'restored', monDate:'2024-01-04', delistDate:null, restoreDate:'2025-07-09'},
   {sym:'CVX', name:'Convex Finance', status:'restored', monDate:'2024-07-01', delistDate:null, restoreDate:'2025-01-02'},
@@ -860,11 +883,11 @@ const TRACKED_TOKENS = [
   {sym:'FLOW', name:'Flow', status:'restored', monDate:'2026-01-02', delistDate:null, restoreDate:'2026-03-06'},
 ];
 
-// Total: 109 tokens
-// delisted: 86
-// delisting: 0
-// monitoring: 16
-// restored: 7
+// Total: 132 tokens
+// delisted: 95
+// delisting: 4
+// monitoring: 27
+// restored: 6
 
 // Auto-transition: a coin still tagged 'delisting' after its delistDate has, in
 // reality, already been removed from the exchange. Promote it to 'delisted' at the

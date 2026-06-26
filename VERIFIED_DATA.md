@@ -87,3 +87,29 @@ Tokens currently on monitoring: JASMY, FTT, MOVE, AWE, ARK, ARDR, PERP, MBL
 26. VOXEL listed twice? In 2025-09-30 and 2025-12-17 batches
 27. Missing NKN in monitoring (was added 2025-05-07)
 28. Restore dates missing for all restored tokens
+
+---
+
+## 2026-06-26 SESSION UPDATE (verified from official Binance announcement URLs)
+
+### Monitoring tag additions
+| Date | Tokens Added | Announcement (binance.com/.../detail/) |
+|------|-------------|----------------------------------------|
+| 2026-04-14 | FARM, HIGH, MLN, RESOLV, SYS, TRU, VELODROME | f2286b6232434b31927ccd3e7187afd3 |
+| 2026-04-30 | NFP, NOM, POND, QUICK, VIC | 629b1970537e45b8801427d3de49a25b |
+| 2026-05-22 | ALCX, COOKIE, DODO, EPIC, HEI, HFT, STORJ, SYN, TLM | ca0f3a3ff83243b79102b4561c8ccdc2 |
+| 2026-06-18 | ACT, BLUR, PIVX, QKC | 2ce2c4973d85405a9bb5fffc475c99dc |
+
+### Delisting announcements
+| Effective Date | Tokens | Announcement (binance.com/.../detail/) |
+|----------------|--------|----------------------------------------|
+| 2026-04-28 | DEGO, DENT, TRU | d067b373496c44a4ab8d28f3e90b66ad |
+| 2026-05-27 | ATA, FARM, MLN, PHB, SYS | a42f51022cb649aea0b4cb808205fd76 |
+| 2026-06-19 | COS, D, HIGH, MBOX | 24aced8c698649d9a552a47eeead5e34 |
+| 2026-07-10 | ALCX, ARDR, NFP, POND | a9c1a7bb97064c69a660316bff39f2bd |
+
+### Notes
+- ALCX/ARDR/NFP/POND status = `delisting` (2026-07-10 is in the future as of this update; auto-transition flips to `delisted` after the date passes).
+- MLN: restored (2024-07-01) → re-monitored (2026-04-14) → delisted (2026-05-27). monDate set to 2026-04-14 for the current cycle.
+- Name choices: EPIC = Epic Cash; HEI = Heima (ex-Litentry/LIT); VELODROME ticker per announcement text.
+- Dataset totals after update: 132 tracked — monitoring 27, delisting 4, delisted 95, restored 6.
