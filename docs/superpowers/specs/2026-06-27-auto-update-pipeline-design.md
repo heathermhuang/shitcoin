@@ -102,5 +102,9 @@ Pipeline is live and verified end-to-end on the real runner:
 - Verified runs: detector reaches Binance through the proxy (no 403), diffs both exchanges; **no-change day = clean success, no PR**; **selftest dispatch → real PR opened** on `auto/delisting-update` (then closed). Daily cron registered (`17 6 * * *`).
 - Manual self-test anytime: Actions → "Check delistings" → Run workflow → `selftest=true`.
 
-### Still v1 (not yet done): auto-edit `index.html`
-The PR currently carries a **findings report** (`data/pending-update.md`) + Coinbase snapshot; the maintainer applies the `TRACKED_TOKENS` line(s) from it. True "auto-parse INTO the array → ready-to-merge diff" is the **v2** enhancement — deferred because there were 0 real changes to test the array-editor against, and a concurrent session was actively editing `index.html`. Build it with a synthetic-change test when ready.
+### v2 SHIPPED (2026-06-27): auto-edit `index.html`
+`--apply` now edits the `TRACKED_TOKENS` array directly → the PR is a **ready-to-merge diff**:
+- Inserts new monitoring/delisting coins, flips existing entries (status + delistDate), updates the totals comment. Never deletes. Names default to the symbol (flagged "verify" in the report).
+- Parsing/editing is **scoped to the `TRACKED_TOKENS` array only** (`sliceTracked`) — index.html also has Coinbase `{sym:...}` arrays; the earlier whole-file scan over-counted (147/150) and risked false-negatives. Now counts correctly (132).
+- Verified: in-memory `--selftest-edit` (7/7 checks incl. "edited array is valid JS"), `--apply` is a clean no-op on 0 changes, and the live CI run stays green. Workflow `add-paths` includes `index.html`.
+- Residual nicety (optional v3): auto-append to `VERIFIED_DATA.md` (kept manual — curated audit format).
