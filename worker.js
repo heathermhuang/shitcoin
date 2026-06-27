@@ -129,7 +129,7 @@ async function cachedProxy(request, upstream, ttl, apiKey) {
 export default {
   async fetch(request, env) {
     const url = new URL(request.url);
-    const path = url.pathname + url.search;
+    const path = url.pathname + url.search; // NOTE: includes the query string — proxy routes use path.slice(N) directly; do NOT also append url.search (that doubled the query and corrupted CoinGecko's per_page)
     const ttl = getTTL(path);
 
     // Force HTTPS — check both url.protocol and CF-Visitor header
@@ -151,7 +151,7 @@ export default {
 
     // /api/* → Binance (allowlisted endpoints only)
     if (path.startsWith('/api/')) {
-      const sub = path.slice(4) + url.search;
+      const sub = path.slice(4);
       if (!isAllowed(BINANCE_ALLOWED, path.slice(4).split('?')[0])) {
         return new Response('{"error":"not allowed"}', { status: 403, headers: { 'Content-Type': 'application/json' } });
       }
@@ -164,7 +164,7 @@ export default {
       if (!isAllowed(COINBASE_ALLOWED, sub)) {
         return new Response('{"error":"not allowed"}', { status: 403, headers: { 'Content-Type': 'application/json' } });
       }
-      return cachedProxy(request, COINBASE_BASE + path.slice(3) + url.search, ttl);
+      return cachedProxy(request, COINBASE_BASE + path.slice(3), ttl);
     }
 
     // /cg/* → CoinGecko (allowlisted endpoints only)
@@ -173,7 +173,7 @@ export default {
       if (!isAllowed(COINGECKO_ALLOWED, sub)) {
         return new Response('{"error":"not allowed"}', { status: 403, headers: { 'Content-Type': 'application/json' } });
       }
-      return cachedProxy(request, COINGECKO_BASE + path.slice(3) + url.search, ttl, env.CG_DEMO_KEY);
+      return cachedProxy(request, COINGECKO_BASE + path.slice(3), ttl, env.CG_DEMO_KEY);
     }
 
     // /ex/<exchange> → exchange info
