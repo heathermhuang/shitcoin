@@ -739,6 +739,74 @@ const CG_TO_CMC = {
     'magic-internet-money':'magic-internet-money',
 };
 
+// ===== RESILIENT FETCH =====
+// Try the same-origin Worker proxy first (cached + hides the user's IP). If the proxy
+// is blocked — Cloudflare datacenter IPs are blocked by Binance and rate-limited by
+// CoinGecko, which makes the proxy return 502 / [] — transparently fall back to
+// fetching the upstream API directly from the browser. All upstreams send
+// Access-Control-Allow-Origin: *, so the browser (residential IP) can reach them.
+// Self-healing: once a proxy prefix is seen failing, the rest of the session goes
+// direct-first for that prefix to avoid wasted round-trips. Returns a Response so
+// existing .ok / .json() call sites keep working unchanged.
+const _proxyBlocked = new Set();
+function _proxyPrefix(p) {
+    if (p.startsWith('/api/')) return 'api';
+    if (p.startsWith('/cg/')) return 'cg';
+    if (p.startsWith('/cb/')) return 'cb';
+    if (p.startsWith('/ex/')) return 'ex:' + p.slice(4).split('?')[0];
+    if (p.startsWith('/llama/')) return 'llama';
+    return null;
+}
+function _directUrl(p) {
+    if (p.startsWith('/api/')) return 'https://data-api.binance.vision/api/v3/' + p.slice(5);
+    if (p.startsWith('/cg/')) return 'https://api.coingecko.com/api/v3/' + p.slice(4);
+    if (p.startsWith('/cb/')) return 'https://api.exchange.coinbase.com/' + p.slice(4);
+    if (p.startsWith('/ex/')) {
+        const ex = p.slice(4).split('?')[0];
+        return ({
+            coinbase: 'https://api.exchange.coinbase.com/products',
+            binance: 'https://data-api.binance.vision/api/v3/exchangeInfo',
+            okx: 'https://www.okx.com/api/v5/public/instruments?instType=SPOT',
+            kraken: 'https://api.kraken.com/0/public/AssetPairs',
+        })[ex] || null;
+    }
+    if (p.startsWith('/llama/')) return 'https://stablecoins.llama.fi/' + p.slice(7);
+    return null;
+}
+function _isEmptyBody(t) {
+    return t === '' || t === '[]' || t === '{}' || t.startsWith('{"error"');
+}
+async function smartFetch(path, opts) {
+    // Absolute URLs: fetch as-is (no proxy concept).
+    if (/^https?:\/\//.test(path)) return fetch(path, opts);
+    const pref = _proxyPrefix(path);
+    const direct = _directUrl(path);
+    const proxyFirst = !(pref && _proxyBlocked.has(pref));
+    const order = proxyFirst ? [path, direct] : [direct, path];
+    let lastResp = null;
+    for (const url of order) {
+        if (!url) continue;
+        const isProxy = (url === path);
+        try {
+            const r = await fetch(url, opts);
+            if (r.ok) {
+                // The proxy can answer 200 with an empty body when Cloudflare is
+                // rate-limited by CoinGecko — treat that as a miss and try direct.
+                if (isProxy) {
+                    const t = await r.clone().text();
+                    if (_isEmptyBody(t)) { if (pref) _proxyBlocked.add(pref); lastResp = r; continue; }
+                }
+                return r;
+            }
+            if (isProxy && pref) _proxyBlocked.add(pref);
+            lastResp = r;
+        } catch (e) {
+            if (isProxy && pref) _proxyBlocked.add(pref);
+        }
+    }
+    return lastResp || new Response('{"error":"all sources failed"}', { status: 502, headers: { 'Content-Type': 'application/json' } });
+}
+
 // ===== BINANCE MODULE =====
 let bnInitialized = false;
 let bnRefreshInterval = null;
@@ -959,7 +1027,7 @@ async function fetchAllData() {
     let tradingPairs = null;
     let _tickerJson = null;
     await Promise.all([
-        fetch(BINANCE_API + '/exchangeInfo').then(r => r.ok ? r.json() : null).then(ei => {
+        smartFetch(BINANCE_API + '/exchangeInfo').then(r => r.ok ? r.json() : null).then(ei => {
             if (!ei) return;
             tradingPairs = new Set();
             ei.symbols.forEach(s => {
@@ -967,7 +1035,7 @@ async function fetchAllData() {
             });
             console.log('ExchangeInfo: ' + tradingPairs.size + ' active USDT pairs');
         }).catch(e => console.warn('ExchangeInfo failed:', e.message)),
-        fetch(BINANCE_API + '/ticker/24hr').then(r => r.ok ? r.json() : null).then(j => { _tickerJson = j; }).catch(() => {}),
+        smartFetch(BINANCE_API + '/ticker/24hr').then(r => r.ok ? r.json() : null).then(j => { _tickerJson = j; }).catch(() => {}),
     ]);
 
     // Step 1: Process ticker data
@@ -1138,7 +1206,7 @@ async function fetchMarketCaps() {
         for (const batch of batches) {
             const ids = batch.map(getGeckoId).join(',');
             try {
-                const resp = await fetch(`/cg/coins/markets?vs_currency=usd&ids=${ids}&per_page=250`);
+                const resp = await smartFetch(`/cg/coins/markets?vs_currency=usd&ids=${ids}&per_page=250`);
                 if (!resp.ok) continue;
                 const data = await resp.json();
                 data.forEach(coin => {
@@ -1178,7 +1246,7 @@ async function fetchDepthData() {
         const batch = candidates.slice(i, i + 5);
         await Promise.all(batch.map(async tk => {
             try {
-                const resp = await fetch(BINANCE_API + `/depth?symbol=${tk.sym}USDT&limit=1000`);
+                const resp = await smartFetch(BINANCE_API + `/depth?symbol=${tk.sym}USDT&limit=1000`);
                 if (!resp.ok) return;
                 const ob = await resp.json();
                 const price = liveData[tk.sym].price;
@@ -1205,7 +1273,7 @@ async function fetchDepthData() {
 async function fetchExchangeData() {
     // Coinbase
     try {
-        const resp = await fetch('/ex/coinbase');
+        const resp = await smartFetch('/ex/coinbase');
         if (resp.ok) {
             const products = await resp.json();
             if (Array.isArray(products)) {
@@ -1220,7 +1288,7 @@ async function fetchExchangeData() {
 
     // OKX
     try {
-        const resp = await fetch('/ex/okx');
+        const resp = await smartFetch('/ex/okx');
         if (resp.ok) {
             const data = await resp.json();
             (data.data || []).forEach(inst => {
@@ -1231,7 +1299,7 @@ async function fetchExchangeData() {
 
     // Kraken
     try {
-        const resp = await fetch('/ex/kraken');
+        const resp = await smartFetch('/ex/kraken');
         if (resp.ok) {
             const data = await resp.json();
             Object.values(data.result || {}).forEach(info => {
@@ -2172,7 +2240,7 @@ function cbSetPage(p) { page = Math.max(0, p); cbRenderAll(); window.scrollTo({t
 async function fetchExchanges() {
     for (const ex of ['binance', 'okx', 'kraken']) {
         try {
-            const r = await fetch('/ex/' + ex);
+            const r = await smartFetch('/ex/' + ex);
             const d = await r.json();
             if (ex === 'binance') {
                 (d.symbols || []).forEach(s => { if (s.status === 'TRADING' && s.quoteAsset === 'USDT') exchangeData.binance.add(s.baseAsset); });
@@ -2187,7 +2255,7 @@ async function fetchExchanges() {
 
 async function fetchDepth(sym) {
     try {
-        const r = await fetch(`/cb/products/${sym}-USD/book?level=2`);
+        const r = await smartFetch(`/cb/products/${sym}-USD/book?level=2`);
         if (!r.ok) return;
         const d = await r.json();
         if (!liveData[sym]) liveData[sym] = {};
@@ -2214,7 +2282,7 @@ async function fetchCoinGeckoData() {
         for (const batch of batches) {
             const ids = batch.map(getGeckoId).join(',');
             try {
-                const resp = await fetch(`/cg/coins/markets?vs_currency=usd&ids=${ids}&per_page=250`);
+                const resp = await smartFetch(`/cg/coins/markets?vs_currency=usd&ids=${ids}&per_page=250`);
                 if (!resp.ok) continue;
                 const data = await resp.json();
                 data.forEach(coin => {
@@ -2269,7 +2337,7 @@ async function cbDoRefresh() {
 // Timeout wrapper for fetch
 function fetchWithTimeout(url, ms = 15000) {
     return Promise.race([
-        fetch(url).then(r => r.json()),
+        smartFetch(url).then(r => r.json()),
         new Promise((_, rej) => setTimeout(() => rej(new Error('timeout ' + url)), ms))
     ]);
 }
@@ -2400,7 +2468,7 @@ function scRenderAll(){scRenderStats();scRenderTable()}
 
 function scSetProgress(pct,txt){const f=document.getElementById('sc-lprog');const l=document.getElementById('sc-ltxt');if(f)f.style.width=pct+'%';if(l)l.textContent=txt}
 
-async function scFetchData(){scSetProgress(10,'Fetching peg data...');let llamaCoins=[];try{const r=await fetch('/llama/stablecoins?includePrices=true');const d=await r.json();llamaCoins=d.peggedAssets||[];scSetProgress(50,'Fetching market data...')}catch(e){scSetProgress(50,'Using fallback data...')}const llamaById={};llamaCoins.forEach(c=>{llamaById[String(c.id)]=c});let cgData=[];try{const ids=SC_HARDCODED.map(h=>h.cgId).join(',');const r=await fetch(`/cg/coins/markets?vs_currency=usd&ids=${ids}&per_page=50`);cgData=await r.json().catch(()=>[]);scSetProgress(80,'Processing...')}catch(e){scSetProgress(80,'CoinGecko unavailable...')}const cgById={};(Array.isArray(cgData)?cgData:[]).forEach(c=>{cgById[c.id]=c});scCoins=SC_HARDCODED.map(hc=>{const llama=llamaById[hc.llamaId]||{};const cg=cgById[hc.cgId]||{};const circ=llama.circulating||{};const mcap=Object.values(circ).reduce((a,v)=>a+(typeof v==='number'?v:0),0);return{...hc,price:llama.price||cg.current_price||1.0,mcap:mcap||cg.market_cap||0,vol24h:cg.total_volume||0,change24h:cg.price_change_percentage_24h||0,chains:llama.chains||[],chainCount:(llama.chains||[]).length||hc.chains_hint||0,icon:hc.icon||cg.image||null,pegType:llama.pegType||'peggedUSD'}});llamaCoins.forEach(lc=>{if(SC_HARDCODED.find(h=>h.llamaId===String(lc.id)))return;const circ=lc.circulating||{};const mcap=circ.peggedUSD||0;if(mcap<10e6)return;if(!(lc.pegType||'').includes('USD'))return;scCoins.push({llamaId:String(lc.id),sym:lc.symbol||'?',name:lc.name||lc.symbol||'?',cgId:lc.gecko_id||null,mech:scNormMech(lc.pegMechanism),price:lc.price||1.0,mcap,vol24h:0,change24h:0,chains:lc.chains||[],chainCount:(lc.chains||[]).length,icon:null,pegType:lc.pegType})});const _discIds=[...new Set(scCoins.filter(c=>c.cgId&&!c.icon).map(c=>c.cgId))];if(_discIds.length){try{const _r=await fetch(`/cg/coins/markets?vs_currency=usd&ids=${_discIds.join(',')}&per_page=250`);const _d=await _r.json().catch(()=>[]);if(Array.isArray(_d))_d.forEach(coin=>{scCoins.forEach(c=>{if(c.cgId===coin.id){if(!c.icon&&coin.image)c.icon=coin.image;if(!c.vol24h)c.vol24h=coin.total_volume||0;if(!c.change24h)c.change24h=coin.price_change_percentage_24h||0;if(!c.mcap&&coin.market_cap)c.mcap=coin.market_cap}})});}catch(e){}}scCoins.sort((a,b)=>(b.mcap||0)-(a.mcap||0));scCoins.forEach(c=>{c._risk=scCalcRisk(c);c._status=scStatus(c)});scSetProgress(100,'Done!');setTimeout(()=>{const l=document.getElementById('sc-loader');if(l)l.classList.add('hidden');const nl=document.getElementById('tnav-live');if(nl)nl.style.display='flex'},400);const now=new Date();const el=document.getElementById('sc-updTime');if(el)el.textContent='updated '+now.toLocaleTimeString();scStartTimer();scRenderAll()}
+async function scFetchData(){scSetProgress(10,'Fetching peg data...');let llamaCoins=[];try{const r=await smartFetch('/llama/stablecoins?includePrices=true');const d=await r.json();llamaCoins=d.peggedAssets||[];scSetProgress(50,'Fetching market data...')}catch(e){scSetProgress(50,'Using fallback data...')}const llamaById={};llamaCoins.forEach(c=>{llamaById[String(c.id)]=c});let cgData=[];try{const ids=SC_HARDCODED.map(h=>h.cgId).join(',');const r=await smartFetch(`/cg/coins/markets?vs_currency=usd&ids=${ids}&per_page=50`);cgData=await r.json().catch(()=>[]);scSetProgress(80,'Processing...')}catch(e){scSetProgress(80,'CoinGecko unavailable...')}const cgById={};(Array.isArray(cgData)?cgData:[]).forEach(c=>{cgById[c.id]=c});scCoins=SC_HARDCODED.map(hc=>{const llama=llamaById[hc.llamaId]||{};const cg=cgById[hc.cgId]||{};const circ=llama.circulating||{};const mcap=Object.values(circ).reduce((a,v)=>a+(typeof v==='number'?v:0),0);return{...hc,price:llama.price||cg.current_price||1.0,mcap:mcap||cg.market_cap||0,vol24h:cg.total_volume||0,change24h:cg.price_change_percentage_24h||0,chains:llama.chains||[],chainCount:(llama.chains||[]).length||hc.chains_hint||0,icon:hc.icon||cg.image||null,pegType:llama.pegType||'peggedUSD'}});llamaCoins.forEach(lc=>{if(SC_HARDCODED.find(h=>h.llamaId===String(lc.id)))return;const circ=lc.circulating||{};const mcap=circ.peggedUSD||0;if(mcap<10e6)return;if(!(lc.pegType||'').includes('USD'))return;scCoins.push({llamaId:String(lc.id),sym:lc.symbol||'?',name:lc.name||lc.symbol||'?',cgId:lc.gecko_id||null,mech:scNormMech(lc.pegMechanism),price:lc.price||1.0,mcap,vol24h:0,change24h:0,chains:lc.chains||[],chainCount:(lc.chains||[]).length,icon:null,pegType:lc.pegType})});const _discIds=[...new Set(scCoins.filter(c=>c.cgId&&!c.icon).map(c=>c.cgId))];if(_discIds.length){try{const _r=await smartFetch(`/cg/coins/markets?vs_currency=usd&ids=${_discIds.join(',')}&per_page=250`);const _d=await _r.json().catch(()=>[]);if(Array.isArray(_d))_d.forEach(coin=>{scCoins.forEach(c=>{if(c.cgId===coin.id){if(!c.icon&&coin.image)c.icon=coin.image;if(!c.vol24h)c.vol24h=coin.total_volume||0;if(!c.change24h)c.change24h=coin.price_change_percentage_24h||0;if(!c.mcap&&coin.market_cap)c.mcap=coin.market_cap}})});}catch(e){}}scCoins.sort((a,b)=>(b.mcap||0)-(a.mcap||0));scCoins.forEach(c=>{c._risk=scCalcRisk(c);c._status=scStatus(c)});scSetProgress(100,'Done!');setTimeout(()=>{const l=document.getElementById('sc-loader');if(l)l.classList.add('hidden');const nl=document.getElementById('tnav-live');if(nl)nl.style.display='flex'},400);const now=new Date();const el=document.getElementById('sc-updTime');if(el)el.textContent='updated '+now.toLocaleTimeString();scStartTimer();scRenderAll()}
 
 function scStartTimer(){if(scRefreshTimer)clearInterval(scRefreshTimer);scTimerSec=180;scUpdateTimer();scRefreshTimer=setInterval(()=>{scTimerSec--;if(scTimerSec<=0){clearInterval(scRefreshTimer);scFetchData()}else scUpdateTimer()},1000)}
 function scUpdateTimer(){const m=Math.floor(scTimerSec/60),s=scTimerSec%60;const el=document.getElementById('sc-refreshTimer');if(el)el.textContent=`next: ${m}:${String(s).padStart(2,'0')}`}
