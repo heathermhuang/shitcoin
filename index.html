@@ -853,7 +853,7 @@ const TRACKED_TOKENS = [
   {sym:'VIC', name:'Viction', status:'monitoring', monDate:'2026-04-30', delistDate:null, restoreDate:null},
   {sym:'COOKIE', name:'Cookie DAO', status:'monitoring', monDate:'2026-05-22', delistDate:null, restoreDate:null},
   {sym:'DODO', name:'DODO', status:'monitoring', monDate:'2026-05-22', delistDate:null, restoreDate:null},
-  {sym:'EPIC', name:'Epic Cash', status:'monitoring', monDate:'2026-05-22', delistDate:null, restoreDate:null},
+  {sym:'EPIC', name:'Epic Chain', status:'monitoring', monDate:'2026-05-22', delistDate:null, restoreDate:null},
   {sym:'HEI', name:'Heima', status:'monitoring', monDate:'2026-05-22', delistDate:null, restoreDate:null},
   {sym:'HFT', name:'Hashflow', status:'monitoring', monDate:'2026-05-22', delistDate:null, restoreDate:null},
   {sym:'STORJ', name:'Storj', status:'monitoring', monDate:'2026-05-22', delistDate:null, restoreDate:null},
@@ -1128,7 +1128,9 @@ async function fetchMarketCaps() {
         const delistedSyms = TRACKED_TOKENS
             .filter(t => t.status === 'delisted' && !liveData[t.sym]?.icon)
             .map(t => t.sym);
-        const allSymsForIcons = [...new Set([...taggedSyms, ...activeSyms, ...delistedSyms])];
+        // Fetch curated coins (tagged + delisted) before the long discovered-active
+        // list so the monitoring/delisted tabs resolve before any rate-limit window.
+        const allSymsForIcons = [...new Set([...taggedSyms, ...delistedSyms, ...activeSyms])];
 
         // Manual overrides for ambiguous symbols
         const overrides = {
@@ -1193,6 +1195,13 @@ async function fetchMarketCaps() {
             'ONT':'ontology','ONG':'ong','MDX':'mdex','VAI':'vai',
             'MOB':'mobilecoin','TORN':'tornado-cash','WAX':'wax',
             'MULTI':'multichain','IRIS':'iris-network','CVP':'powerpool',
+            // Monitoring coins whose CoinGecko id differs from the ticker — without
+            // these the markets API returns nothing, so mcap + logo were both blank.
+            'TLM':'alien-worlds','ACT':'act-i-the-ai-prophecy','HEI':'heima',
+            'SYN':'synapse-2','VIC':'tomochain','VELODROME':'velodrome-finance',
+            'HFT':'hashflow','NOM':'nomina','EPIC':'epic-chain',
+            // Delisted coins missing an id — adds their real logo on the delisted tab.
+            'BTS':'bitshares','SYS':'syscoin','PERL':'perlin','XMR':'monero','FARM':'harvest-finance',
         };
 
         const getGeckoId = sym => overrides[sym] || sym.toLowerCase();
@@ -1205,10 +1214,21 @@ async function fetchMarketCaps() {
 
         for (const batch of batches) {
             const ids = batch.map(getGeckoId).join(',');
-            try {
-                const resp = await smartFetch(`/cg/coins/markets?vs_currency=usd&ids=${ids}&per_page=250`);
-                if (!resp.ok) continue;
-                const data = await resp.json();
+            // CoinGecko's free tier rate-limits bursts with an empty body. Skipping a
+            // throttled batch left those coins with no mcap/logo permanently, so retry
+            // an empty/failed batch a few times with backoff before giving up.
+            let data = null;
+            for (let attempt = 0; attempt < 3; attempt++) {
+                try {
+                    const resp = await smartFetch(`/cg/coins/markets?vs_currency=usd&ids=${ids}&per_page=250`);
+                    if (resp.ok) {
+                        const j = await resp.json();
+                        if (Array.isArray(j) && j.length) { data = j; break; }
+                    }
+                } catch(e) { /* retry */ }
+                await new Promise(r => setTimeout(r, 700 * (attempt + 1)));
+            }
+            if (data) {
                 data.forEach(coin => {
                     // Find matching symbol
                     const sym = batch.find(s => getGeckoId(s) === coin.id);
@@ -1223,8 +1243,9 @@ async function fetchMarketCaps() {
                         if (coin.id) liveData[sym].cgId = coin.id;
                     }
                 });
-            } catch(e) { /* continue */ }
-            await new Promise(r => setTimeout(r, 200)); // Cloudflare worker caches these
+                bnRenderAll(); // progressive: fill rows in as each batch resolves
+            }
+            await new Promise(r => setTimeout(r, 400));
         }
 
         // Recompute risk scores with market cap data
@@ -1761,6 +1782,18 @@ function bnRenderAll() {
     renderFilters();
     renderTable();
     renderTimeline();
+    // Sync the recovery guide on every render (incl. first paint): show it for the
+    // monitoring/high-risk views and keep its restore-rate stat fresh. Previously both
+    // were handled only on filter change, so on initial load the guide stayed hidden
+    // and the stat stuck on "loading…" even though 'monitoring' is the default filter.
+    const guide = document.getElementById('bn-recovery-guide');
+    if (guide) guide.classList.toggle('visible', filter === 'monitoring' || filter === 'highrisk');
+    const rateEl = document.getElementById('bn-restore-rate');
+    if (rateEl) {
+        const rest = allCoins.filter(t => t.status === 'restored').length;
+        const everTagged = allCoins.filter(t => t.monDate).length;
+        if (everTagged > 0) rateEl.textContent = `${Math.round(rest / everTagged * 100)}% of tagged coins restored`;
+    }
     document.getElementById('bn-updTime').textContent = new Date().toLocaleTimeString();
 }
 
@@ -1885,17 +1918,7 @@ function bnSetFilter(f) {
     if (guide) {
         const show = (f === 'monitoring' || f === 'highrisk');
         guide.classList.toggle('visible', show);
-        if (show) {
-            // populate restore rate stat from live data
-            const mon = allCoins.filter(t => t.status === 'monitoring').length;
-            const rest = allCoins.filter(t => t.status === 'restored').length;
-            const everTagged = allCoins.filter(t => t.monDate).length;
-            const rateEl = document.getElementById('bn-restore-rate');
-            if (rateEl && everTagged > 0) {
-                const pct = Math.round(rest / everTagged * 100);
-                rateEl.textContent = `${pct}% of tagged coins restored`;
-            }
-        }
+        // restore-rate stat is kept current in bnRenderAll() (called above)
     }
 }
 function bnSetQuery(q) { query = q; page = 0; renderTable(); }
@@ -2000,6 +2023,10 @@ const CG_OVERRIDES = {
     'MAGIC':'magic','DYP':'defi-yield-protocol','FORT':'forta',
     'STPT':'stp-network','VELO':'velo','LCNX':'lightcoin','BLUR':'blur',
     'PRIME':'echelon-prime','ZETA':'zetachain','PYUSD':'paypal-usd',
+    // Online coins whose CoinGecko id differs from the lowercased ticker — without
+    // these the markets API returned nothing, leaving mcap + logo blank. (validated)
+    'BADGER':'badger-dao','KRL':'kryll','META':'metadium','ACS':'access-protocol',
+    'AVT':'aventus','MNDE':'marinade','FOX':'shapeshift-fox-token','A8':'ancient8','VOXEL':'voxies',
     // Delisted Coinbase coins — gecko IDs validated against CoinGecko so the
     // delisted tab resolves real names + market caps instead of "N pairs".
     'ANT':'aragon','ATA':'automata','BIT':'bitdao','BSV':'bitcoin-cash-sv','CRPT':'crypterium',
@@ -2012,6 +2039,7 @@ const CG_OVERRIDES = {
     'PRQ':'parsiq','RGT':'rari-governance-token','RLY':'rally-2','RNDR':'render-token',
     'SEAM':'seamless-protocol','SNT':'status','TIME':'chronobank','TONE':'te-food',
     'TRIBE':'tribe-2','TRU':'truefi','WAMPL':'wrapped-ampleforth','WLUNA':'wrapped-terra',
+    'BOND':'barnbridge','REP':'augur','GAL':'project-galaxy','UST':'terrausd',
 };
 
 function getCgId(sym) { return CG_OVERRIDES[sym] || sym.toLowerCase(); }
@@ -2334,18 +2362,34 @@ async function fetchCoinGeckoData() {
         // Batch fetch from CoinGecko markets API. Active coins first so they get
         // enriched before any rate-limit window, then delisted coins so the delisted
         // tab also shows real names + market caps (not just "N pairs").
-        const activeSyms = allCoins.filter(c => c.status !== 'delisted').map(c => c.sym);
-        const delistedSyms = allCoins.filter(c => c.status === 'delisted').map(c => c.sym);
+        // Skip coins that already resolved a market cap so the periodic refresh only
+        // retries the gaps left by an earlier rate-limit window — instead of re-fetching
+        // all 400+ and re-triggering the throttle. First run: nothing has mcap, so all
+        // are fetched. This lets blanks fill in over successive refresh cycles.
+        const needs = c => !(liveData[c.sym] && liveData[c.sym].mcap > 0);
+        const activeSyms = allCoins.filter(c => c.status !== 'delisted' && needs(c)).map(c => c.sym);
+        const delistedSyms = allCoins.filter(c => c.status === 'delisted' && needs(c)).map(c => c.sym);
         const fetchSyms = [...activeSyms, ...delistedSyms];
+        if (!fetchSyms.length) return;
         const batches = [];
         for (let i = 0; i < fetchSyms.length; i += 100) batches.push(fetchSyms.slice(i, i + 100));
 
         for (const batch of batches) {
             const ids = batch.map(getGeckoId).join(',');
-            try {
-                const resp = await smartFetch(`/cg/coins/markets?vs_currency=usd&ids=${ids}&per_page=250`);
-                if (!resp.ok) continue;
-                const data = await resp.json();
+            // Retry throttled/empty batches with backoff (see Binance note) so the
+            // delisted tab reliably resolves real names + market caps, not "N pairs".
+            let data = null;
+            for (let attempt = 0; attempt < 3; attempt++) {
+                try {
+                    const resp = await smartFetch(`/cg/coins/markets?vs_currency=usd&ids=${ids}&per_page=250`);
+                    if (resp.ok) {
+                        const j = await resp.json();
+                        if (Array.isArray(j) && j.length) { data = j; break; }
+                    }
+                } catch(e) { /* retry */ }
+                await new Promise(r => setTimeout(r, 700 * (attempt + 1)));
+            }
+            if (data) {
                 data.forEach(coin => {
                     const sym = batch.find(s => getGeckoId(s) === coin.id);
                     if (sym) {
@@ -2356,11 +2400,13 @@ async function fetchCoinGeckoData() {
                         if (coin.name) liveData[sym].name = coin.name;
                     }
                 });
-            } catch(e) {}
-            await new Promise(r => setTimeout(r, 200));
+                allCoins.forEach(c => c._risk = calcRisk(c));
+                cbRenderAll(); // progressive paint as batches resolve
+            }
+            await new Promise(r => setTimeout(r, 400));
         }
 
-        // Recompute risks with mcap data
+        // Final pass to ensure a consistent render with all mcap data
         allCoins.forEach(c => c._risk = calcRisk(c));
         cbRenderAll();
     } catch(e) { console.error('CG error:', e); }
@@ -2392,6 +2438,9 @@ async function cbDoRefresh() {
             document.getElementById('cb-updTime').textContent = 'updated ' + new Date().toLocaleTimeString();
         }
     } catch(e) { console.error('[CB] refresh error:', e); }
+    // Re-run enrichment so coins left blank by an earlier rate-limit window get another
+    // chance to resolve their name/mcap/logo (now scoped to just the missing ones).
+    fetchCoinGeckoData();
     btn.classList.remove('spinning');
 }
 
