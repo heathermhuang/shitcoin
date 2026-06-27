@@ -2034,6 +2034,34 @@ function fmtPrice(p) {
     return '$' + p.toPrecision(4);
 }
 
+// ===== CURATED HISTORICAL DELISTINGS =====
+// Coinbase's /products API only returns assets it still serves, so coins that were
+// fully removed disappear from the data entirely. This curated list backfills
+// documented full delistings (verified against official @CoinbaseAssets announcements
+// and reputable reporting — see VERIFIED_DATA.md). The merge below NEVER overrides a
+// coin that is currently online in the API, so a since-relisted ticker can't be
+// falsely marked delisted. Excludes NY-only suspensions and perpetual-futures delistings.
+const CB_DELISTED = [
+    {sym:'WBTC',   name:'Wrapped Bitcoin',     delistDate:'2024-12-19'},
+    {sym:'GAL',    name:'Galxe',               delistDate:'2025-05-02'},
+    {sym:'LIT',    name:'Litentry',            delistDate:'2025-05-02'},
+    {sym:'DAR',    name:'Mines of Dalarnia',   delistDate:'2025-05-02'},
+    {sym:'ORN',    name:'Orion Protocol',      delistDate:'2025-05-02'},
+    {sym:'PRQ',    name:'PARSIQ',              delistDate:'2025-05-02'},
+    {sym:'MOVE',   name:'Movement',            delistDate:'2025-05-15'},
+    {sym:'MOBILE', name:'Helium Mobile',       delistDate:'2025-06-26'},
+    {sym:'RNDR',   name:'Render (old token)',  delistDate:'2025-06-26'},
+    {sym:'RBN',    name:'Ribbon Finance',      delistDate:'2025-06-26'},
+    {sym:'SYN',    name:'Synapse',             delistDate:'2025-06-26'},
+    {sym:'CLV',    name:'Clover Finance',      delistDate:'2025-11-26'},
+    {sym:'EOS',    name:'EOS',                 delistDate:'2025-11-26'},
+    {sym:'LOKA',   name:'League of Kingdoms',  delistDate:'2025-11-26'},
+    {sym:'MUSE',   name:'Muse DAO',            delistDate:'2025-11-26'},
+    {sym:'WCFG',   name:'Wrapped Centrifuge',  delistDate:'2025-11-26'},
+    {sym:'DAI',    name:'Dai',                 delistDate:'2026-05-04'},
+    {sym:'TIME',   name:'Chrono.tech',         delistDate:'2026-05-11'},
+];
+
 // ===== DATA PROCESSING =====
 function processProducts(products, stats) {
     const map = {};
@@ -2070,6 +2098,22 @@ function processProducts(products, stats) {
             if (open && price) liveData[base].change = ((price - open) / open) * 100;
         }
     }
+
+    // Backfill curated historical delistings that the API no longer returns.
+    for (const d of CB_DELISTED) {
+        if (EXCLUDE.has(d.sym)) continue;
+        const existing = map[d.sym];
+        if (existing) {
+            if (existing.status === 'online') continue; // still trades — never falsely delist
+            existing.name = existing.name || d.name;
+            existing.delistDate = existing.delistDate || d.delistDate;
+            existing.curated = true;
+        } else {
+            map[d.sym] = { sym: d.sym, name: d.name, status: 'delisted', limitOnly: false,
+                           pairs: [], pairsOnline: 0, pairsDelisted: 1, delistDate: d.delistDate, curated: true };
+        }
+    }
+
     return Object.values(map);
 }
 
@@ -2183,7 +2227,7 @@ function cbRenderAll() {
         const rowClass = c.status === 'delisted' ? 'delisted-row' : c.limitOnly ? 'limit-row' : (c._risk >= 60 ? 'highrisk-row' : '');
 
         return `<tr class="${rowClass}">
-            <td><div class="tk">${coinIconHtmlCb}<div><div class="tk-sym">${c.sym}</div><div class="tk-name">${c.pairs.length} pair${c.pairs.length > 1 ? 's' : ''}</div><div class="tk-links"><a href="${cbLink}" target="_blank" title="${c.status==='delisted'?'CoinGecko':'Coinbase'}">${primaryIcon}</a>${cmcHtml}</div></div></div></td>
+            <td><div class="tk">${coinIconHtmlCb}<div><div class="tk-sym">${c.sym}</div><div class="tk-name">${c.name || ld.name || (c.pairs.length + ' pair' + (c.pairs.length > 1 ? 's' : ''))}</div><div class="tk-links"><a href="${cbLink}" target="_blank" title="${c.status==='delisted'?'CoinGecko':'Coinbase'}">${primaryIcon}</a>${cmcHtml}</div></div></div></td>
             <td>${badge}</td>
             <td>${riskHtml}</td>
             <td><span class="vol">${fmtPrice(ld.price)}</span></td>
@@ -2274,10 +2318,14 @@ async function fetchCoinGeckoData() {
     try {
         const getGeckoId = sym => CG_OVERRIDES[sym] || sym.toLowerCase();
 
-        // Batch fetch from CoinGecko markets API
+        // Batch fetch from CoinGecko markets API. Active coins first so they get
+        // enriched before any rate-limit window, then delisted coins so the delisted
+        // tab also shows real names + market caps (not just "N pairs").
         const activeSyms = allCoins.filter(c => c.status !== 'delisted').map(c => c.sym);
+        const delistedSyms = allCoins.filter(c => c.status === 'delisted').map(c => c.sym);
+        const fetchSyms = [...activeSyms, ...delistedSyms];
         const batches = [];
-        for (let i = 0; i < activeSyms.length; i += 100) batches.push(activeSyms.slice(i, i + 100));
+        for (let i = 0; i < fetchSyms.length; i += 100) batches.push(fetchSyms.slice(i, i + 100));
 
         for (const batch of batches) {
             const ids = batch.map(getGeckoId).join(',');
@@ -2292,6 +2340,7 @@ async function fetchCoinGeckoData() {
                         liveData[sym].mcap = coin.market_cap || coin.fully_diluted_valuation || 0;
                         if (coin.image) liveData[sym].icon = coin.image;
                         if (coin.id) liveData[sym].cgId = coin.id;
+                        if (coin.name) liveData[sym].name = coin.name;
                     }
                 });
             } catch(e) {}

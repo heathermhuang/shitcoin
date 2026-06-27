@@ -113,3 +113,38 @@ Tokens currently on monitoring: JASMY, FTT, MOVE, AWE, ARK, ARDR, PERP, MBL
 - MLN: restored (2024-07-01) → re-monitored (2026-04-14) → delisted (2026-05-27). monDate set to 2026-04-14 for the current cycle.
 - Name choices: EPIC = Epic Cash; HEI = Heima (ex-Litentry/LIT); VELODROME ticker per announcement text.
 - Dataset totals after update: 132 tracked — monitoring 27, delisting 4, delisted 95, restored 6.
+
+---
+
+## 2026-06-27 SESSION — Coinbase delisting completeness investigation
+
+### Finding: the premise was largely wrong
+Coinbase's `/products` API **retains** delisted assets for years (status != `online`) rather
+than purging them. Spot-checking ~40 historical Coinbase delistings, nearly all are still
+returned by the API as `delisted` (WLUNA, MIR, REP, OMG, GNT, KEEP, NU, POLY, LOOM, BUSD,
+GUSD, UST, TRIBE, RAI, GALA, UNFI, BOND, RGT, MUSD, etc.). The on-page "Delisted = 69" count
+is therefore close to complete. Only a handful are genuinely purged from the API:
+**REPV2, MCO, BSV, AGI, WNXM, LUNA, LUNC, USTC** (very old / migrated — left out pending verified dates).
+
+### What was actually improved
+1. Coinbase CoinGecko enrichment previously **skipped** delisted coins, so they rendered as
+   "N pairs" with no market cap. Now delisted coins are included in the CoinGecko fetch (active
+   first, then delisted) → they show real names + market caps where the gecko-id matches.
+2. Added a curated `CB_DELISTED` list (below) that guarantees correct names + delist dates for
+   notable recent delistings, merged safely (never overrides a coin currently `online` in the API).
+
+### Curated CB_DELISTED (verified vs official @CoinbaseAssets announcements / reputable reporting)
+| Suspended | Tokens | Source |
+|-----------|--------|--------|
+| 2024-12-19 | WBTC (Wrapped Bitcoin) | Cointelegraph / The Defiant |
+| 2025-05-02 | GAL, LIT, DAR, ORN, PRQ (token migrations) | @CoinbaseAssets status/1918339629381509487 |
+| 2025-05-15 | MOVE (Movement) | CryptoSlate |
+| 2025-06-26 | MOBILE, RNDR, RBN, SYN (migrations) | @CoinbaseAssets status/1927396045098488053 |
+| 2025-11-26 | CLV, EOS, LOKA, MUSE, WCFG | CryptoPotato / CoinAlertNews |
+| 2026-05-04 | DAI (converted to USDS) | crypto.news / U.Today |
+| 2026-05-11 | TIME (Chrono.tech) | U.Today |
+
+Excluded: NY-only suspensions (FLOKI, TURBO, GIGA) and perpetual-futures delistings
+(SPK/ZAMA/GUN/TURBO/MOODENG/NOM -PERP, suspended 2026-06-24) — not spot assets.
+All 18 curated tokens were found already present in the API as delisted, so they add
+naming/date metadata rather than new rows. Dates are best-effort from announcement reporting.
