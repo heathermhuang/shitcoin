@@ -12,6 +12,11 @@ on:
   schedule:
     - cron: '17 6 * * *'   # ~06:17 UTC daily
   workflow_dispatch:        # manual run from the Actions tab
+    inputs:
+      selftest:
+        description: 'Force a throwaway test PR to verify the PR path (safe to close)'
+        type: boolean
+        default: false
 
 permissions:
   contents: write
@@ -37,6 +42,9 @@ jobs:
           PROXY_URL: ${{ secrets.PROXY_URL }}
         run: |
           node scripts/check-delistings.mjs --apply
+          if [ "${{ inputs.selftest }}" = "true" ]; then
+            printf '# Pipeline self-test\n\nManual verification of the PR path — no real data change. Safe to close.\n' > data/pending-update.md
+          fi
           if [ -f data/pending-update.md ]; then
             echo "changed=true" >> "$GITHUB_OUTPUT"
           else
