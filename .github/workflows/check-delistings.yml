@@ -32,11 +32,19 @@ jobs:
         run: npm ci
 
       - name: Detect changes
+        id: detect
         env:
           PROXY_URL: ${{ secrets.PROXY_URL }}
-        run: node scripts/check-delistings.mjs --apply
+        run: |
+          node scripts/check-delistings.mjs --apply
+          if [ -f data/pending-update.md ]; then
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          fi
 
       - name: Open PR if anything changed
+        if: steps.detect.outputs.changed == 'true'
         uses: peter-evans/create-pull-request@v6
         with:
           branch: auto/delisting-update
