@@ -8,7 +8,14 @@
     "build": "node build.js",
     "deploy": "node build.js && wrangler deploy"
   },
-  "keywords": ["crypto", "binance", "coinbase", "delisting", "monitoring", "cloudflare-workers"],
+  "keywords": [
+    "crypto",
+    "binance",
+    "coinbase",
+    "delisting",
+    "monitoring",
+    "cloudflare-workers"
+  ],
   "author": "heathermhuang",
   "license": "MIT",
   "homepage": "https://shitcoin.io",
@@ -18,5 +25,8 @@
   },
   "dependencies": {
     "wrangler": "^4.76.0"
+  },
+  "devDependencies": {
+    "undici": "^7.24.4"
   }
 }

@@ -26,6 +26,10 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
+          cache: 'npm'
+
+      - name: Install deps (undici for the proxy dispatcher)
+        run: npm ci
 
       - name: Detect changes
         env:
