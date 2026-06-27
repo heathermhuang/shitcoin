@@ -93,3 +93,14 @@ Built and verified the detector (`scripts/check-delistings.mjs`); empirical resu
 - Route the **Binance** fetch through a UK residential SOCKS5 proxy (the one used by the MailGPT project). Coinbase needs no proxy.
 - **BLOCKER:** the real proxy creds are **not in the MailGPT repo** — HANDOFFS.md only shows a masked `socks5://…@104.164.96.60:12324`; the live value is in that service's **Render env** (`srv-d8g21j6k1jcs73d43n40`). The owner must supply it and set it as the `PROXY_URL` GitHub secret (entering raw secrets is out of scope for the agent).
 - **Remaining build:** (1) add SOCKS dispatcher support to the script (`socks-proxy-agent` + undici) gated on `$PROXY_URL`; (2) verify the proxy actually reaches Binance; (3) implement `--apply` file edits for `index.html` + `VERIFIED_DATA.md` + `data/coinbase-snapshot.json`; (4) the `.github/workflows/check-delistings.yml` (daily cron, `peter-evans/create-pull-request`, `PROXY_URL` secret).
+
+## SHIPPED (2026-06-27)
+
+Pipeline is live and verified end-to-end on the real runner:
+- Proxy provided was an **HTTP** proxy (port 12323) → used undici `ProxyAgent` (no SOCKS dep needed); `undici` pinned as a devDep + `npm ci` in CI.
+- `PROXY_URL` set as a repo secret; "Allow Actions to create PRs" enabled (with explicit user authorization).
+- Verified runs: detector reaches Binance through the proxy (no 403), diffs both exchanges; **no-change day = clean success, no PR**; **selftest dispatch → real PR opened** on `auto/delisting-update` (then closed). Daily cron registered (`17 6 * * *`).
+- Manual self-test anytime: Actions → "Check delistings" → Run workflow → `selftest=true`.
+
+### Still v1 (not yet done): auto-edit `index.html`
+The PR currently carries a **findings report** (`data/pending-update.md`) + Coinbase snapshot; the maintainer applies the `TRACKED_TOKENS` line(s) from it. True "auto-parse INTO the array → ready-to-merge diff" is the **v2** enhancement — deferred because there were 0 real changes to test the array-editor against, and a concurrent session was actively editing `index.html`. Build it with a synthetic-change test when ready.
