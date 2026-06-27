@@ -148,3 +148,13 @@ Excluded: NY-only suspensions (FLOKI, TURBO, GIGA) and perpetual-futures delisti
 (SPK/ZAMA/GUN/TURBO/MOODENG/NOM -PERP, suspended 2026-06-24) — not spot assets.
 All 18 curated tokens were found already present in the API as delisted, so they add
 naming/date metadata rather than new rows. Dates are best-effort from announcement reporting.
+
+### 2026-06-27 follow-ups
+- **BSV backfill:** Bitcoin SV is genuinely absent from Coinbase's /products (trading suspended
+  Aug 2021 after a 51% attack; fully deprecated 2024-01-09 — Coinbase Help "BSV Deprecation" /
+  CoinDesk 2023-11-07). Added to CB_DELISTED. Other API-absent candidates (MCO, WNXM, REPv2, AGI,
+  native LUNA/LUNC/USTC) could NOT be confirmed as Coinbase-traded-then-delisted, so were left out.
+- **CG_OVERRIDES:** added 40 gecko-id mappings for delisted Coinbase coins, each validated against
+  the live CoinGecko markets API (symbol/name confirmed). Delisted-tab name+mcap coverage went from
+  ~22% to ~78% per page. Remaining "N pairs" rows are coins CoinGecko itself dropped (e.g. VGX/Voyager).
+- **Privacy policy** (worker.js PRIVACY_HTML) updated to disclose the client-side direct-fetch fallback.

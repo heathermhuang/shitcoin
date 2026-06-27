@@ -2000,6 +2000,18 @@ const CG_OVERRIDES = {
     'MAGIC':'magic','DYP':'defi-yield-protocol','FORT':'forta',
     'STPT':'stp-network','VELO':'velo','LCNX':'lightcoin','BLUR':'blur',
     'PRIME':'echelon-prime','ZETA':'zetachain','PYUSD':'paypal-usd',
+    // Delisted Coinbase coins — gecko IDs validated against CoinGecko so the
+    // delisted tab resolves real names + market caps instead of "N pairs".
+    'ANT':'aragon','ATA':'automata','BIT':'bitdao','BSV':'bitcoin-cash-sv','CRPT':'crypterium',
+    'DAR':'mines-of-dalarnia','DDX':'derivadao','ENJ':'enjincoin','GNT':'golem',
+    'KEEP':'keep-network','LIT':'litentry','LOKA':'league-of-kingdoms','LOOM':'loom-network-new',
+    'MATIC':'matic-network','MCO2':'moss-carbon-credit','MEDIA':'media-network','MIR':'mirror-protocol',
+    'MOBILE':'helium-mobile','MONA':'monavale','MOVE':'movement','MTL':'metal',
+    'MULTI':'multichain','MUSE':'muse-2','MXC':'mxc','NU':'nucypher',
+    'OOKI':'ooki','ORN':'orion-protocol','PLA':'playdapp','POLY':'polymath',
+    'PRQ':'parsiq','RGT':'rari-governance-token','RLY':'rally-2','RNDR':'render-token',
+    'SEAM':'seamless-protocol','SNT':'status','TIME':'chronobank','TONE':'te-food',
+    'TRIBE':'tribe-2','TRU':'truefi','WAMPL':'wrapped-ampleforth','WLUNA':'wrapped-terra',
 };
 
 function getCgId(sym) { return CG_OVERRIDES[sym] || sym.toLowerCase(); }
@@ -2042,6 +2054,7 @@ function fmtPrice(p) {
 // coin that is currently online in the API, so a since-relisted ticker can't be
 // falsely marked delisted. Excludes NY-only suspensions and perpetual-futures delistings.
 const CB_DELISTED = [
+    {sym:'BSV',    name:'Bitcoin SV',          delistDate:'2024-01-09'}, // trading suspended Aug 2021 (51% attack); fully deprecated Jan 2024
     {sym:'WBTC',   name:'Wrapped Bitcoin',     delistDate:'2024-12-19'},
     {sym:'GAL',    name:'Galxe',               delistDate:'2025-05-02'},
     {sym:'LIT',    name:'Litentry',            delistDate:'2025-05-02'},
