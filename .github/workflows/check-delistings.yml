@@ -58,6 +58,7 @@ jobs:
           branch: auto/delisting-update
           delete-branch: true
           add-paths: |
+            index.html
             data/coinbase-snapshot.json
             data/pending-update.md
           commit-message: 'data: auto-detected delisting/monitoring changes'

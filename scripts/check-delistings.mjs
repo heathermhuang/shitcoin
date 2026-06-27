@@ -2,14 +2,15 @@
 // Auto-update detector for shitcoin.io coin data.
 //
 // Detects Binance monitoring/delisting announcements + Coinbase trading-status
-// changes that are NOT yet reflected in the committed data, and reports them.
-// With --apply it also writes a Coinbase snapshot baseline. (Binance file-editing
-// is intentionally a separate, reviewed step — see PR body output.)
+// changes not yet reflected in the committed data. With --apply it edits the
+// TRACKED_TOKENS array in index.html, refreshes the Coinbase snapshot, and writes
+// a findings report — the GitHub Action turns those into a review PR.
 //
 // Usage:
-//   node scripts/check-delistings.mjs            # dry run: print a report
-//   node scripts/check-delistings.mjs --json     # machine-readable report (for the Action/PR body)
-//   node scripts/check-delistings.mjs --apply    # also write data/coinbase-snapshot.json
+//   node scripts/check-delistings.mjs               # dry run: print a report
+//   node scripts/check-delistings.mjs --json        # machine-readable report
+//   node scripts/check-delistings.mjs --apply       # edit index.html + snapshot + report
+//   node scripts/check-delistings.mjs --selftest-edit  # in-memory test of the array editor
 //
 // Env:
 //   PROXY_URL  residential HTTP proxy URL for the Binance fetch
@@ -77,10 +78,23 @@ function parseAnnouncements(titles) {
   return out;
 }
 
-// ---------- current data ----------
+// ---------- current data (scoped to the TRACKED_TOKENS array ONLY) ----------
+// index.html contains other {sym:...} arrays too (Coinbase CB_DELISTED, etc.),
+// so slice out just the Binance TRACKED_TOKENS array before parsing/editing.
+function sliceTracked(html) {
+  const marker = 'const TRACKED_TOKENS = [';
+  const start = html.indexOf(marker);
+  if (start < 0) throw new Error('TRACKED_TOKENS array not found in index.html');
+  const open = start + marker.length;
+  const close = html.indexOf('\n];', open);
+  if (close < 0) throw new Error('TRACKED_TOKENS closing "];" not found');
+  return { before: html.slice(0, open), body: html.slice(open, close), after: html.slice(close) };
+}
+
 function parseTracked(html) {
+  const { body } = sliceTracked(html);
   const map = new Map();
-  for (const line of html.split('\n')) {
+  for (const line of body.split('\n')) {
     const sm = line.match(/\{sym:'([^']+)'/);
     if (!sm) continue;
     map.set(sm[1], {
@@ -90,6 +104,82 @@ function parseTracked(html) {
     });
   }
   return map;
+}
+
+// ---------- v2: edit the TRACKED_TOKENS array ----------
+function entryLine({ sym, name, status, monDate, delistDate }) {
+  const q = v => (v ? `'${v}'` : 'null');
+  return `  {sym:'${sym}', name:'${name}', status:'${status}', monDate:${q(monDate)}, delistDate:${q(delistDate)}, restoreDate:null},`;
+}
+
+function updateTotalsComment(html) {
+  const t = parseTracked(html);
+  const c = { delisted: 0, delisting: 0, monitoring: 0, restored: 0 };
+  for (const v of t.values()) if (v.status in c) c[v.status]++;
+  const block = `// Total: ${t.size} tokens\n// delisted: ${c.delisted}\n// delisting: ${c.delisting}\n// monitoring: ${c.monitoring}\n// restored: ${c.restored}`;
+  return html.replace(/\/\/ Total: \d+ tokens\n\/\/ delisted: \d+\n\/\/ delisting: \d+\n\/\/ monitoring: \d+\n\/\/ restored: \d+/, block);
+}
+
+// Apply detected Binance changes to the TRACKED_TOKENS array. Never deletes.
+// New coins: name defaults to the symbol (flag for review). Delistings with no
+// prior monitoring record use the delist date as a placeholder monDate.
+function applyBinanceEdits(html, changes) {
+  const { before, body, after } = sliceTracked(html);
+  const lines = body.split('\n');
+  const idx = new Map();
+  lines.forEach((line, i) => { const m = line.match(/\{sym:'([^']+)'/); if (m) idx.set(m[1], i); });
+
+  const applied = [], inserts = [];
+  for (const ch of changes) {
+    if (idx.has(ch.sym)) {
+      let line = lines[idx.get(ch.sym)];
+      line = line.replace(/status:'[^']*'/, `status:'${ch.expected}'`);
+      if (ch.kind === 'delisting') line = line.replace(/delistDate:('[^']*'|null)/, `delistDate:'${ch.date}'`);
+      lines[idx.get(ch.sym)] = line;
+      applied.push(`${ch.sym} → ${ch.expected} (flipped)`);
+    } else {
+      inserts.push(entryLine({
+        sym: ch.sym, name: ch.sym, status: ch.expected,
+        monDate: ch.date,                                   // monitoring: tag date; delisting: placeholder
+        delistDate: ch.kind === 'delisting' ? ch.date : null,
+      }));
+      applied.push(`${ch.sym} → ${ch.expected} (added; name=symbol — verify)`);
+    }
+  }
+
+  let newBody = lines.join('\n');
+  if (inserts.length) newBody = newBody.replace(/\s*$/, '') + '\n' + inserts.join('\n');
+  return { html: updateTotalsComment(before + newBody + after), applied };
+}
+
+// In-memory self-test of the editor (no file writes). Run: --selftest-edit
+async function selftestEdit() {
+  const html = await readFile(INDEX, 'utf8');
+  const before = parseTracked(html);
+  const existingMon = [...before.entries()].find(([, v]) => v.status === 'monitoring')?.[0];
+  const changes = [
+    { sym: 'ZZTESTMON', kind: 'monitoring', date: '2099-01-01', expected: 'monitoring' },
+    { sym: 'ZZTESTDEL', kind: 'delisting', date: '2099-02-02', expected: 'delisting' },
+    ...(existingMon ? [{ sym: existingMon, kind: 'delisting', date: '2099-03-03', expected: 'delisting' }] : []),
+  ];
+  const { html: out, applied } = applyBinanceEdits(html, changes);
+  const after = parseTracked(out);
+  let editedArrayOk = true;
+  try { eval('([' + sliceTracked(out).body + '])'); } catch { editedArrayOk = false; }
+  const checks = [
+    ['new monitoring coin added', after.get('ZZTESTMON')?.status === 'monitoring'],
+    ['new delisting coin added w/ date', after.get('ZZTESTDEL')?.status === 'delisting' && after.get('ZZTESTDEL')?.delistDate === "'2099-02-02'"],
+    ['existing coin flipped to delisting', !existingMon || (after.get(existingMon)?.status === 'delisting' && after.get(existingMon)?.delistDate === "'2099-03-03'")],
+    ['tracked count grew by exactly 2', after.size === before.size + 2],
+    ['totals comment matches', (/\/\/ Total: (\d+) tokens/.exec(out) || [])[1] === String(after.size)],
+    ['only 2 sym entries added file-wide', (out.match(/\{sym:'/g) || []).length === (html.match(/\{sym:'/g) || []).length + 2],
+    ['edited array still valid JS', editedArrayOk],
+  ];
+  let ok = true;
+  for (const [name, pass] of checks) { console.log(`${pass ? 'PASS' : 'FAIL'}  ${name}`); if (!pass) ok = false; }
+  console.log('applied:', applied.join(' | '));
+  console.log(ok ? '\n✅ selftest-edit PASSED' : '\n❌ selftest-edit FAILED');
+  process.exitCode = ok ? 0 : 1;
 }
 
 function diffBinance(events, tracked) {
@@ -140,6 +230,8 @@ function diffCoinbase(current, previous) {
 
 // ---------- main ----------
 async function main() {
+  if (FLAGS.has('--selftest-edit')) return selftestEdit();
+
   const html = await readFile(INDEX, 'utf8');
   const tracked = parseTracked(html);
 
@@ -180,6 +272,10 @@ async function main() {
   // --apply: persist state so the Action can open a PR. Gated so routine runs
   // (no delisting/monitoring changes) touch no files → no daily PR noise.
   if (FLAGS.has('--apply')) {
+    if (binanceNew.length) {
+      const { html: edited } = applyBinanceEdits(html, binanceNew);
+      await writeFile(INDEX, edited);
+    }
     if (cbSnap && (cb.baseline || cb.changes.length)) {
       await writeFile(SNAPSHOT, JSON.stringify(cbSnap, null, 0) + '\n');
     }
