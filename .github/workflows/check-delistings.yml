@@ -1,0 +1,46 @@
+name: Check delistings
+
+# Daily detector for new Binance monitoring/delisting announcements + Coinbase
+# trading-status changes. Opens a PR when something changes; no-op otherwise.
+#
+# Requires repo secret PROXY_URL (residential HTTP proxy) — binance.com blocks
+# datacenter IPs, so the GitHub runner must reach Binance through it.
+# Also requires: Settings → Actions → "Allow GitHub Actions to create and
+# approve pull requests" (enabled).
+
+on:
+  schedule:
+    - cron: '17 6 * * *'   # ~06:17 UTC daily
+  workflow_dispatch:        # manual run from the Actions tab
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Detect changes
+        env:
+          PROXY_URL: ${{ secrets.PROXY_URL }}
+        run: node scripts/check-delistings.mjs --apply
+
+      - name: Open PR if anything changed
+        uses: peter-evans/create-pull-request@v6
+        with:
+          branch: auto/delisting-update
+          delete-branch: true
+          add-paths: |
+            data/coinbase-snapshot.json
+            data/pending-update.md
+          commit-message: 'data: auto-detected delisting/monitoring changes'
+          title: 'data: auto-detected Binance/Coinbase changes — needs review'
+          body-path: data/pending-update.md
+          labels: auto-update
