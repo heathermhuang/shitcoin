@@ -80,3 +80,16 @@ cron (daily)
 - Confirm exact Binance `catalogId`(s) for delisting + monitoring (test through the proxy).
 - Finalize the `TRACKED_TOKENS` string-transform approach (small, well-tested, per-symbol anchored).
 - PR auth: default `GITHUB_TOKEN` works for same-repo PRs; repo setting "Allow GitHub Actions to create and approve pull requests" must be enabled.
+
+## Implementation findings (2026-06-27)
+
+Built and verified the detector (`scripts/check-delistings.mjs`); empirical results that **revise the design**:
+
+- ✅ **Binance CMS API confirmed**: `GET www.binance.com/bapi/composite/v1/public/cms/article/list/query?catalogId=161` — catalog 161 ("Delisting") carries **both** delist and monitoring-tag notices. Two anchored regexes parse it; `^Binance Will Delist` / `^Binance Will Extend the Monitoring Tag to Include` correctly exclude **Margin/Futures** delistings and **pair-removal** notices (those were false positives in the first pass — fixed). Against current data: **0 changes** (data is complete, parser is clean).
+- ✅ **Coinbase** reachable from anywhere (829 products); snapshot-diff approach works.
+- ❌ **`binance.com` blocks datacenter IPs.** The Cloudflare worker `/bnann` proxy got **HTTP 403** (upstream nginx, not the worker). Retesting from a non-datacenter IP with the same UA returned 200 → the block is **IP-based, not header-based**. US GitHub runners will be blocked too. **→ "proxy via worker" is dead; the `/bnann` route was backed out of `worker.js` source** (the already-deployed worker keeps a harmless 403'ing route until its next deploy).
+
+### Revised plan — option 3: GitHub Action + residential SOCKS5 proxy
+- Route the **Binance** fetch through a UK residential SOCKS5 proxy (the one used by the MailGPT project). Coinbase needs no proxy.
+- **BLOCKER:** the real proxy creds are **not in the MailGPT repo** — HANDOFFS.md only shows a masked `socks5://…@104.164.96.60:12324`; the live value is in that service's **Render env** (`srv-d8g21j6k1jcs73d43n40`). The owner must supply it and set it as the `PROXY_URL` GitHub secret (entering raw secrets is out of scope for the agent).
+- **Remaining build:** (1) add SOCKS dispatcher support to the script (`socks-proxy-agent` + undici) gated on `$PROXY_URL`; (2) verify the proxy actually reaches Binance; (3) implement `--apply` file edits for `index.html` + `VERIFIED_DATA.md` + `data/coinbase-snapshot.json`; (4) the `.github/workflows/check-delistings.yml` (daily cron, `peter-evans/create-pull-request`, `PROXY_URL` secret).
