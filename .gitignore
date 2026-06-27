@@ -7,3 +7,5 @@ worker.dist.js
 *.log
 .DS_Store
 CLAUDE.md
+.dev.vars
+.dev.vars.*

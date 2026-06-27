@@ -31,17 +31,17 @@
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
 <style>
 :root {
-    --bg-0: #020408;
-    --bg-1: #080c14;
-    --bg-2: #0d1320;
-    --bg-3: #131b2e;
-    --bg-4: #1a2540;
-    --border-1: rgba(255,255,255,0.06);
-    --border-2: rgba(255,255,255,0.10);
-    --border-3: rgba(255,255,255,0.15);
-    --text-1: #f1f5f9;
-    --text-2: #94a3b8;
-    --text-3: #475569;
+    --bg-0: #08090c;
+    --bg-1: #0c0e12;
+    --bg-2: #111318;
+    --bg-3: #171a21;
+    --bg-4: #222730;
+    --border-1: rgba(255,255,255,0.07);
+    --border-2: rgba(255,255,255,0.12);
+    --border-3: rgba(255,255,255,0.18);
+    --text-1: #f3f5f8;
+    --text-2: #9aa1ad;
+    --text-3: #6a7282;
     --red: #ef4444;
     --red-soft: rgba(239,68,68,0.12);
     --amber: #f59e0b;
@@ -60,7 +60,7 @@ html{font-family:'Inter',sans-serif}
 body{background:var(--bg-0);color:var(--text-1);font-family:'Inter',sans-serif;min-height:100vh;overflow-x:hidden;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale}
 body::after{content:'';position:fixed;top:0;left:0;width:100%;height:100%;opacity:0.025;background:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");pointer-events:none;z-index:0}
 .wrap{position:relative;z-index:1;max-width:1700px;margin:0 auto;padding:28px 24px}
-.mono{font-family:'IBM Plex Mono',monospace}
+.mono{font-family:'IBM Plex Mono',monospace;font-variant-numeric:tabular-nums}
 
 /* HEADER */
 .hdr{display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:16px;margin-bottom:24px}
@@ -74,69 +74,29 @@ body::after{content:'';position:fixed;top:0;left:0;width:100%;height:100%;opacit
 @keyframes blink{0%,100%{opacity:1;transform:scale(1)}50%{opacity:0.3;transform:scale(0.8)}}
 .meta-text{font-size:11px;font-family:'IBM Plex Mono',monospace;color:var(--text-3)}
 .btn{background:var(--bg-3);border:1px solid var(--border-2);color:var(--text-2);padding:7px 14px;border-radius:8px;font-family:'IBM Plex Mono',monospace;font-size:11px;cursor:pointer;transition:all 0.2s cubic-bezier(0.16,1,0.3,1);display:flex;align-items:center;gap:5px}
-.btn:hover{background:var(--bg-4);border-color:var(--border-3);color:var(--text-1);transform:translateY(-1px);box-shadow:0 4px 12px rgba(0,0,0,0.3)}
+.btn:hover{background:var(--bg-4);border-color:var(--border-3);color:var(--text-1)}
 .btn:active{transform:translateY(0)}
 .btn.spinning svg{animation:spin 0.8s linear infinite}
 @keyframes spin{from{transform:rotate(0)}to{transform:rotate(360deg)}}
 
 /* STATS */
 .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px;margin-bottom:24px}
-.stat{background:linear-gradient(135deg,var(--bg-2) 0%,var(--bg-1) 100%);border:1px solid var(--border-1);border-radius:12px;padding:20px 24px;transition:all 0.2s;position:relative;overflow:hidden}
-.stat::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;border-radius:12px 12px 0 0}
+.stat{background:var(--bg-1);border:1px solid var(--border-1);border-radius:10px;padding:17px 20px;transition:border-color 0.2s,box-shadow 0.2s;position:relative;overflow:hidden}
+.stat::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;border-radius:10px 10px 0 0;opacity:0.9}
 .stat.r::before{background:var(--red)}.stat.a::before{background:var(--amber)}.stat.g::before{background:var(--green)}.stat.b::before{background:var(--blue)}.stat.p::before{background:var(--purple)}
-.stat:hover{border-color:var(--border-2);transform:translateY(-1px);box-shadow:0 8px 24px rgba(0,0,0,0.3)}
-.stat-label{font-size:11px;text-transform:uppercase;letter-spacing:0.08em;color:var(--text-3);font-family:'IBM Plex Mono',monospace;margin-bottom:8px;font-weight:500}
-.stat-val{font-size:28px;font-weight:700;letter-spacing:-0.5px;line-height:1;font-family:'IBM Plex Mono',monospace}
+.stat:hover{border-color:var(--border-2)}
+.stat-label{font-size:10px;text-transform:uppercase;letter-spacing:0.1em;color:var(--text-3);font-family:'IBM Plex Mono',monospace;margin-bottom:9px;font-weight:600}
+.stat-val{font-size:27px;font-weight:600;letter-spacing:-0.6px;line-height:1;font-family:'IBM Plex Mono',monospace;font-variant-numeric:tabular-nums}
 .stat-val.r{color:var(--red)}.stat-val.a{color:var(--amber)}.stat-val.g{color:var(--green)}.stat-val.b{color:var(--blue)}.stat-val.p{color:var(--purple)}
 .stat-sub{font-size:10px;color:var(--text-3);font-family:'IBM Plex Mono',monospace;margin-top:6px}
 
 /* PREDICTION */
-.pred-bar{background:linear-gradient(135deg,var(--bg-2) 0%,var(--bg-1) 100%);border:1px solid var(--border-1);border-radius:12px;padding:14px 20px;margin-bottom:24px;display:flex;align-items:center;gap:16px;flex-wrap:wrap}
-.recovery-guide{background:linear-gradient(135deg,rgba(34,197,94,0.04) 0%,rgba(16,185,129,0.02) 100%);border:1px solid rgba(34,197,94,0.18);border-radius:12px;padding:20px 24px;margin-bottom:20px;display:none}
-.recovery-guide.visible{display:block}
-.recovery-guide-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;gap:12px}
-.recovery-guide-title{font-size:13px;font-weight:700;color:#22c55e;font-family:'IBM Plex Mono',monospace;letter-spacing:0.04em;display:flex;align-items:center;gap:8px}
-.recovery-guide-stat{font-size:11px;font-family:'IBM Plex Mono',monospace;color:var(--text-3);background:rgba(34,197,94,0.08);border:1px solid rgba(34,197,94,0.15);border-radius:20px;padding:3px 10px}
-.recovery-guide-intro{font-size:13px;color:var(--text-2);line-height:1.6;margin-bottom:16px}
-.recovery-guide-intro strong{color:var(--text-1)}
-.recovery-steps{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px}
-.recovery-step{background:rgba(255,255,255,0.02);border:1px solid var(--border-1);border-radius:8px;padding:12px 14px}
-.recovery-step-icon{font-size:16px;margin-bottom:6px}
-.recovery-step-title{font-size:12px;font-weight:600;color:var(--text-1);margin-bottom:4px}
-.recovery-step-desc{font-size:11px;color:var(--text-3);line-height:1.5}
-.recovery-guide-toggle{background:none;border:none;font-size:11px;color:var(--text-3);cursor:pointer;font-family:'IBM Plex Mono',monospace;padding:0;display:flex;align-items:center;gap:4px}
-.recovery-guide-toggle:hover{color:var(--text-2)}
-.recovery-guide-body{transition:opacity 0.2s}
-.recovery-guide.collapsed .recovery-guide-body{display:none}
-.recovery-guide.collapsed #rg-chevron{transform:rotate(180deg)}
 /* Coin-level recovery detail rows */
-tbody tr.mon-clickable{cursor:pointer}
-tbody tr.mon-clickable:hover{background:rgba(34,197,94,0.05)!important;border-left:2px solid rgba(34,197,94,0.4)!important}
-tbody tr.mon-clickable.expanded{background:rgba(34,197,94,0.05)!important;border-left:2px solid rgba(34,197,94,0.5)!important}
-.coin-detail-row td{padding:0!important;border:none!important}
-.coin-detail-panel{background:linear-gradient(180deg,rgba(34,197,94,0.05) 0%,transparent 100%);border-bottom:1px solid rgba(34,197,94,0.12);padding:14px 20px 18px 20px}
-.cdr-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
-.cdr-title{font-size:11px;font-family:'IBM Plex Mono',monospace;color:#22c55e;font-weight:600;letter-spacing:0.04em}
-.cdr-hint{font-size:10px;font-family:'IBM Plex Mono',monospace;color:var(--text-3)}
-.cdr-close{background:none;border:none;font-size:10px;color:var(--text-3);cursor:pointer;font-family:'IBM Plex Mono',monospace;padding:0;margin-left:12px}
-.cdr-close:hover{color:var(--text-1)}
-.cdr-items{display:flex;gap:8px;flex-wrap:wrap}
-.cdr-item{flex:1;min-width:170px;max-width:270px;background:rgba(255,255,255,0.025);border:1px solid var(--border-1);border-radius:8px;padding:10px 12px}
-.cdr-item.urgent{border-color:rgba(239,68,68,0.3);background:rgba(239,68,68,0.05)}
-.cdr-item.good{border-color:rgba(34,197,94,0.2);background:rgba(34,197,94,0.04)}
-.cdr-item-title{font-size:11px;font-weight:600;color:var(--text-1);margin-bottom:3px}
-.cdr-item.urgent .cdr-item-title{color:#f87171}
-.cdr-item.good .cdr-item-title{color:#4ade80}
-.cdr-item-desc{font-size:10.5px;color:var(--text-3);line-height:1.5}
-.cdr-footer{font-size:10px;color:var(--text-3);font-family:'IBM Plex Mono',monospace;margin-top:12px;padding-top:10px;border-top:1px solid var(--border-1)}
-.pred-bar .pred-label{font-size:11px;font-family:'IBM Plex Mono',monospace;color:var(--text-3);text-transform:uppercase;letter-spacing:0.08em;font-weight:500}
-.pred-bar .pred-val{font-size:13px;font-weight:600;color:var(--cyan);font-family:'IBM Plex Mono',monospace}
-.pred-bar .pred-sep{width:1px;height:20px;background:var(--border-1)}
 
 /* FILTERS */
 .filters{display:flex;align-items:center;gap:6px;margin-bottom:16px;flex-wrap:wrap}
 .ftab{padding:7px 16px;border-radius:20px;font-size:12px;font-weight:500;cursor:pointer;transition:all 0.2s;border:1px solid var(--border-1);background:transparent;color:var(--text-2);font-family:'Inter',sans-serif;white-space:nowrap;min-height:36px}
-.ftab:hover{background:var(--bg-3);border-color:var(--border-2);color:var(--text-1);transform:translateY(-1px)}
+.ftab:hover{background:var(--bg-3);border-color:var(--border-2);color:var(--text-1)}
 .ftab.active{background:var(--text-1);color:var(--bg-0);border-color:var(--text-1);font-weight:600}
 .ftab .cnt{font-family:'IBM Plex Mono',monospace;font-size:10px;margin-left:4px;opacity:0.6}
 .search{margin-left:auto;background:rgba(255,255,255,0.04);border:1px solid var(--border-2);border-radius:8px;padding:0 14px;color:var(--text-1);font-family:'IBM Plex Mono',monospace;font-size:12px;width:200px;outline:none;transition:all 0.2s;height:36px}
@@ -144,20 +104,18 @@ tbody tr.mon-clickable.expanded{background:rgba(34,197,94,0.05)!important;border
 .search:focus{border-color:var(--blue);box-shadow:0 0 0 2px rgba(59,130,246,0.15);background:rgba(255,255,255,0.06)}
 
 /* TABLE */
-.tbl-wrap{background:var(--bg-1);border:1px solid var(--border-1);border-radius:14px;overflow-x:auto;box-shadow:0 4px 24px rgba(0,0,0,0.4)}
+.tbl-wrap{background:var(--bg-1);border:1px solid var(--border-1);border-radius:12px;overflow-x:auto;box-shadow:0 1px 0 rgba(255,255,255,0.02),0 10px 34px rgba(0,0,0,0.34)}
 table{width:100%;border-collapse:collapse;min-width:1200px}
 thead{background:rgba(255,255,255,0.02)}
-th{padding:12px 14px;text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:0.08em;color:var(--text-3);font-family:'IBM Plex Mono',monospace;font-weight:600;border-bottom:1px solid var(--border-1);white-space:nowrap;cursor:pointer;user-select:none;transition:color 0.15s}
+th{padding:11px 14px;text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:0.1em;color:var(--text-3);font-family:'IBM Plex Mono',monospace;font-weight:600;border-bottom:1px solid var(--border-2);white-space:nowrap;cursor:pointer;user-select:none;transition:color 0.15s}
 th:hover{color:var(--text-2)}
 th.sorted{color:var(--blue)}
 th[data-sort]::after{content:'';margin-left:3px;opacity:0.3;font-size:9px}
 th[data-sort].sorted::after{content:' ▼';opacity:1}
 th[data-sort].sorted.asc-dir::after{content:' ▲';opacity:1}
-td{padding:12px 14px;border-bottom:1px solid rgba(255,255,255,0.04);font-size:13px;vertical-align:middle}
+td{padding:10px 14px;border-bottom:1px solid var(--border-1);font-size:12.5px;vertical-align:middle}
 tr{transition:background 0.15s,border-left 0.15s}
-tbody tr:nth-child(even){background:rgba(255,255,255,0.012)}
-tbody tr:hover{background:rgba(255,255,255,0.025);border-left:2px solid rgba(59,130,246,0.4)}
-tbody tr:hover td:first-child{padding-left:12px}
+tbody tr:hover{background:rgba(255,255,255,0.03)}
 tbody tr:last-child td{border-bottom:none}
 tbody tr.delisting-row{background:rgba(239,68,68,0.04)}
 tbody tr.delisted-row{opacity:0.4}
@@ -181,7 +139,7 @@ tbody tr.limit-row{background:rgba(245,158,11,0.04)}
 .ex-icons a:hover{opacity:1}
 .ex-icons a img{width:16px;height:16px;border-radius:3px;display:block}
 
-.badge{display:inline-flex;align-items:center;gap:4px;padding:3px 9px;border-radius:20px;font-size:10px;font-weight:600;font-family:'IBM Plex Mono',monospace;text-transform:uppercase;letter-spacing:0.04em}
+.badge{display:inline-flex;align-items:center;gap:4px;padding:3px 8px;border-radius:5px;font-size:10px;font-weight:600;font-family:'IBM Plex Mono',monospace;text-transform:uppercase;letter-spacing:0.04em}
 .badge.monitoring{background:var(--amber-soft);color:var(--amber);border:1px solid rgba(245,158,11,0.15)}
 .badge.delisting{background:var(--red-soft);color:var(--red);border:1px solid rgba(239,68,68,0.15);animation:dpulse 2s ease-in-out infinite}
 .badge.delisted{background:rgba(100,100,130,0.08);color:var(--text-3);border:1px solid rgba(100,100,130,0.1)}
@@ -204,10 +162,10 @@ tbody tr.limit-row{background:rgba(245,158,11,0.04)}
 .days-ref.near{color:var(--amber)}
 .days-ref.ok{color:var(--green)}
 
-.vol{font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--text-2)}
-.pct{font-size:11px}.pct.up{color:var(--green)}.pct.dn{color:var(--red)}
-.mcap{font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--text-2)}
-.depth{font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--text-3)}
+.vol{font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--text-2);font-variant-numeric:tabular-nums}
+.pct{font-size:11px;font-family:'IBM Plex Mono',monospace;font-variant-numeric:tabular-nums;font-weight:500}.pct.up{color:var(--green)}.pct.dn{color:var(--red)}
+.mcap{font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--text-1);font-variant-numeric:tabular-nums}
+.depth{font-family:'IBM Plex Mono',monospace;font-size:11.5px;color:var(--text-2);font-variant-numeric:tabular-nums}
 
 /* RISK SCORE */
 .risk-score{display:inline-flex;align-items:center;gap:5px;font-family:'IBM Plex Mono',monospace;font-size:12px;font-weight:700;padding:3px 8px;border-radius:4px}
@@ -226,8 +184,8 @@ tbody tr.limit-row{background:rgba(245,158,11,0.04)}
 .timeline-section{margin-top:40px}
 .sec-title{font-size:16px;font-weight:700;margin-bottom:16px;display:flex;align-items:center;gap:8px;color:var(--text-1);letter-spacing:-0.3px}
 .timeline{display:flex;gap:12px;overflow-x:auto;padding-bottom:12px;scrollbar-width:thin;scrollbar-color:var(--border-2) transparent}
-.tcard{flex-shrink:0;background:linear-gradient(135deg,var(--bg-2) 0%,var(--bg-1) 100%);border:1px solid var(--border-1);border-radius:12px;padding:18px;min-width:240px;transition:all 0.2s cubic-bezier(0.16,1,0.3,1)}
-.tcard:hover{border-color:var(--border-2);transform:translateY(-2px);box-shadow:0 8px 24px rgba(0,0,0,0.4)}
+.tcard{flex-shrink:0;background:var(--bg-1);border:1px solid var(--border-1);border-radius:10px;padding:18px;min-width:240px;transition:border-color 0.2s,box-shadow 0.2s}
+.tcard:hover{border-color:var(--border-2)}
 .tcard.urgent{border-color:rgba(239,68,68,0.2);background:linear-gradient(135deg,var(--bg-2),rgba(239,68,68,0.03))}
 .tcard .tdate{font-family:'IBM Plex Mono',monospace;font-size:12px;font-weight:600;color:var(--amber);margin-bottom:6px}
 .tcard.urgent .tdate{color:var(--red)}
@@ -291,9 +249,6 @@ tbody tr.limit-row{background:rgba(245,158,11,0.04)}
   .search{min-width:140px;font-size:11px}
   .hdr h1{font-size:18px}
   .hdr .sub{font-size:11px}
-  .pred-bar{padding:10px 14px;gap:10px}
-  .pred-bar .pred-label{font-size:10px}
-  .pred-bar .pred-val{font-size:12px}
   .cookie-bar{padding:12px 14px}
   .cookie-bar-inner{flex-direction:column;align-items:flex-start;gap:10px}
   .cookie-bar-actions{align-self:flex-end}
@@ -487,60 +442,7 @@ tbody tr.limit-row{background:rgba(245,158,11,0.04)}
     </div>
 </div>
 <div class="stats" id="bn-stats"></div>
-<div class="pred-bar" id="bn-predBar"></div>
 <div class="filters" id="bn-filters"></div>
-<div class="recovery-guide" id="bn-recovery-guide">
-  <div class="recovery-guide-header">
-    <div class="recovery-guide-title">
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2.5"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
-      Recovery Playbook — How Monitored Coins Get Restored
-    </div>
-    <div style="display:flex;align-items:center;gap:8px">
-      <div class="recovery-guide-stat" id="bn-restore-rate">loading…</div>
-      <button class="recovery-guide-toggle" onclick="document.getElementById('bn-recovery-guide').classList.toggle('collapsed')">
-        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" id="rg-chevron"><polyline points="18 15 12 9 6 15"/></svg>
-        collapse
-      </button>
-    </div>
-  </div>
-  <div class="recovery-guide-body">
-    <div class="recovery-guide-intro">
-      Monitoring status is a warning, not a verdict. Binance reviews tagged coins regularly — <strong>projects that demonstrate improving fundamentals have gotten restored</strong>. Here's what the data shows matters most:
-    </div>
-    <div class="recovery-steps">
-      <div class="recovery-step">
-        <div class="recovery-step-icon">📈</div>
-        <div class="recovery-step-title">Grow trading volume</div>
-        <div class="recovery-step-desc">Sustain consistent daily volume above $500K–$1M USDT. Sudden spikes don't count — Binance looks for sustained organic growth over weeks.</div>
-      </div>
-      <div class="recovery-step">
-        <div class="recovery-step-icon">💧</div>
-        <div class="recovery-step-title">Improve liquidity depth</div>
-        <div class="recovery-step-desc">Engage market makers to tighten spreads and deepen order book. Bid/ask depth within 2% of price is a key signal this monitor tracks.</div>
-      </div>
-      <div class="recovery-step">
-        <div class="recovery-step-icon">🌐</div>
-        <div class="recovery-step-title">List on more exchanges</div>
-        <div class="recovery-step-desc">Cross-listings on OKX, Kraken, or Coinbase demonstrate market demand beyond a single venue. Multi-exchange presence reduces delisting risk.</div>
-      </div>
-      <div class="recovery-step">
-        <div class="recovery-step-icon">⛓</div>
-        <div class="recovery-step-title">Show on-chain activity</div>
-        <div class="recovery-step-desc">Growing active addresses, transaction counts, TVL, or protocol usage show real utility beyond speculation.</div>
-      </div>
-      <div class="recovery-step">
-        <div class="recovery-step-icon">📣</div>
-        <div class="recovery-step-title">Maintain community health</div>
-        <div class="recovery-step-desc">Regular project updates, active social channels, GitHub commits, and roadmap progress signal a live team. Dead comms is a red flag.</div>
-      </div>
-      <div class="recovery-step">
-        <div class="recovery-step-icon">📬</div>
-        <div class="recovery-step-title">Engage the exchange</div>
-        <div class="recovery-step-desc">Respond promptly to any exchange communications. Proactively submit evidence of improvements — exchanges do review appeals and project submissions.</div>
-      </div>
-    </div>
-  </div>
-</div>
 <div class="tbl-wrap">
     <table>
         <thead><tr>
@@ -1572,38 +1474,6 @@ function renderStats() {
     `;
 }
 
-function renderPredBar() {
-    // Compute next expected announcement date dynamically
-    // Collect all unique monDates, find the latest, add median interval
-    const dates = [...new Set(TRACKED_TOKENS.map(t => t.monDate).filter(Boolean))].sort();
-    let nextWave = '—';
-    if (dates.length >= 2) {
-        const intervals = [];
-        for (let i = 1; i < dates.length; i++) {
-            intervals.push(daysBetween(dates[i-1], dates[i]));
-        }
-        intervals.sort((a,b) => a-b);
-        const medInterval = intervals[Math.floor(intervals.length / 2)];
-        const lastDate = dates[dates.length - 1];
-        const nextDate = new Date(lastDate + 'T00:00:00');
-        nextDate.setDate(nextDate.getDate() + medInterval);
-        const today = NOW.toISOString().slice(0,10);
-        if (nextDate.toISOString().slice(0,10) > today) {
-            nextWave = '~' + nextDate.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
-        } else {
-            nextWave = 'Due soon';
-        }
-    }
-    document.getElementById('bn-predBar').innerHTML = `
-        <span class="pred-label">🔮 Pattern Analysis</span>
-        <span class="pred-val">Next tag wave: ${nextWave}</span>
-        <span class="pred-sep"></span>
-        <span class="pred-val">Delist rate: ${Math.round(TRACKED_TOKENS.filter(t=>t.status==='delisted').length / TRACKED_TOKENS.length * 100)}%</span>
-        <span class="pred-sep"></span>
-        <span class="pred-val">Restore rate: ${Math.round(TRACKED_TOKENS.filter(t=>t.status==='restored').length / TRACKED_TOKENS.length * 100)}%</span>
-    `;
-}
-
 function renderFilters() {
     const all = allCoins.length;
     const active = allCoins.filter(t => t.status === 'active' || t.status === 'monitoring' || t.status === 'delisting' || t.status === 'restored').length;
@@ -1689,10 +1559,6 @@ function renderTable() {
         }
 
         const rowClass = t.status === 'delisting' ? 'delisting-row' : t.status === 'delisted' ? 'delisted-row' : t.status === 'restored' ? 'restored-row' : (t.status === 'active' && t._risk >= 70) ? 'highrisk-row' : '';
-        const isClickable = t.status === 'monitoring' || t.status === 'delisting';
-        const domVal = t.monDate ? daysBetween(t.monDate, t.status === 'delisting' ? today : today) : null;
-        if (isClickable) bnDetailStore.set(t.sym, { t, ld, dom: domVal });
-
         const ghIconUrl = `https://cdn.jsdelivr.net/gh/ErikThiart/cryptocurrency-icons@master/32/${t.sym.toLowerCase()}.png`;
         const primaryIconUrl = ld.icon || ghIconUrl;
         const fallbackIconUrl = ld.icon ? ghIconUrl : '';
@@ -1709,11 +1575,8 @@ function renderTable() {
         const cmcLink = cmcSlug ? 'https://coinmarketcap.com/currencies/' + cmcSlug + '/' : '';
         const cmcHtml = cmcLink ? '<a href="' + cmcLink + '" target="_blank" title="CoinMarketCap"><img src="https://www.google.com/s2/favicons?domain=coinmarketcap.com&sz=32" alt="CMC"></a>' : '';
 
-        const clickAttr = isClickable ? `onclick="bnToggleDetail('${t.sym}',this)"` : '';
-        const expandHint = isClickable ? `<span style="float:right;font-size:9px;font-family:'IBM Plex Mono',monospace;color:var(--text-3);opacity:0.5;margin-top:2px">▶ actions</span>` : '';
-
-        return `<tr class="${rowClass}${isClickable?' mon-clickable':''}" ${clickAttr}>
-            <td><div class="tk">${coinIconHtml}<div><div class="tk-sym">${t.sym}${expandHint}</div><div class="tk-name">${t.name||t.sym}</div><div class="tk-links"><a href="${binanceLink}" target="_blank" title="${linkTitle}" onclick="event.stopPropagation()">${linkPrimaryIcon}</a>${cmcHtml ? cmcHtml.replace('href=', 'onclick="event.stopPropagation()" href=') : ''}</div></div></div></td>
+        return `<tr class="${rowClass}">
+            <td><div class="tk">${coinIconHtml}<div><div class="tk-sym">${t.sym}</div><div class="tk-name">${t.name||t.sym}</div><div class="tk-links"><a href="${binanceLink}" target="_blank" title="${linkTitle}" onclick="event.stopPropagation()">${linkPrimaryIcon}</a>${cmcHtml ? cmcHtml.replace('href=', 'onclick="event.stopPropagation()" href=') : ''}</div></div></div></td>
             <td>${badges[t.status]||''}</td>
             <td>${riskHtml}</td>
             <td class="col-days">${domHtml}</td>
@@ -1778,129 +1641,10 @@ function renderTimeline() {
 
 function bnRenderAll() {
     renderStats();
-    renderPredBar();
     renderFilters();
     renderTable();
     renderTimeline();
-    // Sync the recovery guide on every render (incl. first paint): show it for the
-    // monitoring/high-risk views and keep its restore-rate stat fresh. Previously both
-    // were handled only on filter change, so on initial load the guide stayed hidden
-    // and the stat stuck on "loading…" even though 'monitoring' is the default filter.
-    const guide = document.getElementById('bn-recovery-guide');
-    if (guide) guide.classList.toggle('visible', filter === 'monitoring' || filter === 'highrisk');
-    const rateEl = document.getElementById('bn-restore-rate');
-    if (rateEl) {
-        const rest = allCoins.filter(t => t.status === 'restored').length;
-        const everTagged = allCoins.filter(t => t.monDate).length;
-        if (everTagged > 0) rateEl.textContent = `${Math.round(rest / everTagged * 100)}% of tagged coins restored`;
-    }
     document.getElementById('bn-updTime').textContent = new Date().toLocaleTimeString();
-}
-
-// ============ COIN DETAIL EXPAND ============
-const bnDetailStore = new Map();
-
-function bnToggleDetail(sym, rowEl) {
-    const next = rowEl.nextElementSibling;
-    if (next && next.classList.contains('coin-detail-row')) {
-        next.remove();
-        rowEl.classList.remove('expanded');
-        return;
-    }
-    document.querySelectorAll('.coin-detail-row').forEach(r => r.remove());
-    document.querySelectorAll('.mon-clickable.expanded').forEach(r => r.classList.remove('expanded'));
-
-    const data = bnDetailStore.get(sym);
-    if (!data) return;
-    rowEl.classList.add('expanded');
-
-    const { items, restoreCount } = bnBuildDetailItems(data.t, data.ld, data.dom);
-    const itemsHtml = items.map(item =>
-        `<div class="cdr-item ${item.urgent?'urgent':item.ok?'good':''}">
-            <div class="cdr-item-title">${item.icon} ${item.title}</div>
-            <div class="cdr-item-desc">${item.desc}</div>
-        </div>`
-    ).join('');
-
-    const tr = document.createElement('tr');
-    tr.className = 'coin-detail-row';
-    tr.innerHTML = `<td colspan="13"><div class="coin-detail-panel">
-        <div class="cdr-head">
-            <div class="cdr-title">📋 RECOVERY ACTIONS — ${sym}</div>
-            <div style="display:flex;align-items:center;gap:8px">
-                <span class="cdr-hint">click row again to close</span>
-                <button class="cdr-close" onclick="event.stopPropagation();this.closest('tr').previousElementSibling.click()">✕</button>
-            </div>
-        </div>
-        <div class="cdr-items">${itemsHtml}</div>
-        <div class="cdr-footer">💡 ${restoreCount} coins have recovered from monitoring status — consistent improvement gets results.</div>
-    </div></td>`;
-    rowEl.after(tr);
-}
-
-function bnBuildDetailItems(t, ld, dom) {
-    const vol = ld.vol || 0;
-    const bid = ld.bidDepth;
-    const mcap = ld.mcap || 0;
-    const onCB  = exchangeData.coinbase.has(t.sym);
-    const onOKX = exchangeData.okx.has(t.sym);
-    const onKR  = exchangeData.kraken.has(t.sym);
-    const crossCount = [onCB, onOKX, onKR].filter(Boolean).length;
-    const restoreCount = allCoins.filter(c => c.status === 'restored').length;
-    const items = [];
-
-    // 1. Time window
-    if (dom !== null && dom !== undefined) {
-        if (dom < 30)        items.push({ ok:true,  icon:'🟢', title:`${dom}d on monitoring — still early`,       desc:`The 195-day median to delist means you have time. Start immediately — early consistent improvement has the highest recovery rate.` });
-        else if (dom < 90)   items.push({ ok:false, icon:'⏱',  title:`${dom}d on monitoring — keep up momentum`,  desc:`Past one month. Exchanges review tagged coins regularly. Demonstrate measurable improvement every 30 days to show a positive trend.` });
-        else if (dom < 150)  items.push({ ok:false, urgent:true, icon:'⚠️', title:`${dom}d — past halfway`,       desc:`Past the halfway point of the 195-day median. Prioritize volume and order book depth — they're the fastest metrics to visibly move.` });
-        else                 items.push({ ok:true,  icon:'💪', title:`${dom}d — still listed past the median`,   desc:`The median delist timeline is 195 days — you're past it and Binance has still kept you active. That's a signal they're watching for improvement. Keep delivering: consistent volume growth and transparent team updates now could tip the decision in your favor.` });
-    }
-
-    // 2. Project-specific resources (positive signals already in place)
-    if (t.resources && t.resources.length > 0) {
-        t.resources.forEach(r => {
-            items.push({ ok:true, icon:'🔗', title:`✅ ${r.label}`,
-                desc:`${r.note} — <a href="${r.url}" target="_blank" style="color:#4ade80;text-decoration:underline">${r.url.replace('https://','')}</a>` });
-        });
-    }
-
-    // 3. Volume
-    if (vol > 0) {
-        if (vol < 100000)        items.push({ ok:false, urgent:true, icon:'📉', title:`Volume critical — ${fmtNum(vol,0)}/day`,     desc:`Far below the $500K–$1M threshold. Priority #1. Organic community trading, ecosystem integrations, and liquidity mining can help — avoid wash trading.` });
-        else if (vol < 500000)   items.push({ ok:false, icon:'📈', title:`Volume low — ${fmtNum(vol,0)}/day`,                       desc:`Below $500K. Sustained growth over weeks counts more than spikes. Target organic drivers: new exchange listings, product launches, community campaigns.` });
-        else if (vol < 1000000)  items.push({ ok:false, icon:'📈', title:`Volume near threshold — ${fmtNum(vol,0)}/day`,            desc:`Getting close. Sustain $1M+ consistently for several weeks — that trend is what the exchange sees as a positive signal.` });
-        else                     items.push({ ok:true,  icon:'✅', title:`Volume healthy — ${fmtNum(vol,0)}/day`,                   desc:`Strong volume. Focus on liquidity depth and cross-exchange presence as the next priorities.` });
-    }
-
-    // 4. Order book depth
-    if (bid !== undefined && bid !== null) {
-        if (bid < 10000)        items.push({ ok:false, urgent:true, icon:'🔴', title:`Order book empty — ${bid>0?fmtNum(bid,0):'$0'} bid depth`,  desc:`Near-empty book signals poor price discovery. Engage a professional market maker immediately — this is the fastest fix available.` });
-        else if (bid < 50000)   items.push({ ok:false, icon:'💧', title:`Order book thin — ${fmtNum(bid,0)} bid depth`,                           desc:`Thin books amplify volatility and concern exchanges. A market maker providing consistent 2% depth can move this metric within days.` });
-        else                    items.push({ ok:true,  icon:'✅', title:`Liquidity acceptable — ${fmtNum(bid,0)} bid depth`,                       desc:`Bid/ask depth looks reasonable. Keep it consistent and focus on volume and exchange presence.` });
-    }
-
-    // 5. Cross-exchange presence
-    if (crossCount === 0) {
-        items.push({ ok:false, icon:'🌐', title:'Only on Binance',
-            desc:`Single-venue coins carry the highest delisting risk. Pursue Coinbase, OKX, or Kraken listings to demonstrate broader market demand — each listing is evidence in your favor.` });
-    } else if (crossCount < 3) {
-        const have = [onCB&&'Coinbase',onOKX&&'OKX',onKR&&'Kraken'].filter(Boolean).join(', ');
-        const missing = [!onCB&&'Coinbase',!onOKX&&'OKX',!onKR&&'Kraken'].filter(Boolean);
-        items.push({ ok:false, icon:'🌐', title:`Listed on ${crossCount} other exchange${crossCount>1?'s':''}`,
-            desc:`On ${have}. Adding ${missing[0]} would strengthen your multi-venue case. Use this in exchange communications as proof of market demand.` });
-    } else {
-        items.push({ ok:true, icon:'✅', title:'Strong cross-exchange presence',
-            desc:`Listed on Coinbase, OKX, and Kraken — excellent. Mention this prominently in any exchange appeal or status update submission.` });
-    }
-
-    // 6. Market cap context (only flag if very low)
-    if (mcap > 0 && mcap < 5000000) {
-        items.push({ ok:false, icon:'💎', title:`Market cap low — ${fmtNum(mcap,0)}`,
-            desc:`Low market cap signals limited adoption. Prioritize demonstrating real utility: DeFi integrations, active on-chain usage, and meaningful partnerships help build organic value.` });
-    }
-
-    return { items, restoreCount };
 }
 
 // ============ INTERACTIONS ============
@@ -1914,12 +1658,6 @@ function bnSetFilter(f) {
     filter = f;
     page = 0;
     bnRenderAll();
-    const guide = document.getElementById('bn-recovery-guide');
-    if (guide) {
-        const show = (f === 'monitoring' || f === 'highrisk');
-        guide.classList.toggle('visible', show);
-        // restore-rate stat is kept current in bnRenderAll() (called above)
-    }
 }
 function bnSetQuery(q) { query = q; page = 0; renderTable(); }
 function bnSetPage(p) { page = Math.max(0, p); renderTable(); window.scrollTo({top: document.querySelector('.tbl-wrap').offsetTop - 80, behavior:'smooth'}); }
@@ -1953,7 +1691,6 @@ window.bnSortBy = bnSortBy;
 window.bnSetQuery = bnSetQuery;
 window.bnSetPage = bnSetPage;
 window.bnDoRefresh = bnDoRefresh;
-window.bnToggleDetail = bnToggleDetail;
 
 })();
 
