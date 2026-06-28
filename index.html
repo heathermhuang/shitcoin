@@ -2081,12 +2081,19 @@ async function fetchDepth(sym) {
         if (!r.ok) return;
         const d = await r.json();
         if (!liveData[sym]) liveData[sym] = {};
-        const price = liveData[sym].price || 0;
+        const bids = d.bids || [], asks = d.asks || [];
+        // Reference price for the ±2% window: prefer the stats price, but fall back to
+        // the book's own mid (best bid/ask) so depth still computes when
+        // /cb/products/stats hasn't populated liveData[sym].price yet.
+        const bestBid = bids.length ? parseFloat(bids[0][0]) : 0;
+        const bestAsk = asks.length ? parseFloat(asks[0][0]) : 0;
+        const mid = (bestBid && bestAsk) ? (bestBid + bestAsk) / 2 : (bestBid || bestAsk);
+        const price = liveData[sym].price || mid;
         if (!price) return;
         const low = price * 0.98, high = price * 1.02;
         let bidSum = 0, askSum = 0;
-        (d.bids || []).forEach(([p, s]) => { const px = parseFloat(p); if (px >= low) bidSum += px * parseFloat(s); });
-        (d.asks || []).forEach(([p, s]) => { const px = parseFloat(p); if (px <= high) askSum += px * parseFloat(s); });
+        bids.forEach(([p, s]) => { const px = parseFloat(p); if (px >= low) bidSum += px * parseFloat(s); });
+        asks.forEach(([p, s]) => { const px = parseFloat(p); if (px <= high) askSum += px * parseFloat(s); });
         liveData[sym].bidDepth = bidSum;
         liveData[sym].askDepth = askSum;
     } catch(e) {}
@@ -2150,11 +2157,20 @@ async function fetchCoinGeckoData() {
 }
 
 async function fetchDepthBatch() {
-    // Fetch depth for top risk coins (non-delisted, risk >= 30)
-    const targets = allCoins.filter(c => c.status !== 'delisted' && c._risk >= 30 && liveData[c.sym]?.price).map(c => c.sym);
-    for (const sym of targets.slice(0, 40)) {
+    // Fetch order-book depth for every online coin that trades against USD, highest
+    // risk first. No longer gated on a pre-populated price (fetchDepth derives a mid
+    // from the book itself), and no longer capped at 40 — so bid/ask fills in across
+    // the table instead of just the top handful. Filtering to coins that actually have
+    // a <SYM>-USD pair avoids wasted 404s on USDT/USDC-only listings.
+    const targets = allCoins
+        .filter(c => c.status !== 'delisted' && (c.pairs || []).includes(c.sym + '-USD'))
+        .sort((a, b) => (b._risk || 0) - (a._risk || 0))
+        .map(c => c.sym);
+    let i = 0;
+    for (const sym of targets.slice(0, 150)) {
         await fetchDepth(sym);
-        await new Promise(r => setTimeout(r, 200));
+        if (++i % 12 === 0) cbRenderAll(); // progressive paint as depth resolves
+        await new Promise(r => setTimeout(r, 150));
     }
     cbRenderAll();
 }
@@ -2178,6 +2194,7 @@ async function cbDoRefresh() {
     // Re-run enrichment so coins left blank by an earlier rate-limit window get another
     // chance to resolve their name/mcap/logo (now scoped to just the missing ones).
     fetchCoinGeckoData();
+    fetchDepthBatch(); // refresh order-book depth too — was previously fetched only once at init
     btn.classList.remove('spinning');
 }
 
