@@ -1109,7 +1109,20 @@ async function fetchMarketCaps() {
             'BTS':'bitshares','SYS':'syscoin','PERL':'perlin','XMR':'monero','FARM':'harvest-finance',
         };
 
-        const getGeckoId = sym => overrides[sym] || sym.toLowerCase();
+        // Resolve each ticker to the highest-market-cap CoinGecko coin with that symbol so
+        // tickers missing from `overrides` don't fall back to a bare-ticker id owned by a
+        // tiny namesake (e.g. TIA -> "Tiamonds" $420K instead of Celestia). Top ~1000 by mcap.
+        const cgBySymbol = {};
+        for (let page = 1; page <= 4; page++) {
+            let arr = null;
+            for (let a = 0; a < 2 && !arr; a++) {
+                try { const r = await smartFetch(`/cg/coins/markets?vs_currency=usd&order=market_cap_desc&per_page=250&page=${page}`); if (r.ok) { const j = await r.json().catch(()=>[]); if (Array.isArray(j) && j.length) arr = j; } } catch(e) {}
+                if (!arr) await new Promise(res => setTimeout(res, 600));
+            }
+            if (!arr) break;
+            arr.forEach(c => { const s = (c.symbol || '').toUpperCase(); if (s && !cgBySymbol[s]) cgBySymbol[s] = c; });
+        }
+        const getGeckoId = sym => overrides[sym] || (cgBySymbol[sym.toUpperCase()] || {}).id || sym.toLowerCase();
 
         // Batch fetch from CoinGecko markets API (100 at a time)
         const batches = [];
@@ -2104,7 +2117,8 @@ async function fetchDepth(sym) {
 
 async function fetchCoinGeckoData() {
     try {
-        const getGeckoId = sym => CG_OVERRIDES[sym] || sym.toLowerCase();
+        let cgBySymbol = {};
+        const getGeckoId = sym => CG_OVERRIDES[sym] || (cgBySymbol[sym.toUpperCase()] || {}).id || sym.toLowerCase();
 
         // Batch fetch from CoinGecko markets API. Active coins first so they get
         // enriched before any rate-limit window, then delisted coins so the delisted
@@ -2118,6 +2132,18 @@ async function fetchCoinGeckoData() {
         const delistedSyms = allCoins.filter(c => c.status === 'delisted' && needs(c)).map(c => c.sym);
         const fetchSyms = [...activeSyms, ...delistedSyms];
         if (!fetchSyms.length) return;
+        // Build a symbol -> highest-market-cap coin map (top ~1000) so tickers missing from
+        // CG_OVERRIDES resolve to the real coin (TIA -> Celestia), not a tiny namesake
+        // (tia -> "Tiamonds" $420K) that owns the bare-ticker id.
+        for (let page = 1; page <= 4; page++) {
+            let arr = null;
+            for (let a = 0; a < 2 && !arr; a++) {
+                try { const r = await smartFetch(`/cg/coins/markets?vs_currency=usd&order=market_cap_desc&per_page=250&page=${page}`); if (r.ok) { const j = await r.json().catch(()=>[]); if (Array.isArray(j) && j.length) arr = j; } } catch(e) {}
+                if (!arr) await new Promise(res => setTimeout(res, 600));
+            }
+            if (!arr) break;
+            arr.forEach(c => { const s = (c.symbol || '').toUpperCase(); if (s && !cgBySymbol[s]) cgBySymbol[s] = c; });
+        }
         const batches = [];
         for (let i = 0; i < fetchSyms.length; i += 100) batches.push(fetchSyms.slice(i, i + 100));
 
