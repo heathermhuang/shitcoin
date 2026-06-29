@@ -1009,13 +1009,14 @@ async function fetchAllData() {
     if (lprog) lprog.style.width = '100%';
     setTimeout(() => { document.getElementById('bn-loader').classList.add('hidden'); const nl = document.getElementById('tnav-live'); if (nl) nl.style.display = 'flex'; }, 200);
 
-    // Step 4: Fetch market caps from CoinGecko (async, renders update when done)
-    fetchMarketCaps();
+    // Step 4 + 5: Enrich market caps FIRST, then fetch the bid/ask spread. Both hit
+    // CoinGecko, which (with the worker proxy CF-blocked) is served by a direct browser
+    // fetch on a strict per-IP rate limit. Running the per-coin spread calls concurrently
+    // with the mcap enrichment starves it → blank market caps. Sequencing also lets the
+    // spread lookup reuse the cgId resolved during enrichment.
+    fetchMarketCaps().then(() => fetchDepthData());
 
-    // Step 5: Fetch depth for high-risk + monitoring tokens
-    fetchDepthData();
-
-    // Step 6: Fetch cross-exchange listing data
+    // Step 6: Fetch cross-exchange listing data (separate /ex/ source, no CoinGecko)
     fetchExchangeData();
 }
 
@@ -1123,10 +1124,30 @@ async function fetchMarketCaps() {
         }
         const getGeckoId = sym => overrides[sym] || (cgBySymbol[sym.toUpperCase()] || {}).id || sym.toLowerCase();
 
-        // Batch fetch from CoinGecko markets API (100 at a time)
+        // Apply the page data we ALREADY fetched above directly: every top-~1000 coin
+        // gets its mcap/icon/cgId here with no further CoinGecko calls, so it can't be
+        // blanked by a rate-limit on the id-batches below. Only coins with a curated
+        // override (which may intentionally point away from the highest-mcap namesake)
+        // or coins outside the top-~1000 still need an id-fetch.
+        const leftover = [];
+        for (const sym of allSymsForIcons) {
+            const cg = overrides[sym] ? null : cgBySymbol[sym.toUpperCase()];
+            if (!cg) { leftover.push(sym); continue; }
+            if (!liveData[sym]) liveData[sym] = {};
+            if (liveData[sym].price !== undefined) {
+                liveData[sym].mcap = cg.market_cap || cg.fully_diluted_valuation || 0;
+                liveData[sym].fdv = cg.fully_diluted_valuation;
+            }
+            if (cg.image) liveData[sym].icon = cg.image;
+            if (cg.id) liveData[sym].cgId = cg.id;
+        }
+        computeRiskScores();
+        bnRenderAll(); // paint the top-~1000 immediately, before any id-batch
+
+        // Batch fetch ONLY the leftovers from CoinGecko markets API (100 at a time)
         const batches = [];
-        for (let i = 0; i < allSymsForIcons.length; i += 100) {
-            batches.push(allSymsForIcons.slice(i, i + 100));
+        for (let i = 0; i < leftover.length; i += 100) {
+            batches.push(leftover.slice(i, i + 100));
         }
 
         for (const batch of batches) {
@@ -1179,11 +1200,15 @@ async function fetchDepthData() {
     const activeHighRisk = allCoins
         .filter(t => t.status === 'active' && t._risk >= 70 && liveData[t.sym]?.price)
         .sort((a, b) => (b._risk || 0) - (a._risk || 0))
-        .slice(0, 20);
+        .slice(0, 10);
     const candidates = [...tagged, ...activeHighRisk];
 
-    for (let i = 0; i < candidates.length; i += 5) {
-        const batch = candidates.slice(i, i + 5);
+    // These per-coin /coins/{id}/tickers calls share CoinGecko's strict per-IP limit with
+    // the market-cap enrichment, so keep them gentle (small batches, long pauses, capped
+    // active set). Runs only AFTER fetchMarketCaps, so mcaps are already in regardless.
+    const SPREAD_BATCH = 3, SPREAD_DELAY = 1200;
+    for (let i = 0; i < candidates.length; i += SPREAD_BATCH) {
+        const batch = candidates.slice(i, i + SPREAD_BATCH);
         await Promise.all(batch.map(async tk => {
             try {
                 const cgId = liveData[tk.sym]?.cgId || tk.sym.toLowerCase();
@@ -1198,7 +1223,7 @@ async function fetchDepthData() {
                 liveData[tk.sym].spread = pick.bid_ask_spread_percentage;
             } catch(e) {}
         }));
-        if (i + 5 < candidates.length) await new Promise(r => setTimeout(r, 500));
+        if (i + SPREAD_BATCH < candidates.length) await new Promise(r => setTimeout(r, SPREAD_DELAY));
     }
     computeRiskScores();
     bnRenderAll();
@@ -2136,8 +2161,25 @@ async function fetchCoinGeckoData() {
             if (!arr) break;
             arr.forEach(c => { const s = (c.symbol || '').toUpperCase(); if (s && !cgBySymbol[s]) cgBySymbol[s] = c; });
         }
+        // Apply the page data we already fetched directly so top-~1000 coins resolve their
+        // mcap/name/icon here with no extra CoinGecko calls (immune to a rate-limit on the
+        // id-batches below). Only curated-override coins and the long tail outside the
+        // top-~1000 still need an id-fetch.
+        const leftover = [];
+        for (const sym of fetchSyms) {
+            const cg = CG_OVERRIDES[sym] ? null : cgBySymbol[sym.toUpperCase()];
+            if (!cg) { leftover.push(sym); continue; }
+            if (!liveData[sym]) liveData[sym] = {};
+            liveData[sym].mcap = cg.market_cap || cg.fully_diluted_valuation || 0;
+            if (cg.image) liveData[sym].icon = cg.image;
+            if (cg.id) liveData[sym].cgId = cg.id;
+            if (cg.name) liveData[sym].name = cg.name;
+        }
+        allCoins.forEach(c => c._risk = calcRisk(c));
+        cbRenderAll(); // paint the top-~1000 immediately, before any id-batch
+
         const batches = [];
-        for (let i = 0; i < fetchSyms.length; i += 100) batches.push(fetchSyms.slice(i, i + 100));
+        for (let i = 0; i < leftover.length; i += 100) batches.push(leftover.slice(i, i + 100));
 
         for (const batch of batches) {
             const ids = batch.map(getGeckoId).join(',');
