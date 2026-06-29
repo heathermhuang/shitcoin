@@ -123,7 +123,7 @@ tbody tr.restored-row{background:rgba(34,197,94,0.04)}
 tbody tr.highrisk-row{background:rgba(239,68,68,0.03)}
 tbody tr.limit-row{background:rgba(245,158,11,0.04)}
 /* Right-align numeric columns (headers by sort key, cells by content class) */
-th[data-sort="price"],th[data-sort="peg"],th[data-sort="mcap"],th[data-sort="vol"],th[data-sort="vol24h"],th[data-sort="change"],th[data-sort="change24h"],th[data-sort="risk"],th[data-sort="_risk"],th[data-sort="bidDepth"],th[data-sort="askDepth"],th[data-sort="daysOnMon"]{text-align:right}
+th[data-sort="price"],th[data-sort="peg"],th[data-sort="mcap"],th[data-sort="vol"],th[data-sort="vol24h"],th[data-sort="change"],th[data-sort="change24h"],th[data-sort="risk"],th[data-sort="_risk"],th[data-sort="bidDepth"],th[data-sort="askDepth"],th[data-sort="spread"],th[data-sort="daysOnMon"]{text-align:right}
 td:has(.price-cell),td:has(.peg-delta),td:has(.mcap),td:has(.vol),td:has(.pct),td:has(.depth),td:has(.risk-score),td:has(.days-ref){text-align:right}
 
 /* CELLS */
@@ -255,7 +255,7 @@ td:has(.price-cell),td:has(.peg-delta),td:has(.mcap),td:has(.vol),td:has(.pct),t
   .cookie-bar{padding:12px 14px}
   .cookie-bar-inner{flex-direction:column;align-items:flex-start;gap:10px}
   .cookie-bar-actions{align-self:flex-end}
-  .col-days,.col-mon,.col-vol,.col-mcap,.col-bid,.col-ask,.col-also{display:none}
+  .col-days,.col-mon,.col-vol,.col-mcap,.col-bid,.col-ask,.col-spread,.col-also{display:none}
   table{min-width:360px}
   td,th{padding:10px 10px}
   .tk-ico{width:24px;height:24px}
@@ -451,7 +451,7 @@ td:has(.price-cell),td:has(.peg-delta),td:has(.mcap),td:has(.vol),td:has(.pct),t
         <thead><tr>
             <th data-sort="symbol" onclick="bnSortBy('symbol')">Token</th>
             <th data-sort="status" onclick="bnSortBy('status')">Status</th>
-            <th data-sort="risk" onclick="bnSortBy('risk')" title="Risk score: volume + mcap + depth + status">Risk</th>
+            <th data-sort="risk" onclick="bnSortBy('risk')" title="Risk score: volume + mcap + spread + status">Risk</th>
             <th class="col-days" data-sort="daysOnMon" onclick="bnSortBy('daysOnMon')" title="Days since monitoring tag added">Days</th>
             <th class="col-mon" data-sort="monDate" onclick="bnSortBy('monDate')">Mon. Added</th>
             <th data-sort="delistDate" onclick="bnSortBy('delistDate')">Delist Date</th>
@@ -459,8 +459,7 @@ td:has(.price-cell),td:has(.peg-delta),td:has(.mcap),td:has(.vol),td:has(.pct),t
             <th data-sort="change" onclick="bnSortBy('change')">24h %</th>
             <th class="col-vol" data-sort="vol" onclick="bnSortBy('vol')">24h Vol</th>
             <th class="col-mcap" data-sort="mcap" onclick="bnSortBy('mcap')">Mkt Cap</th>
-            <th class="col-bid" data-sort="bidDepth" onclick="bnSortBy('bidDepth')" title="Bid depth within 2% below price">Bid -2%</th>
-            <th class="col-ask" data-sort="askDepth" onclick="bnSortBy('askDepth')" title="Ask depth within 2% above price">Ask +2%</th>
+            <th class="col-spread" data-sort="spread" onclick="bnSortBy('spread')" title="Binance bid/ask spread % (via CoinGecko) — wider = thinner liquidity, higher delist risk">Spread</th>
             <th class="col-also" title="Also listed on other exchanges">Also On</th>
         </tr></thead>
         <tbody id="bn-tbody"></tbody>
@@ -1173,7 +1172,9 @@ async function fetchMarketCaps() {
 }
 
 async function fetchDepthData() {
-    // Always fetch depth for ALL monitoring + delisting; cap active coins at top 20 by risk
+    // Binance order-book depth needs the Binance API (blocked from Cloudflare IPs), so use
+    // CoinGecko's per-market bid/ask spread % as the liquidity signal instead. Fetched for all
+    // monitoring/delisting coins + the top 20 active coins by risk.
     const tagged = allCoins.filter(t => (t.status === 'monitoring' || t.status === 'delisting') && liveData[t.sym]?.price);
     const activeHighRisk = allCoins
         .filter(t => t.status === 'active' && t._risk >= 70 && liveData[t.sym]?.price)
@@ -1185,22 +1186,16 @@ async function fetchDepthData() {
         const batch = candidates.slice(i, i + 5);
         await Promise.all(batch.map(async tk => {
             try {
-                const resp = await smartFetch(BINANCE_API + `/depth?symbol=${tk.sym}USDT&limit=1000`);
+                const cgId = liveData[tk.sym]?.cgId || tk.sym.toLowerCase();
+                const resp = await smartFetch(`/cg/coins/${cgId}/tickers?exchange_ids=binance`);
                 if (!resp.ok) return;
-                const ob = await resp.json();
-                const price = liveData[tk.sym].price;
-                const low2 = price * 0.98, high2 = price * 1.02;
-                let bidDepth = 0, askDepth = 0;
-                for (const [p, q] of ob.bids) {
-                    const px = parseFloat(p);
-                    if (px >= low2) bidDepth += parseFloat(q) * px; else break;
-                }
-                for (const [p, q] of ob.asks) {
-                    const px = parseFloat(p);
-                    if (px <= high2) askDepth += parseFloat(q) * px; else break;
-                }
-                liveData[tk.sym].bidDepth = bidDepth;
-                liveData[tk.sym].askDepth = askDepth;
+                const j = await resp.json();
+                const tickers = (j.tickers || []).filter(x => x.bid_ask_spread_percentage != null);
+                if (!tickers.length) return;
+                // Prefer the USDT pair, else the highest-volume Binance pair.
+                const usdt = tickers.find(x => x.target === 'USDT');
+                const pick = usdt || tickers.sort((a, b) => (b.converted_volume?.usd || 0) - (a.converted_volume?.usd || 0))[0];
+                liveData[tk.sym].spread = pick.bid_ask_spread_percentage;
             } catch(e) {}
         }));
         if (i + 5 < candidates.length) await new Promise(r => setTimeout(r, 500));
@@ -1300,11 +1295,10 @@ function computeRiskScores() {
         const mcapRisk = ld.mcap ? Math.max(0, 25 - (mcapPct * 0.25)) : 20; // Unknown mcap = moderate risk
         risk += mcapRisk;
 
-        // Factor 3: Order book depth (0-20 points) - thinner book = higher risk
-        const totalDepth = (ld.bidDepth || 0) + (ld.askDepth || 0);
-        const depthPct = pctile(depths, totalDepth);
-        const depthRisk = depths.length > 0 ? Math.max(0, 20 - (depthPct * 0.2)) : 10;
-        risk += depthRisk;
+        // Factor 3: Bid/ask spread (0-20 points) - wider spread = thinner liquidity = higher risk.
+        // Spread % comes from CoinGecko (Binance order-book depth is unavailable from CF IPs).
+        const spreadRisk = ld.spread != null ? Math.min(20, ld.spread * 5) : 10;
+        risk += spreadRisk;
 
         // Factor 4: Trade count (0-10 points) - fewer trades = higher risk
         const countRisk = ld.count ? Math.max(0, 10 - Math.min(10, Math.log10(ld.count) * 2.5)) : 8;
@@ -1460,8 +1454,7 @@ function getFiltered() {
             case 'change': va=ld[a.sym]?.change||0; vb=ld[b.sym]?.change||0; break;
             case 'vol': va=ld[a.sym]?.vol||0; vb=ld[b.sym]?.vol||0; break;
             case 'mcap': va=ld[a.sym]?.mcap||0; vb=ld[b.sym]?.mcap||0; break;
-            case 'bidDepth': va=ld[a.sym]?.bidDepth||0; vb=ld[b.sym]?.bidDepth||0; break;
-            case 'askDepth': va=ld[a.sym]?.askDepth||0; vb=ld[b.sym]?.askDepth||0; break;
+            case 'spread': va=ld[a.sym]?.spread??-1; vb=ld[b.sym]?.spread??-1; break;
             default: va=a.sym; vb=b.sym;
         }
         if (va < vb) return sort.dir==='asc' ? -1 : 1;
@@ -1602,8 +1595,7 @@ function renderTable() {
             <td>${changeHtml}</td>
             <td class="col-vol"><span class="vol">${ld.vol ? fmtNum(ld.vol,1) : '—'}</span></td>
             <td class="col-mcap"><span class="mcap">${ld.mcap ? fmtNum(ld.mcap,0) : '—'}</span></td>
-            <td class="col-bid"><span class="depth">${ld.bidDepth ? fmtNum(ld.bidDepth,0) : '—'}</span></td>
-            <td class="col-ask"><span class="depth">${ld.askDepth ? fmtNum(ld.askDepth,0) : '—'}</span></td>
+            <td class="col-spread"><span class="depth">${ld.spread != null ? ld.spread.toFixed(2) + '%' : '—'}</span></td>
             <td class="col-also">${getExchangeIcons(t.sym)}</td>
         </tr>`;
     }).join('');

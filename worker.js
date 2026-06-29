@@ -14,7 +14,7 @@ const COINGECKO_BASE = 'https://api.coingecko.com/api/v3';
 // Only paths the app actually needs are permitted; everything else returns 403.
 const BINANCE_ALLOWED  = ['/ticker/24hr', '/depth', '/exchangeInfo', '/ticker/price'];
 const COINBASE_ALLOWED = ['/products'];
-const COINGECKO_ALLOWED = ['/coins/markets', '/simple/price', '/coins/list'];
+const COINGECKO_ALLOWED = ['/coins', '/simple/price'];
 
 function isAllowed(allowlist, subpath) {
   return allowlist.some(p => subpath === p || subpath.startsWith(p + '?') || subpath.startsWith(p + '/'));
