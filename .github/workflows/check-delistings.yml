@@ -41,21 +41,40 @@ jobs:
         env:
           PROXY_URL: ${{ secrets.PROXY_URL }}
         run: |
-          node scripts/check-delistings.mjs --apply
+          # Grep stdout, not the report file: when the Binance fetch dies and
+          # Coinbase is quiet there are no "changes", so no file is ever written —
+          # yet that is precisely the run we must not let pass silently.
+          node scripts/check-delistings.mjs --apply | tee /tmp/report.txt
+
+          if grep -q 'BINANCE_FETCH_FAILED' /tmp/report.txt; then
+            echo "binance_failed=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "binance_failed=false" >> "$GITHUB_OUTPUT"
+          fi
+
+          sig=$(sed -n 's/.*findings-signature: \([0-9a-f]*\).*/\1/p' /tmp/report.txt | head -1)
           if [ "${{ inputs.selftest }}" = "true" ]; then
             printf '# Pipeline self-test\n\nManual verification of the PR path — no real data change. Safe to close.\n' > data/pending-update.md
+            sig="selftest-${GITHUB_RUN_ID}"
           fi
+          echo "sig=${sig:-unknown}" >> "$GITHUB_OUTPUT"
+
           if [ -f data/pending-update.md ]; then
             echo "changed=true" >> "$GITHUB_OUTPUT"
           else
             echo "changed=false" >> "$GITHUB_OUTPUT"
           fi
 
+      # Branch is named after the findings signature, not a fixed string. Identical
+      # findings on consecutive days reuse the branch and quietly update one PR;
+      # a genuinely new finding opens a NEW PR, which is the only thing that
+      # actually notifies anyone. (A single fixed branch meant a July 29 Coinbase
+      # delisting sat unnoticed for five days while the PR was silently amended.)
       - name: Open PR if anything changed
         if: steps.detect.outputs.changed == 'true'
         uses: peter-evans/create-pull-request@v6
         with:
-          branch: auto/delisting-update
+          branch: auto/delisting-update-${{ steps.detect.outputs.sig }}
           delete-branch: true
           add-paths: |
             index.html
@@ -65,3 +84,11 @@ jobs:
           title: 'data: auto-detected Binance/Coinbase changes — needs review'
           body-path: data/pending-update.md
           labels: auto-update
+
+      # Runs after the PR step so a Coinbase-only finding still gets its PR, but
+      # the job still goes red — a blind detector must never report a green check.
+      - name: Fail if the Binance fetch broke
+        if: steps.detect.outputs.binance_failed == 'true'
+        run: |
+          echo "::error::Binance fetch failed — the detector was blind to announcements this run. Check the PROXY_URL secret."
+          exit 1

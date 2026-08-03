@@ -12,6 +12,15 @@
 //   node scripts/check-delistings.mjs --apply       # edit index.html + snapshot + report
 //   node scripts/check-delistings.mjs --selftest-edit  # in-memory test of the array editor
 //
+// The report ends with two HTML-comment markers the Action greps off stdout:
+//   <!-- findings-signature: xxxx -->  stable hash of WHAT was found (not when).
+//                                      Names the PR branch, so repeat findings
+//                                      update one PR and new findings open a new
+//                                      one — a new PR is the only real notification.
+//   <!-- BINANCE_FETCH_FAILED -->      emitted when the announcement fetch threw.
+//                                      Fails the job; a blind run must never be
+//                                      indistinguishable from a quiet one.
+//
 // Env:
 //   PROXY_URL  residential HTTP proxy URL for the Binance fetch
 //              (http://user:pass@host:port). Empty = direct, which only works
@@ -24,6 +33,7 @@
 // makes Binance see a residential IP. Coinbase needs no proxy (reachable anywhere).
 
 import { readFile, writeFile } from 'node:fs/promises';
+import { createHash } from 'node:crypto';
 import { ProxyAgent } from 'undici';
 
 const ROOT = new URL('..', import.meta.url).pathname;
@@ -215,6 +225,18 @@ async function fetchCoinbase() {
   return snap;
 }
 
+// Stable fingerprint of WHAT was found, deliberately excluding the run date and
+// any tracked-count noise. The Action names the PR branch after it, so the same
+// unresolved finding keeps updating one PR (no daily spam) while a genuinely new
+// finding lands on a new branch — which is what actually produces a notification.
+function findingsSignature(binanceNew, cbChanges) {
+  const payload = {
+    b: binanceNew.map(n => `${n.sym}:${n.kind}:${n.date}`).sort(),
+    c: cbChanges.map(c => `${c.id}:${c.to.status}:${c.to.trading_disabled}`).sort(),
+  };
+  return createHash('sha256').update(JSON.stringify(payload)).digest('hex').slice(0, 12);
+}
+
 function diffCoinbase(current, previous) {
   if (!previous) return { baseline: true, changes: [] };
   const changes = [];
@@ -249,6 +271,7 @@ async function main() {
   } catch (e) { cbErr = e.message; }
 
   const hasChanges = !!(binanceNew.length || (!cb.baseline && cb.changes.length));
+  const signature = findingsSignature(binanceNew, cb.baseline ? [] : cb.changes);
 
   // Human-readable markdown report — used for console output AND the PR body.
   const lines = [`# Auto-update check — ${TODAY}`, `Tracked Binance coins: ${tracked.size}`];
@@ -261,10 +284,15 @@ async function main() {
     lines.push(`\n## Coinbase — ${cb.changes.length} status change(s)`);
     for (const c of cb.changes) lines.push(`- ${c.id}: ${c.from.status}/${c.from.trading_disabled} → ${c.to.status}/${c.to.trading_disabled}`);
   }
+  // Machine-readable markers the Action greps: the signature names the PR branch,
+  // BINANCE_FETCH_FAILED trips the explicit failure step. Both ride in the report
+  // (and therefore the PR body) as HTML comments so they stay invisible to readers.
+  lines.push(`\n<!-- findings-signature: ${signature} -->`);
+  if (binanceErr) lines.push('<!-- BINANCE_FETCH_FAILED -->');
   const md = lines.join('\n');
 
   if (FLAGS.has('--json')) {
-    console.log(JSON.stringify({ today: TODAY, trackedCount: tracked.size, binanceNew, binanceErr, coinbase: cb, cbErr, hasChanges }, null, 2));
+    console.log(JSON.stringify({ today: TODAY, trackedCount: tracked.size, signature, binanceNew, binanceErr, coinbase: cb, cbErr, hasChanges }, null, 2));
   } else {
     console.log(md);
   }
