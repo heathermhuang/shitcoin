@@ -754,22 +754,27 @@ const TRACKED_TOKENS = [
   {sym:'HIGH', name:'Highstreet', status:'delisted', monDate:'2026-04-14', delistDate:'2026-06-19', restoreDate:null},
   {sym:'NOM', name:'Nomina', status:'monitoring', monDate:'2026-04-30', delistDate:null, restoreDate:null},
   {sym:'QUICK', name:'QuickSwap', status:'monitoring', monDate:'2026-04-30', delistDate:null, restoreDate:null},
-  {sym:'VIC', name:'Viction', status:'monitoring', monDate:'2026-04-30', delistDate:null, restoreDate:null},
   {sym:'COOKIE', name:'Cookie DAO', status:'monitoring', monDate:'2026-05-22', delistDate:null, restoreDate:null},
   {sym:'DODO', name:'DODO', status:'monitoring', monDate:'2026-05-22', delistDate:null, restoreDate:null},
   {sym:'EPIC', name:'Epic Chain', status:'monitoring', monDate:'2026-05-22', delistDate:null, restoreDate:null},
   {sym:'HEI', name:'Heima', status:'monitoring', monDate:'2026-05-22', delistDate:null, restoreDate:null},
-  {sym:'HFT', name:'Hashflow', status:'monitoring', monDate:'2026-05-22', delistDate:null, restoreDate:null},
   {sym:'STORJ', name:'Storj', status:'monitoring', monDate:'2026-05-22', delistDate:null, restoreDate:null},
   {sym:'SYN', name:'Synapse', status:'monitoring', monDate:'2026-05-22', delistDate:null, restoreDate:null},
   {sym:'TLM', name:'Alien Worlds', status:'monitoring', monDate:'2026-05-22', delistDate:null, restoreDate:null},
   {sym:'ACT', name:'Act I: The AI Prophecy', status:'monitoring', monDate:'2026-06-18', delistDate:null, restoreDate:null},
   {sym:'BLUR', name:'Blur', status:'monitoring', monDate:'2026-06-18', delistDate:null, restoreDate:null},
-  {sym:'PIVX', name:'PIVX', status:'monitoring', monDate:'2026-06-18', delistDate:null, restoreDate:null},
   {sym:'QKC', name:'QuarkChain', status:'monitoring', monDate:'2026-06-18', delistDate:null, restoreDate:null},
   {sym:'ALCX', name:'Alchemix', status:'delisting', monDate:'2026-05-22', delistDate:'2026-07-10', restoreDate:null},
   {sym:'NFP', name:'NFPrompt', status:'delisting', monDate:'2026-04-30', delistDate:'2026-07-10', restoreDate:null},
   {sym:'POND', name:'Marlin', status:'delisting', monDate:'2026-04-30', delistDate:'2026-07-10', restoreDate:null},
+  // 2026-08-17 delisting. ACX, PYR and VANRY were never given a monitoring tag
+  // (checked 300 announcements back) — monDate stays null, not the delist date.
+  {sym:'ACX', name:'Across Protocol', status:'delisting', monDate:null, delistDate:'2026-08-17', restoreDate:null},
+  {sym:'HFT', name:'Hashflow', status:'delisting', monDate:'2026-05-22', delistDate:'2026-08-17', restoreDate:null},
+  {sym:'PIVX', name:'PIVX', status:'delisting', monDate:'2026-06-18', delistDate:'2026-08-17', restoreDate:null},
+  {sym:'PYR', name:'Vulcan Forged', status:'delisting', monDate:null, delistDate:'2026-08-17', restoreDate:null},
+  {sym:'VANRY', name:'Vanar Chain', status:'delisting', monDate:null, delistDate:'2026-08-17', restoreDate:null},
+  {sym:'VIC', name:'Viction', status:'delisting', monDate:'2026-04-30', delistDate:'2026-08-17', restoreDate:null},
   {sym:'A2Z', name:'Arena-Z', status:'delisted', monDate:'2026-03-13', delistDate:'2026-04-01', restoreDate:null},
   {sym:'FORTH', name:'Ampleforth Governance', status:'delisted', monDate:'2026-03-06', delistDate:'2026-04-01', restoreDate:null},
   {sym:'HOOK', name:'Hooked Protocol', status:'delisted', monDate:'2026-03-06', delistDate:'2026-04-01', restoreDate:null},
@@ -855,10 +860,10 @@ const TRACKED_TOKENS = [
   {sym:'FLOW', name:'Flow', status:'restored', monDate:'2026-01-02', delistDate:null, restoreDate:'2026-03-06'},
 ];
 
-// Total: 132 tokens
+// Total: 135 tokens
 // delisted: 95
-// delisting: 4
-// monitoring: 27
+// delisting: 10
+// monitoring: 24
 // restored: 6
 
 // Auto-transition: a coin still tagged 'delisting' after its delistDate has, in
@@ -1871,6 +1876,10 @@ const CB_DELISTED = [
     {sym:'WCFG',   name:'Wrapped Centrifuge',  delistDate:'2025-11-26'},
     {sym:'DAI',    name:'Dai',                 delistDate:'2026-05-04'},
     {sym:'TIME',   name:'Chrono.tech',         delistDate:'2026-05-11'},
+    // Detected by scripts/check-delistings.mjs: ACX-USD was online on 2026-07-28
+    // and delisted/trading_disabled on 2026-07-29 — 5 days before Binance
+    // announced its own ACX delisting (2026-08-17).
+    {sym:'ACX',    name:'Across Protocol',     delistDate:'2026-07-29'},
 ];
 
 // ===== DATA PROCESSING =====
