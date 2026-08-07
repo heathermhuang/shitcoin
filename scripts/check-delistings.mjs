@@ -237,17 +237,28 @@ function findingsSignature(binanceNew, cbChanges) {
   return createHash('sha256').update(JSON.stringify(payload)).digest('hex').slice(0, 12);
 }
 
+// Coinbase products are PAIRS, so a raw diff conflates two very different events:
+// an asset actually leaving the exchange, and routine quote-pair housekeeping
+// (Coinbase prunes GBP/EUR/USDT pairs constantly while the asset keeps trading on
+// -USD). Reported together, six pair removals read as six delistings — the kind of
+// noise that teaches you to stop opening the PR. So split them: an asset that still
+// has an online pair is churn; one that just lost its last is a delisting.
 function diffCoinbase(current, previous) {
-  if (!previous) return { baseline: true, changes: [] };
-  const changes = [];
+  if (!previous) return { baseline: true, changes: [], pairChurn: [] };
+  const baseOf = id => id.split('-')[0];
+  const stillTrading = new Set();
+  for (const [id, v] of Object.entries(current)) {
+    if (v.status === 'online' && !v.trading_disabled) stillTrading.add(baseOf(id));
+  }
+  const changes = [], pairChurn = [];
   for (const [id, now] of Object.entries(current)) {
     const was = previous[id];
     if (!was) continue; // brand-new listing, not a risk signal
     if (was.status !== now.status || was.trading_disabled !== now.trading_disabled) {
-      changes.push({ id, from: was, to: now });
+      (stillTrading.has(baseOf(id)) ? pairChurn : changes).push({ id, from: was, to: now });
     }
   }
-  return { baseline: false, changes };
+  return { baseline: false, changes, pairChurn };
 }
 
 // ---------- main ----------
@@ -262,7 +273,7 @@ async function main() {
     binanceNew = diffBinance(parseAnnouncements(await fetchBinanceTitles()), tracked);
   } catch (e) { binanceErr = e.message; }
 
-  let cb = { baseline: false, changes: [] }, cbErr = null, cbSnap = null;
+  let cb = { baseline: false, changes: [], pairChurn: [] }, cbErr = null, cbSnap = null;
   try {
     cbSnap = await fetchCoinbase();
     let prev = null;
@@ -270,7 +281,11 @@ async function main() {
     cb = diffCoinbase(cbSnap, prev);
   } catch (e) { cbErr = e.message; }
 
-  const hasChanges = !!(binanceNew.length || (!cb.baseline && cb.changes.length));
+  // Pair churn still counts as "something to commit" — the refreshed snapshot has
+  // to land or the same churn is re-detected every day forever — but it is reported
+  // apart from real findings so the PR never overstates what happened.
+  const cbAny = !cb.baseline && (cb.changes.length || cb.pairChurn.length);
+  const hasChanges = !!(binanceNew.length || cbAny);
   const signature = findingsSignature(binanceNew, cb.baseline ? [] : cb.changes);
 
   // Human-readable markdown report — used for console output AND the PR body.
@@ -281,8 +296,13 @@ async function main() {
   if (cbErr) lines.push(`\n⚠ Coinbase fetch FAILED: ${cbErr}`);
   else if (cb.baseline) lines.push(`\n## Coinbase — baseline snapshot (${Object.keys(cbSnap).length} products)`);
   else {
-    lines.push(`\n## Coinbase — ${cb.changes.length} status change(s)`);
-    for (const c of cb.changes) lines.push(`- ${c.id}: ${c.from.status}/${c.from.trading_disabled} → ${c.to.status}/${c.to.trading_disabled}`);
+    lines.push(`\n## Coinbase — ${cb.changes.length} asset delisting(s)`);
+    for (const c of cb.changes) lines.push(`- **${c.id}**: ${c.from.status}/${c.from.trading_disabled} → ${c.to.status}/${c.to.trading_disabled} — last online pair gone`);
+    if (cb.pairChurn.length) {
+      lines.push(`\n<details><summary>${cb.pairChurn.length} routine quote-pair removal(s) — asset still trading, no action needed</summary>\n`);
+      for (const c of cb.pairChurn) lines.push(`- ${c.id}: ${c.from.status} → ${c.to.status}`);
+      lines.push('\n</details>');
+    }
   }
   // Machine-readable markers the Action greps: the signature names the PR branch,
   // BINANCE_FETCH_FAILED trips the explicit failure step. Both ride in the report
@@ -304,7 +324,7 @@ async function main() {
       const { html: edited } = applyBinanceEdits(html, binanceNew);
       await writeFile(INDEX, edited);
     }
-    if (cbSnap && (cb.baseline || cb.changes.length)) {
+    if (cbSnap && (cb.baseline || cbAny)) {
       await writeFile(SNAPSHOT, JSON.stringify(cbSnap, null, 0) + '\n');
     }
     if (hasChanges) {
