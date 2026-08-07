@@ -141,7 +141,14 @@ async function cachedProxy(request, upstream, ttl, apiKey, proxy) {
   if (isCoinGecko && apiKey) upstreamHeaders['x-cg-demo-api-key'] = apiKey;
   // Route blocked upstreams (Binance/CoinGecko block CF datacenter IPs) through the
   // CONNECT proxy when one is configured; everything else uses normal fetch().
-  const useProxy = proxy && (upstream.includes('binance.vision') || upstream.includes('coingecko.com'));
+  //
+  // Exception — CoinGecko WITH a Demo key goes direct, skipping the proxy. The key
+  // carries its own quota, so the request no longer depends on the egress IP being
+  // residential, and the proxy's exit IP currently rejects CF-sourced CONNECT — which
+  // is what turned every /cg/ response into []. Keyless CoinGecko still needs the
+  // proxy, since anonymous requests from CF datacenter IPs do get throttled to [].
+  const cgDirect = isCoinGecko && !!apiKey;
+  const useProxy = proxy && !cgDirect && (upstream.includes('binance.vision') || upstream.includes('coingecko.com'));
   const doFetch = () => useProxy
     ? proxyFetch(upstream, proxy, upstreamHeaders)
     : fetch(upstream, { headers: upstreamHeaders, cf: { cacheTtl: ttl, cacheEverything: true } });
