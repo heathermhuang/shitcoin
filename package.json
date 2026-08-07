@@ -24,7 +24,7 @@
     "url": "https://github.com/heathermhuang/shitcoin.git"
   },
   "dependencies": {
-    "wrangler": "^4.76.0"
+    "wrangler": "^4.119.0"
   },
   "devDependencies": {
     "undici": "^7.24.4"
