@@ -214,7 +214,7 @@ async function cachedProxy(request, upstream, ttl, apiKey, proxy) {
         headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
       });
     }
-    return new Response('{"error":"fetch failed"}', {
+    return new Response(JSON.stringify({ error: 'fetch failed', detail: String((e && e.message) || e).slice(0, 200) }), {
       status: 502,
       headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
     });
