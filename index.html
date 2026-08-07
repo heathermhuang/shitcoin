@@ -1216,7 +1216,14 @@ async function fetchDepthData() {
         const batch = candidates.slice(i, i + SPREAD_BATCH);
         await Promise.all(batch.map(async tk => {
             try {
-                const cgId = liveData[tk.sym]?.cgId || tk.sym.toLowerCase();
+                // Only ask about a CoinGecko id we actually resolved. The old
+                // `|| tk.sym.toLowerCase()` fallback guessed a bare ticker, which
+                // 404s for anything CoinGecko doesn't list (Binance's tokenized
+                // equities: F, GSB, NFLXB, SMCIB) and, worse, can hit the tiny
+                // namesake that owns the bare id — the same trap the mcap sweep
+                // above avoids by resolving symbols against the top-1000 by mcap.
+                const cgId = liveData[tk.sym]?.cgId;
+                if (!cgId) return;
                 const resp = await smartFetch(`/cg/coins/${cgId}/tickers?exchange_ids=binance`);
                 if (!resp.ok) return;
                 const j = await resp.json();
@@ -1815,6 +1822,9 @@ const CG_OVERRIDES = {
     'SEAM':'seamless-protocol','SNT':'status','TIME':'chronobank','TONE':'te-food',
     'TRIBE':'tribe-2','TRU':'truefi','WAMPL':'wrapped-ampleforth','WLUNA':'wrapped-terra',
     'BOND':'barnbridge','REP':'augur','GAL':'project-galaxy','UST':'terrausd',
+    // Too small for the top-1000 mcap sweep to resolve by symbol, and the bare
+    // ticker is not their CoinGecko id — without these both render mcap "—".
+    'PYR':'vulcan-forged','VANRY':'vanar-chain',
 };
 
 function getCgId(sym) { return CG_OVERRIDES[sym] || sym.toLowerCase(); }
