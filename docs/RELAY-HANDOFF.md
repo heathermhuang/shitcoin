@@ -1,15 +1,20 @@
-# Binance relay — build brief
+# Binance relay — how it works and how to operate it
 
-> ⚠️ **This repo is PUBLIC. Never put the IPRoyal proxy URL, the Render API key, or any
-> token in this file or anywhere else in the repo.** Values live in the Render dashboard,
-> Cloudflare secrets, and `~/Code/bnbscan/.render-api-key` (mode 600, gitignored).
+> ⚠️ **This repo is PUBLIC. Never put the IPRoyal proxy URL, the Render API key, the
+> relay token, or any other credential in this file or anywhere else in the repo.**
+> Values live in the Render dashboard, Cloudflare secrets, and
+> `~/Code/bnbscan/.render-api-key` (mode 600, gitignored).
+
+**Status: live since 2026-08-12.** `curl https://shitcoin.io/api/exchangeInfo` returns
+200 with real JSON. It had returned 502 for months.
 
 ## Why this exists
 
 The Worker cannot fetch Binance. Two independent reasons, both verified 2026-08-12:
 
-1. **Binance blocks Cloudflare egress.** Disable the proxy and `/api/exchangeInfo` returns
-   `{"error":"upstream error"}` — a non-OK response from `data-api.binance.vision` itself.
+1. **Binance blocks Cloudflare egress.** Disable the proxy and `/api/exchangeInfo`
+   returns `{"error":"upstream error"}` — a non-OK response from
+   `data-api.binance.vision` itself.
 2. **The CONNECT tunnel workaround is dead.** `proxyFetch()` opens a raw socket, issues
    CONNECT (which **succeeds** — `HTTP/1.1 200 Connection Established`), then calls
    `socket.startTls()`, which fails with `TLS Handshake Failed.` Probed live across
@@ -20,55 +25,51 @@ The Worker cannot fetch Binance. Two independent reasons, both verified 2026-08-
    above `proxyFetch` in `worker.js`.
 
 **Do not try to fix this with a different proxy.** No proxy fixes it. The credentials are
-fine; the Workers socket API is the blocker.
+fine; the Workers socket API is the blocker. `proxyFetch()` is dead code kept only so its
+comment stops anyone rebuilding it.
 
-Today the site works because `smartFetch` in `index.html` falls back to fetching Binance
-**from the visitor's own browser**. That works (374 active coins, live prices) but means
-every visitor hits Binance themselves — so anyone behind a corporate DNS filter, a privacy
-extension, or a national restriction sees an empty Binance tab.
-
-## Goal
-
-A small Node service on Render that *can* use the proxy properly (Node's `undici` does
-CONNECT+TLS correctly — proven daily by `scripts/check-delistings.mjs` in CI). The Worker
-then calls it over ordinary HTTPS. No raw sockets anywhere.
+So the Binance call happens in Node instead, where `undici` does CONNECT+TLS correctly,
+and the Worker makes an ordinary HTTPS request to that.
 
 ```
-Render (Node + undici) ──proxy──> data-api.binance.vision
-        ▲
-        │ plain HTTPS + bearer token
-   Cloudflare Worker  ──> existing cache layer ──> visitors
+Render (Node, DIRECT to Binance) <── plain HTTPS + bearer token ── Cloudflare Worker
+        │                                                                │
+        └──> data-api.binance.vision                    existing cache layer ──> visitors
+                                                                │
+                        on relay timeout/failure ──> smartFetch fallback (visitor's browser)
 ```
 
-## Step 1 before writing any code
+## Step 1 result: no proxy is needed
 
-**Check whether Render can reach Binance directly.** Render is a datacenter IP so it is
-*probably* blocked like Cloudflare — but it has never been tested, and if it works the
-relay needs no proxy at all and gets much simpler.
+The open question was whether Render's datacenter IPs are blocked like Cloudflare's.
+**They are not.** From the live service:
 
-Deploy a one-route service and curl it:
-
-```js
-// probe.js
-import http from 'node:http';
-http.createServer(async (_, res) => {
-  const out = {};
-  try { const r = await fetch('https://data-api.binance.vision/api/v3/ping'); out.direct = r.status; }
-  catch (e) { out.direct = 'ERR ' + e.message; }
-  res.setHeader('content-type', 'application/json');
-  res.end(JSON.stringify(out));
-}).listen(process.env.PORT || 3000);
+```json
+{"mode":"direct","node":"v22.23.2","proxyConfigured":false,"direct":{"status":200,"ms":479}}
 ```
 
-- `direct: 200` → **no proxy needed.** Skip all proxy wiring below.
-- `direct: 4xx/5xx/ERR` → proxy required; continue as designed.
+So `PROXY_URL` is **unset** on Render and the IPRoyal proxy is not in the path at all —
+one less dependency, one less cost, one less failure mode. Re-check any time with
+`curl -H "Authorization: Bearer $RELAY_TOKEN" https://shitcoin-relay.onrender.com/diag`.
 
-Also confirm Render's egress can reach the proxy's port (**12323**, non-standard — some
-hosts restrict outbound ports).
+If Binance ever starts blocking Render too, the fix needs **no code change**: set
+`PROXY_URL` in the Render dashboard to the IPRoyal URL (same value as the Cloudflare
+`PROXY_URL` secret) and redeploy. The relay picks its egress mode at boot, exactly like
+`scripts/check-delistings.mjs`. `/diag` then also reports whether Render can reach the
+proxy's non-standard port 12323 at all.
 
-## Relay spec
+## What is deployed
 
-**Routes** — mirror `BINANCE_ALLOWED` in `worker.js:15` exactly, no open proxy:
+| | |
+|---|---|
+| Render service | `shitcoin-relay` (`srv-d9u1rhrncjis73aas190`), Oregon, **free** plan |
+| URL | `https://shitcoin-relay.onrender.com` |
+| Source | `relay/` in this repo, branch `claude/binance-relay-shitcoin-ca75fc` ⚠️ see below |
+| Render env | `RELAY_TOKEN` (secret), `NODE_VERSION=22`. **No `PROXY_URL`.** |
+| Worker secrets | `RELAY_URL`, `RELAY_TOKEN` (`npx wrangler secret list`) |
+| Config record | `render.yaml` — the service was created via the API, so keep the two in sync by hand |
+
+**Routes** — mirror `BINANCE_ALLOWED` in `worker.js:15` exactly. Anything else is 404.
 
 | route | upstream | cache TTL |
 |---|---|---|
@@ -76,89 +77,69 @@ hosts restrict outbound ports).
 | `GET /binance/exchangeInfo` | `/api/v3/exchangeInfo` | 900s |
 | `GET /binance/ticker/price` | `/api/v3/ticker/price` | 120s |
 | `GET /binance/depth?symbol=` | `/api/v3/depth` | 300s |
-| `GET /ping` | — | health check, no auth |
+| `GET /diag` | — | egress self-test, token required |
+| `GET /ping` | — | health check, no auth (Render's monitor has no token) |
 
-**Auth.** Every `/binance/*` route requires `Authorization: Bearer $RELAY_TOKEN`. Without
-this you have published an open Binance proxy on the internet.
+**It is not an open proxy.** Every `/binance/*` and `/diag` request needs
+`Authorization: Bearer $RELAY_TOKEN`, compared with `timingSafeEqual`. An unset
+`RELAY_TOKEN` denies everything rather than allowing everything. Query strings are
+rebuilt from a per-endpoint parameter allowlist, so neither the path nor the query can
+reach an arbitrary Binance endpoint.
 
-**Env vars** (set in the Render dashboard, `sync: false` in `render.yaml`):
-- `PROXY_URL` — IPRoyal, `http://user:pass@host:12323`. Same value as the Cloudflare
-  `PROXY_URL` secret. Only needed if step 1 says the proxy is required.
-- `RELAY_TOKEN` — generate a fresh random token; do not reuse anything.
+## Things that will bite you
 
-**Implementation notes**
-- Node 22, `undici` `ProxyAgent` — copy the pattern from `scripts/check-delistings.mjs`
-  (`binanceDispatcher`), which is the known-good version of exactly this.
-- In-memory cache keyed by path with the TTLs above. The Worker caches too, so the relay
-  should see very little traffic.
-- Return upstream JSON unchanged so the Worker's existing parsing is untouched.
+- **The Render service tracks a feature branch.** If
+  `claude/binance-relay-shitcoin-ca75fc` is merged and deleted, the service stops
+  redeploying and any later relay change silently does nothing. After merging, repoint
+  it at `main` in the Render dashboard (Settings → Branch).
+- **Free plan sleeps after ~15 min idle** and cold-starts in tens of seconds. The Worker
+  gives up after **5s** (`RELAY_TIMEOUT_MS`) and returns 502, at which point
+  `smartFetch` in `index.html` fetches Binance from the visitor's own browser — the page
+  still works, it just loses the server-side path for that request. In practice the site's
+  own 120s refresh keeps the instance warm whenever anyone is looking at it. Upgrade to
+  Starter (~$7/mo) to make it always-on.
+- **Do not remove the client-side fallback.** It is the safety net for every case above.
+- **`exchangeInfo` is 17.5 MB.** The relay gzips it to ~320 KB and memoizes the compressed
+  copy on the cache entry; without that, re-compressing on each hit would dominate the
+  response on a 0.1-CPU instance. The cache is bounded in **bytes** (64 MB), not entries,
+  because 200 × 17.5 MB would OOM a 512 MB box.
+- **Deploying the Worker drops Google Analytics unless you fill it in first.** The live
+  site runs `G-4MY2VXRGJJ`; the repo has `GA_ID = ''`. Fill it in `index.html`, build,
+  deploy, then `git checkout index.html`. **Commit everything before that revert** — it
+  discards uncommitted work in that file.
+- Wait ~30s after `wrangler deploy` before verifying live; edge propagation is not instant.
 
-## Worker changes (`worker.js`)
+## Verify
 
-- Add `env.RELAY_URL` + `env.RELAY_TOKEN` (Cloudflare secrets).
-- In `cachedProxy`, for Binance upstreams: if `RELAY_URL` is set, `fetch()` the relay with
-  the bearer header **instead of** `proxyFetch()`. Leave CoinGecko alone — `31d11e8`
-  already routes it direct with `CG_DEMO_KEY` and that works.
-- **Use a short timeout (~5s) on the relay fetch.** On a free Render plan a cold start can
-  take tens of seconds; the Worker must fail fast so `smartFetch`'s client-side fallback
-  takes over rather than the page hanging.
-- **Do not remove the client-side fallback.** It is the safety net and it is what is
-  keeping the site working today.
-- Keep `proxyFetch()` and its post-mortem comment — dead code for now, but the comment is
-  the record of why this approach cannot be revived.
+```bash
+# 1. health, no auth
+curl https://shitcoin-relay.onrender.com/ping                       # -> 200 {"ok":true,...}
 
-## Render plan choice
+# 2. real data, with auth
+curl -H "Authorization: Bearer $RELAY_TOKEN" \
+     https://shitcoin-relay.onrender.com/binance/exchangeInfo       # -> 200, 3680 symbols
 
-Free web services sleep after ~15 min idle and cold-start slowly, which is a bad failure
-mode in a page's load path. Options:
+# 3. still not an open proxy
+curl https://shitcoin-relay.onrender.com/binance/exchangeInfo       # -> 401
 
-- **Free** — acceptable only because the Worker cache (120–900s) plus the client fallback
-  absorb cold starts. Expect occasional slow first loads.
-- **Starter (~$7/mo)** — always on. Recommended if this is meant to be reliable.
-
-Reference `render.yaml` pattern: `~/Code/bnbscan/render.yaml` (services, `sync: false`
-secrets, `healthCheckPath`). That project is a much bigger blueprint — copy the shape, not
-the scale.
-
-## Verify before declaring done
-
-1. `curl https://<relay>.onrender.com/ping` → 200
-2. `curl -H "Authorization: Bearer $RELAY_TOKEN" https://<relay>.onrender.com/binance/exchangeInfo` → 200 with real JSON
-3. Same call **without** the header → 401 (not an open proxy)
-4. After deploying the Worker: `curl https://shitcoin.io/api/exchangeInfo` → 200, **not**
-   `{"error":...}`. This is the actual goal — it has returned 502 for months.
-5. Load `https://shitcoin.io` in a browser with the network tab open: Binance requests
-   should go to **shitcoin.io**, not to `data-api.binance.vision`.
-6. Deploy discipline: **commit before the GA fill-and-revert** (`git checkout index.html`
-   wipes uncommitted work), and wait ~30s for edge propagation before verifying live.
-
-## Opener prompt for a fresh session
-
+# 4. the actual goal
+curl https://shitcoin.io/api/exchangeInfo                           # -> 200, not {"error":...}
 ```
-Build the Binance relay for shitcoin.io. Full brief: docs/RELAY-HANDOFF.md in
-/Users/heatherm/Documents/Claude/shitcoin — read it first, it explains why the
-Worker cannot reach Binance and why no proxy can fix it.
 
-Short version: Binance blocks Cloudflare's IPs, and the CONNECT-tunnel workaround
-in worker.js proxyFetch() is dead — CONNECT succeeds but Workers' startTls() fails
-against every host including example.com. Node's undici does this correctly, so the
-fix is a small Node relay on Render that the Worker calls over plain HTTPS.
+5. Load `https://shitcoin.io` with the network tab open: `/api/exchangeInfo` and
+   `/api/ticker/24hr` should go to **shitcoin.io**, with no request to
+   `data-api.binance.vision`.
 
-Start with Step 1 in the brief: deploy a throwaway probe to find out whether Render
-can reach data-api.binance.vision DIRECTLY. If it can, the relay needs no proxy and
-gets much simpler. Don't skip this — it has never been tested.
+Last run 2026-08-12: all five pass. 3680 symbols, 3683 tickers, 374 active coins on the
+page, no console errors, and no browser-side Binance requests.
 
-Credentials (never commit any of these — the repo is PUBLIC):
-- Render API key: ~/Code/bnbscan/.render-api-key  (RENDER_API_KEY=rnd_…, mode 600)
-- IPRoyal proxy: same value as the Cloudflare PROXY_URL secret; set it in the Render
-  dashboard only if Step 1 shows the proxy is needed.
-- render.yaml pattern to copy: ~/Code/bnbscan/render.yaml
+## Rotating the token
 
-Constraints:
-- Token-gate every /binance/* route or you have published an open Binance proxy.
-- Mirror BINANCE_ALLOWED (worker.js:15) exactly — no arbitrary path passthrough.
-- Short timeout on the Worker's relay fetch, and KEEP the client-side smartFetch
-  fallback. It is what keeps the site working today.
-- Success = curl https://shitcoin.io/api/exchangeInfo returns 200 with real JSON.
-  It has returned 502 for months.
+Generate a new value, then set it in both places (they must match) and redeploy:
+
+```bash
+NEW=$(openssl rand -hex 32)
+# Render: dashboard -> shitcoin-relay -> Environment -> RELAY_TOKEN  (triggers a redeploy)
+printf '%s' "$NEW" | npx wrangler secret put RELAY_TOKEN
+npx wrangler deploy   # remember the GA fill above
 ```
