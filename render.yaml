@@ -9,13 +9,16 @@
 
 services:
   - type: web
-    name: shitcoin-relay
+    name: shitcoin-relay-2  # "-2" because Render's API cannot move a service from free to
+                            # a paid plan (PATCH serviceDetails.plan 500s), but CREATE
+                            # accepts a plan — so the starter instance is a new service and
+                            # the Worker's RELAY_URL secret was pointed at it. The original
+                            # free `shitcoin-relay` is superseded. See docs/RELAY-HANDOFF.md.
     runtime: node
-    plan: free              # Free web services sleep after ~15 min idle and cold-start
-                            # slowly. Tolerable ONLY because the Worker caches responses
-                            # for 120-900s and index.html's smartFetch falls back to
-                            # fetching Binance from the visitor's browser. Upgrade to
-                            # starter (~$7/mo) to make it always-on.
+    plan: starter           # ~$7/mo, always-on. Free sleeps after ~15 min idle, which put a
+                            # tens-of-seconds cold start in the page's load path; the Worker
+                            # gave up at 5s and every such request fell back to fetching
+                            # Binance from the visitor's own browser.
     region: oregon
     rootDir: relay
     buildCommand: npm ci --omit=dev

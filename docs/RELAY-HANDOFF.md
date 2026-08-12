@@ -62,9 +62,10 @@ proxy's non-standard port 12323 at all.
 
 | | |
 |---|---|
-| Render service | `shitcoin-relay` (`srv-d9u1rhrncjis73aas190`), Oregon, **free** plan |
-| URL | `https://shitcoin-relay.onrender.com` |
+| Render service | **`shitcoin-relay-2` (`srv-d9u319142hec739efsd0`), Oregon, `starter` plan (~$7/mo, always-on)** |
+| URL | `https://shitcoin-relay-2.onrender.com` |
 | Source | `relay/` in this repo, branch `main` |
+| Superseded | `shitcoin-relay` (`srv-d9u1rhrncjis73aas190`) — the original **free** service. Still running, costs $0, safe to delete. See the plan note below for why it was replaced instead of upgraded. |
 | Render env | `RELAY_TOKEN` (secret), `NODE_VERSION=22`. **No `PROXY_URL`.** |
 | Worker secrets | `RELAY_URL`, `RELAY_TOKEN` (`npx wrangler secret list`) |
 | Config record | `render.yaml` — the service was created via the API, so keep the two in sync by hand |
@@ -93,18 +94,23 @@ reach an arbitrary Binance endpoint.
   stopped redeploying the moment that branch was deleted — silently, with no error
   anywhere). If the relay ever moves branches again, change it in Render → Settings →
   Branch, and remember `plan`/`branch` here in `render.yaml` are only a record.
-- **⚠️ Plan is still `free`, and free sleeps after ~15 min idle.** Decision made
-  2026-08-12 to move to Starter (~$7/mo, always-on); it is **not applied yet** because
-  Render's API returns a 500 for any `plan` change — a no-op PATCH of another
-  `serviceDetails` field on the same service succeeds, so the endpoint works and the
-  free→paid upgrade is gated behind the dashboard's billing flow. Do it at
-  Render → shitcoin-relay → Settings → Instance Type → Starter, then set `plan: starter`
-  in `render.yaml` to match.
-  Until then: cold starts take tens of seconds, the Worker gives up after **5s**
-  (`RELAY_TIMEOUT_MS`) and returns 502, and `smartFetch` in `index.html` fetches Binance
-  from the visitor's own browser — the page still works, it just loses the server-side
-  path for that request. The site's own 120s refresh keeps the instance warm whenever
-  anyone is actually looking at it.
+- **Render's API cannot move a service from `free` to a paid plan.**
+  `PATCH /v1/services/{id}` with `{"serviceDetails":{"plan":"starter"}}` returns
+  `500 internal server error`, every time. It is not the value and not billing: sending
+  `"Starter"` returns a clean `400` naming `starter` as valid, a no-op PATCH of
+  `healthCheckPath` on the same object returns 200, and this team already runs
+  `starter`/`standard`/`pro` services elsewhere. **Workaround used 2026-08-12:** service
+  *creation* accepts a plan even though PATCH cannot change one, so the relay was
+  recreated directly on `starter` and the Worker cut over by pointing the `RELAY_URL`
+  secret at the new URL. Zero downtime — the new service was fully verified before the
+  secret changed. Do the same if you ever need another plan change from the API.
+- **Cold starts are no longer in the load path** now that the plan is `starter`
+  (always-on, no spin-down). The 5s `RELAY_TIMEOUT_MS` and the `smartFetch` fallback
+  still exist and still matter — they cover a deploy restart, a Render incident, or a
+  Binance stall. Do not remove them.
+- **`wrangler secret put` does NOT redeploy your code.** It updates the binding on the
+  live version, which is why the `RELAY_URL` cutover needed no GA fill-and-revert. Only
+  `wrangler deploy` ships `index.html`, and that is the one that drops GA.
 - **Do not remove the client-side fallback.** It is the safety net for every case above.
 - **`exchangeInfo` is 17.5 MB.** The relay gzips it to ~320 KB and memoizes the compressed
   copy on the cache entry; without that, re-compressing on each hit would dominate the
