@@ -64,7 +64,7 @@ proxy's non-standard port 12323 at all.
 |---|---|
 | Render service | `shitcoin-relay` (`srv-d9u1rhrncjis73aas190`), Oregon, **free** plan |
 | URL | `https://shitcoin-relay.onrender.com` |
-| Source | `relay/` in this repo, branch `claude/binance-relay-shitcoin-ca75fc` ⚠️ see below |
+| Source | `relay/` in this repo, branch `main` |
 | Render env | `RELAY_TOKEN` (secret), `NODE_VERSION=22`. **No `PROXY_URL`.** |
 | Worker secrets | `RELAY_URL`, `RELAY_TOKEN` (`npx wrangler secret list`) |
 | Config record | `render.yaml` — the service was created via the API, so keep the two in sync by hand |
@@ -88,16 +88,23 @@ reach an arbitrary Binance endpoint.
 
 ## Things that will bite you
 
-- **The Render service tracks a feature branch.** If
-  `claude/binance-relay-shitcoin-ca75fc` is merged and deleted, the service stops
-  redeploying and any later relay change silently does nothing. After merging, repoint
-  it at `main` in the Render dashboard (Settings → Branch).
-- **Free plan sleeps after ~15 min idle** and cold-starts in tens of seconds. The Worker
-  gives up after **5s** (`RELAY_TIMEOUT_MS`) and returns 502, at which point
-  `smartFetch` in `index.html` fetches Binance from the visitor's own browser — the page
-  still works, it just loses the server-side path for that request. In practice the site's
-  own 120s refresh keeps the instance warm whenever anyone is looking at it. Upgrade to
-  Starter (~$7/mo) to make it always-on.
+- **The Render service's tracked branch must match where the code lives.** It tracks
+  `main` (fixed 2026-08-12; it briefly tracked the feature branch, which would have
+  stopped redeploying the moment that branch was deleted — silently, with no error
+  anywhere). If the relay ever moves branches again, change it in Render → Settings →
+  Branch, and remember `plan`/`branch` here in `render.yaml` are only a record.
+- **⚠️ Plan is still `free`, and free sleeps after ~15 min idle.** Decision made
+  2026-08-12 to move to Starter (~$7/mo, always-on); it is **not applied yet** because
+  Render's API returns a 500 for any `plan` change — a no-op PATCH of another
+  `serviceDetails` field on the same service succeeds, so the endpoint works and the
+  free→paid upgrade is gated behind the dashboard's billing flow. Do it at
+  Render → shitcoin-relay → Settings → Instance Type → Starter, then set `plan: starter`
+  in `render.yaml` to match.
+  Until then: cold starts take tens of seconds, the Worker gives up after **5s**
+  (`RELAY_TIMEOUT_MS`) and returns 502, and `smartFetch` in `index.html` fetches Binance
+  from the visitor's own browser — the page still works, it just loses the server-side
+  path for that request. The site's own 120s refresh keeps the instance warm whenever
+  anyone is actually looking at it.
 - **Do not remove the client-side fallback.** It is the safety net for every case above.
 - **`exchangeInfo` is 17.5 MB.** The relay gzips it to ~320 KB and memoizes the compressed
   copy on the cache entry; without that, re-compressing on each hit would dominate the
