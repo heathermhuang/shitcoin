@@ -20,6 +20,27 @@ function isAllowed(allowlist, subpath) {
   return allowlist.some(p => subpath === p || subpath.startsWith(p + '?') || subpath.startsWith(p + '/'));
 }
 
+// ---- Binance relay (relay/server.mjs, deployed on Render) -------------------
+// Binance blocks Cloudflare's egress IPs and the in-Worker CONNECT tunnel below
+// cannot be made to work, so the Binance call happens in Node instead and the
+// Worker makes an ordinary HTTPS request to it. Verified 2026-08-12: Render's
+// egress reaches data-api.binance.vision DIRECTLY (`/diag` -> direct: 200), so
+// the relay needs no proxy of its own.
+//
+// Unset RELAY_URL/RELAY_TOKEN and the Worker behaves exactly as before.
+const RELAY_TIMEOUT_MS = 5000;
+
+function parseRelay(env) {
+  if (!env.RELAY_URL || !env.RELAY_TOKEN) return null;
+  return { url: env.RELAY_URL.replace(/\/+$/, ''), token: env.RELAY_TOKEN };
+}
+
+// https://data-api.binance.vision/api/v3/ticker/24hr -> https://relay/binance/ticker/24hr
+// The relay's routes mirror BINANCE_ALLOWED exactly, so this is a prefix swap.
+function relayUrl(upstream, relay) {
+  return relay.url + '/binance' + upstream.slice(BINANCE_BASE.length);
+}
+
 const EXCHANGE_URLS = {
   coinbase: 'https://api.exchange.coinbase.com/products',
   binance:  'https://data-api.binance.vision/api/v3/exchangeInfo',
@@ -147,7 +168,7 @@ async function proxyFetch(targetUrl, proxy, headers = {}) {
   return new Response(body, { status, headers: { 'Content-Type': h['content-type'] || 'application/json' } });
 }
 
-async function cachedProxy(request, upstream, ttl, apiKey, proxy) {
+async function cachedProxy(request, upstream, ttl, apiKey, proxy, relay) {
   const cache = caches.default;
   // CoinGecko: store cached entries for 24h so stale-while-revalidate survives rate-limit windows
   const isCoinGecko = upstream.includes('coingecko.com');
@@ -170,8 +191,20 @@ async function cachedProxy(request, upstream, ttl, apiKey, proxy) {
   // proxy, since anonymous requests from CF datacenter IPs do get throttled to [] —
   // though with the proxy broken that path is currently academic.
   const cgDirect = isCoinGecko && !!apiKey;
-  const useProxy = proxy && !cgDirect && (upstream.includes('binance.vision') || upstream.includes('coingecko.com'));
-  const doFetch = () => useProxy
+  // Binance goes through the Node relay when one is configured. It takes priority
+  // over the CONNECT proxy because it is the path that actually works.
+  const useRelay = !!relay && upstream.startsWith(BINANCE_BASE);
+  const useProxy = proxy && !cgDirect && !useRelay && (upstream.includes('binance.vision') || upstream.includes('coingecko.com'));
+  const doFetch = () => useRelay
+    // Short timeout on purpose. A cold Render free instance can take tens of
+    // seconds to wake; the Worker must give up fast so index.html's smartFetch
+    // falls back to fetching Binance from the visitor's own browser instead of
+    // the page hanging. A 502 here is a working page, not a broken one.
+    ? fetch(relayUrl(upstream, relay), {
+        headers: { ...upstreamHeaders, 'Authorization': `Bearer ${relay.token}`, 'Accept-Encoding': 'gzip' },
+        signal: AbortSignal.timeout(RELAY_TIMEOUT_MS),
+      })
+    : useProxy
     ? proxyFetch(upstream, proxy, upstreamHeaders)
     : fetch(upstream, { headers: upstreamHeaders, cf: { cacheTtl: ttl, cacheEverything: true } });
   const cacheKey = new Request(upstream, { headers: { 'Cache-Control': 'no-transform' } });
@@ -249,6 +282,7 @@ export default {
     const path = url.pathname + url.search; // NOTE: includes the query string — proxy routes use path.slice(N) directly; do NOT also append url.search (that doubled the query and corrupted CoinGecko's per_page)
     const ttl = getTTL(path);
     const proxy = parseProxy(env.PROXY_URL);
+    const relay = parseRelay(env);
 
     // Force HTTPS — check both url.protocol and CF-Visitor header
     const cfVisitor = request.headers.get('CF-Visitor');
@@ -273,7 +307,7 @@ export default {
       if (!isAllowed(BINANCE_ALLOWED, path.slice(4).split('?')[0])) {
         return new Response('{"error":"not allowed"}', { status: 403, headers: { 'Content-Type': 'application/json' } });
       }
-      return cachedProxy(request, BINANCE_BASE + sub, ttl, undefined, proxy);
+      return cachedProxy(request, BINANCE_BASE + sub, ttl, undefined, proxy, relay);
     }
 
     // /cb/* → Coinbase (allowlisted endpoints only)
@@ -282,7 +316,7 @@ export default {
       if (!isAllowed(COINBASE_ALLOWED, sub)) {
         return new Response('{"error":"not allowed"}', { status: 403, headers: { 'Content-Type': 'application/json' } });
       }
-      return cachedProxy(request, COINBASE_BASE + path.slice(3), ttl, undefined, proxy);
+      return cachedProxy(request, COINBASE_BASE + path.slice(3), ttl, undefined, proxy, relay);
     }
 
     // /cg/* → CoinGecko (allowlisted endpoints only)
@@ -291,7 +325,7 @@ export default {
       if (!isAllowed(COINGECKO_ALLOWED, sub)) {
         return new Response('{"error":"not allowed"}', { status: 403, headers: { 'Content-Type': 'application/json' } });
       }
-      return cachedProxy(request, COINGECKO_BASE + path.slice(3), ttl, env.CG_DEMO_KEY, proxy);
+      return cachedProxy(request, COINGECKO_BASE + path.slice(3), ttl, env.CG_DEMO_KEY, proxy, relay);
     }
 
     // /ex/<exchange> → exchange info
@@ -299,7 +333,7 @@ export default {
       const ex = path.slice(4).split('?')[0];
       const upstream = EXCHANGE_URLS[ex];
       if (!upstream) return new Response('{"error":"unknown exchange"}', { status: 404 });
-      return cachedProxy(request, upstream, 1800, undefined, proxy);
+      return cachedProxy(request, upstream, 1800, undefined, proxy, relay);
     }
 
     // Favicon
