@@ -1,0 +1,35 @@
+# Render blueprint for the Binance relay.
+#
+# The live service was created through the Render API rather than by syncing this
+# blueprint, so treat this file as the record of the intended configuration — if
+# you change something here, change it in the dashboard too (or create a Blueprint
+# instance from it and let Render own the config from then on).
+#
+# Why this service exists at all: relay/server.mjs, and docs/RELAY-HANDOFF.md.
+
+services:
+  - type: web
+    name: shitcoin-relay
+    runtime: node
+    plan: free              # Free web services sleep after ~15 min idle and cold-start
+                            # slowly. Tolerable ONLY because the Worker caches responses
+                            # for 120-900s and index.html's smartFetch falls back to
+                            # fetching Binance from the visitor's browser. Upgrade to
+                            # starter (~$7/mo) to make it always-on.
+    region: oregon
+    rootDir: relay
+    buildCommand: npm ci --omit=dev
+    startCommand: node server.mjs
+    healthCheckPath: /ping  # unauthenticated by design — Render's monitor has no token
+    autoDeploy: true
+    envVars:
+      - key: RELAY_TOKEN
+        sync: false         # set in the Render dashboard; must match the Worker's
+                            # RELAY_TOKEN secret. Without it every /binance/* route
+                            # returns 401 — deliberately fail-closed.
+      - key: PROXY_URL
+        sync: false         # IPRoyal residential proxy. Set ONLY if Binance starts
+                            # blocking Render's egress; unset means direct. Verify with
+                            # `curl -H "Authorization: Bearer $RELAY_TOKEN" <url>/diag`.
+      - key: NODE_VERSION
+        value: "22"

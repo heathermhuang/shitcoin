@@ -1,0 +1,17 @@
+{
+  "name": "shitcoin-relay",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Binance relay for shitcoin.io — the Cloudflare Worker calls this because Workers cannot reach Binance (see ../docs/RELAY-HANDOFF.md)",
+  "type": "module",
+  "main": "server.mjs",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "start": "node server.mjs"
+  },
+  "dependencies": {
+    "undici": "^7.24.4"
+  }
+}
