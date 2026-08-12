@@ -47,6 +47,27 @@ function getTTL(path) {
 // datacenter IPs (Binance, CoinGecko). Workers' fetch() can't use an HTTP proxy,
 // so we open a raw TCP socket to the proxy, issue CONNECT, upgrade to TLS, and
 // speak HTTP/1.1 by hand. Credentials come from env.PROXY_URL (a secret).
+//
+// ⚠️ THIS PATH DOES NOT WORK, and the reason is not what it long appeared to be.
+// The old belief was that the proxy's exit IP rejects CF-sourced CONNECT. It does
+// not: with valid credentials the CONNECT returns "HTTP/1.1 200 Connection
+// Established" every time. What fails is startTls() immediately after, with
+// "TLS Handshake Failed."
+//
+// Measured 2026-08-12 by probing the live Worker:
+//   * two different residential proxies       -> identical failure
+//   * allowHalfOpen false / true / omitted    -> identical failure
+//   * startTls() with and without expectedServerHostname -> identical failure
+//   * targets binance.vision, coingecko, coinbase AND example.com -> all fail
+// curl through the same proxies reaches every one of those hosts fine.
+//
+// example.com failing is the tell: this is not upstream-specific. Workers'
+// startTls() is built to upgrade a connection to the host you dialled (SMTP,
+// Postgres); it cannot complete a handshake with a DIFFERENT host through a
+// CONNECT tunnel. No proxy purchase or option tweak fixes this — the fix is a
+// small relay on non-Cloudflare compute that the Worker calls over plain HTTPS.
+// Binance still genuinely blocks CF (disabling the proxy yields "upstream
+// error"), so today Binance data rides the client-side smartFetch fallback.
 function parseProxy(proxyUrl) {
   if (!proxyUrl) return null;
   try {
@@ -144,9 +165,10 @@ async function cachedProxy(request, upstream, ttl, apiKey, proxy) {
   //
   // Exception — CoinGecko WITH a Demo key goes direct, skipping the proxy. The key
   // carries its own quota, so the request no longer depends on the egress IP being
-  // residential, and the proxy's exit IP currently rejects CF-sourced CONNECT — which
-  // is what turned every /cg/ response into []. Keyless CoinGecko still needs the
-  // proxy, since anonymous requests from CF datacenter IPs do get throttled to [].
+  // residential, and the proxy path is broken anyway (see proxyFetch) — which is what
+  // turned every /cg/ response into []. Keyless CoinGecko still routes through the
+  // proxy, since anonymous requests from CF datacenter IPs do get throttled to [] —
+  // though with the proxy broken that path is currently academic.
   const cgDirect = isCoinGecko && !!apiKey;
   const useProxy = proxy && !cgDirect && (upstream.includes('binance.vision') || upstream.includes('coingecko.com'));
   const doFetch = () => useProxy
