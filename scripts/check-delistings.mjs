@@ -46,22 +46,42 @@ const BINANCE_BASE = 'https://www.binance.com';
 const PROXY_URL = process.env.PROXY_URL || '';
 const binanceDispatcher = PROXY_URL ? new ProxyAgent(PROXY_URL) : undefined;
 const CMS_PATH = '/bapi/composite/v1/public/cms/article/list/query';
-const DELISTING_CATALOG = 161; // "Delisting" — holds both delist + monitoring-tag notices
+// Binance splits these across catalogs AND moves them without notice. Monitoring-tag
+// notices lived in 161 ("Delisting") until 2026-06-18, then moved to 49 ("Latest
+// Binance News") — reading only 161 silently missed three monitoring announcements
+// over seven weeks (2026-07-03, 07-24, 08-11) and wrongly recorded ACX/PYR/VANRY as
+// never tagged. Sweep both and merge. A catalog that returns nothing is reported,
+// because "no announcements" and "we stopped looking here" must not look alike.
+const CATALOGS = [
+  { id: 161, name: 'Delisting' },
+  { id: 49, name: 'Latest Binance News' },
+];
 const TODAY = process.env.TODAY || new Date().toISOString().slice(0, 10);
 const UA = 'Mozilla/5.0 (compatible; shitcoin-monitor/1.0)';
 
 const FLAGS = new Set(process.argv.slice(2));
 
 // ---------- Binance announcements ----------
-async function fetchBinanceTitles() {
-  const url = `${BINANCE_BASE}${CMS_PATH}?type=1&catalogId=${DELISTING_CATALOG}&pageNo=1&pageSize=50`;
+async function fetchCatalogTitles(catalogId) {
+  const url = `${BINANCE_BASE}${CMS_PATH}?type=1&catalogId=${catalogId}&pageNo=1&pageSize=50`;
   const opts = { headers: { 'User-Agent': UA } };
   if (binanceDispatcher) opts.dispatcher = binanceDispatcher;
   const r = await fetch(url, opts);
-  if (!r.ok) throw new Error(`Binance CMS HTTP ${r.status}`);
+  if (!r.ok) throw new Error(`Binance CMS catalog ${catalogId} HTTP ${r.status}`);
   const j = await r.json();
-  const catalogs = j?.data?.catalogs || [];
-  return catalogs.flatMap(c => (c.articles || []).map(a => a.title));
+  return (j?.data?.catalogs || []).flatMap(c => (c.articles || []).map(a => a.title));
+}
+
+// -> { titles: [...unique], empty: [names of catalogs that returned nothing] }
+async function fetchBinanceTitles() {
+  const titles = new Set();
+  const empty = [];
+  for (const cat of CATALOGS) {
+    const got = await fetchCatalogTitles(cat.id);
+    if (!got.length) empty.push(`${cat.name} (${cat.id})`);
+    for (const t of got) titles.add(t);
+  }
+  return { titles: [...titles], empty };
 }
 
 function splitSymbols(s) {
@@ -268,9 +288,11 @@ async function main() {
   const html = await readFile(INDEX, 'utf8');
   const tracked = parseTracked(html);
 
-  let binanceNew = [], binanceErr = null;
+  let binanceNew = [], binanceErr = null, emptyCatalogs = [];
   try {
-    binanceNew = diffBinance(parseAnnouncements(await fetchBinanceTitles()), tracked);
+    const { titles, empty } = await fetchBinanceTitles();
+    emptyCatalogs = empty;
+    binanceNew = diffBinance(parseAnnouncements(titles), tracked);
   } catch (e) { binanceErr = e.message; }
 
   let cb = { baseline: false, changes: [], pairChurn: [] }, cbErr = null, cbSnap = null;
@@ -291,6 +313,9 @@ async function main() {
   // Human-readable markdown report — used for console output AND the PR body.
   const lines = [`# Auto-update check — ${TODAY}`, `Tracked Binance coins: ${tracked.size}`];
   if (binanceErr) lines.push(`\n⚠ Binance fetch FAILED: ${binanceErr}`);
+  // A catalog that suddenly returns nothing is how the 2026-06→08 blind spot would
+  // have looked from the inside. Say it out loud rather than reporting "0 changes".
+  if (emptyCatalogs.length) lines.push(`\n⚠ Binance catalog(s) returned no articles — Binance may have moved them again: ${emptyCatalogs.join(', ')}`);
   lines.push(`\n## Binance — ${binanceNew.length} change(s) not yet in data`);
   for (const n of binanceNew) lines.push(`- **${n.sym}** → ${n.expected} (${n.kind} ${n.date}) — ${n.reason}`);
   if (cbErr) lines.push(`\n⚠ Coinbase fetch FAILED: ${cbErr}`);

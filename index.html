@@ -764,17 +764,31 @@ const TRACKED_TOKENS = [
   {sym:'ACT', name:'Act I: The AI Prophecy', status:'monitoring', monDate:'2026-06-18', delistDate:null, restoreDate:null},
   {sym:'BLUR', name:'Blur', status:'monitoring', monDate:'2026-06-18', delistDate:null, restoreDate:null},
   {sym:'QKC', name:'QuarkChain', status:'monitoring', monDate:'2026-06-18', delistDate:null, restoreDate:null},
+  // From here on the monitoring tags come from catalog 49 ("Latest Binance News"),
+  // where Binance moved them after 2026-06-18. All were missed until 2026-08-12.
+  {sym:'SCRT', name:'Secret', status:'monitoring', monDate:'2026-07-03', delistDate:null, restoreDate:null},
+  {sym:'LSK', name:'Lisk', status:'monitoring', monDate:'2026-07-24', delistDate:null, restoreDate:null},
+  {sym:'STX', name:'Stacks', status:'monitoring', monDate:'2026-07-24', delistDate:null, restoreDate:null},
+  {sym:'GLMR', name:'Moonbeam', status:'monitoring', monDate:'2026-08-11', delistDate:null, restoreDate:null},
+  {sym:'ICX', name:'ICON', status:'monitoring', monDate:'2026-08-11', delistDate:null, restoreDate:null},
+  {sym:'MOVR', name:'Moonriver', status:'monitoring', monDate:'2026-08-11', delistDate:null, restoreDate:null},
+  {sym:'RARE', name:'SuperRare', status:'monitoring', monDate:'2026-08-11', delistDate:null, restoreDate:null},
+  {sym:'SOPH', name:'Sophon', status:'monitoring', monDate:'2026-08-11', delistDate:null, restoreDate:null},
   {sym:'ALCX', name:'Alchemix', status:'delisting', monDate:'2026-05-22', delistDate:'2026-07-10', restoreDate:null},
   {sym:'NFP', name:'NFPrompt', status:'delisting', monDate:'2026-04-30', delistDate:'2026-07-10', restoreDate:null},
   {sym:'POND', name:'Marlin', status:'delisting', monDate:'2026-04-30', delistDate:'2026-07-10', restoreDate:null},
-  // 2026-08-17 delisting. ACX, PYR and VANRY were never given a monitoring tag
-  // (checked 300 announcements back) — monDate stays null, not the delist date.
-  {sym:'ACX', name:'Across Protocol', status:'delisting', monDate:null, delistDate:'2026-08-17', restoreDate:null},
+  // 2026-08-17 delisting. All six WERE tagged for monitoring first — ACX on
+  // 2026-07-24, PYR/VANRY on 2026-07-03, in catalog 49 ("Latest Binance News"),
+  // which the detector did not read until it was fixed to sweep both catalogs.
+  {sym:'ACX', name:'Across Protocol', status:'delisting', monDate:'2026-07-24', delistDate:'2026-08-17', restoreDate:null},
   {sym:'HFT', name:'Hashflow', status:'delisting', monDate:'2026-05-22', delistDate:'2026-08-17', restoreDate:null},
   {sym:'PIVX', name:'PIVX', status:'delisting', monDate:'2026-06-18', delistDate:'2026-08-17', restoreDate:null},
-  {sym:'PYR', name:'Vulcan Forged', status:'delisting', monDate:null, delistDate:'2026-08-17', restoreDate:null},
-  {sym:'VANRY', name:'Vanar Chain', status:'delisting', monDate:null, delistDate:'2026-08-17', restoreDate:null},
+  {sym:'PYR', name:'Vulcan Forged', status:'delisting', monDate:'2026-07-03', delistDate:'2026-08-17', restoreDate:null},
+  {sym:'VANRY', name:'Vanar Chain', status:'delisting', monDate:'2026-07-03', delistDate:'2026-08-17', restoreDate:null},
   {sym:'VIC', name:'Viction', status:'delisting', monDate:'2026-04-30', delistDate:'2026-08-17', restoreDate:null},
+  // Monitoring tag 2026-07-03; AEUR/USDT spot removed 2026-07-31 and balances
+  // auto-converted to EUR 1:1 from 2026-08-14. Binance's own EUR stablecoin.
+  {sym:'AEUR', name:'Binance EUR', status:'delisted', monDate:'2026-07-03', delistDate:'2026-07-31', restoreDate:null},
   {sym:'A2Z', name:'Arena-Z', status:'delisted', monDate:'2026-03-13', delistDate:'2026-04-01', restoreDate:null},
   {sym:'FORTH', name:'Ampleforth Governance', status:'delisted', monDate:'2026-03-06', delistDate:'2026-04-01', restoreDate:null},
   {sym:'HOOK', name:'Hooked Protocol', status:'delisted', monDate:'2026-03-06', delistDate:'2026-04-01', restoreDate:null},
@@ -860,10 +874,10 @@ const TRACKED_TOKENS = [
   {sym:'FLOW', name:'Flow', status:'restored', monDate:'2026-01-02', delistDate:null, restoreDate:'2026-03-06'},
 ];
 
-// Total: 135 tokens
-// delisted: 95
+// Total: 144 tokens
+// delisted: 96
 // delisting: 10
-// monitoring: 24
+// monitoring: 32
 // restored: 6
 
 // Auto-transition: a coin still tagged 'delisting' after its delistDate has, in
@@ -1076,6 +1090,10 @@ async function fetchMarketCaps() {
             // Delisting 2026-08-17. Too small for the top-1000 sweep to resolve by
             // symbol, and the bare ticker is not their id — without these, mcap "—".
             'PYR':'vulcan-forged','VANRY':'vanar-chain',
+            // Monitoring tags from catalog 49, added 2026-08-12. Ids verified against
+            // the live API; STX ('blockstack') is already above.
+            'GLMR':'moonbeam','ICX':'icon','MOVR':'moonriver','RARE':'superrare',
+            'SOPH':'sophon','LSK':'lisk','SCRT':'secret',
             'BTC':'bitcoin','ETH':'ethereum','BNB':'binancecoin','SOL':'solana',
             'XRP':'ripple','DOGE':'dogecoin','ADA':'cardano','AVAX':'avalanche-2',
             'DOT':'polkadot','LINK':'chainlink','SHIB':'shiba-inu','UNI':'uniswap',
@@ -1893,6 +1911,13 @@ const CB_DELISTED = [
     // and delisted/trading_disabled on 2026-07-29 — 5 days before Binance
     // announced its own ACX delisting (2026-08-17).
     {sym:'ACX',    name:'Across Protocol',     delistDate:'2026-07-29'},
+    // Detected by the 2026-08-08 run (PR #5): each lost its last online pair.
+    // Names are Coinbase's own — note PIRATE is Pirate Nation, not Pirate Chain (ARRR).
+    {sym:'LRC',    name:'Loopring',            delistDate:'2026-08-08'},
+    {sym:'FIS',    name:'Stafi',               delistDate:'2026-08-08'},
+    {sym:'PIRATE', name:'Pirate Nation',       delistDate:'2026-08-08'},
+    {sym:'IDEX',   name:'IDEX',                delistDate:'2026-08-08'},
+    {sym:'OMNI',   name:'Omni Network',        delistDate:'2026-08-08'},
 ];
 
 // ===== DATA PROCESSING =====
