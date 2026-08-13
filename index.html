@@ -1925,6 +1925,68 @@ const CB_DELISTED = [
     {sym:'PIRATE', name:'Pirate Nation',       delistDate:'2026-08-07'},
     {sym:'IDEX',   name:'IDEX',                delistDate:'2026-08-07'},
     {sym:'OMNI',   name:'Omni Network',        delistDate:'2026-08-07'},
+    // ── Name backfill, added 2026-08-12 ───────────────────────────────────
+    // Fully delisted on Coinbase, and the API still returns them, so these rows
+    // ALREADY render — just with no curated name, so each falls back to
+    // CoinGecko and degrades to "N pairs" whenever CoinGecko is rate-limited.
+    // Names are Coinbase's OWN, read from api.exchange.coinbase.com/currencies
+    // rather than typed from memory: MONA is Monavale (NOT MonaCoin) and this
+    // JUP is the 2023 Jupiter, not the Solana one — the same ticker collisions
+    // that made PIRATE worth annotating.
+    //
+    // delistDate is null where no official announcement date could be verified.
+    // The Coinbase tab renders no date column, so null costs nothing here, and
+    // inventing dates would break the VERIFIED_DATA.md standard.
+    {sym:'DREP',   name:'Drep',                  delistDate:'2024-01-04'}, // same 2024-01-04 batch
+    {sym:'ATA',    name:'Automata Network',      delistDate:'2024-01-04'}, // suspended 2pm ET alongside DREP, MONA, SYLO
+    {sym:'MONA',   name:'Monavale',              delistDate:'2024-01-04'}, // same 2024-01-04 batch — Monavale, NOT MonaCoin
+    {sym:'SYLO',   name:'Sylo',                  delistDate:'2024-01-04'}, // same 2024-01-04 batch
+    {sym:'SNT',    name:'Status',                delistDate:'2024-02-23'}, // suspended 2pm ET 2024-02-23
+    {sym:'ENJ',    name:'Enjin Coin',            delistDate:'2024-06-14'}, // suspended 2pm ET 2024-06-14
+    {sym:'DESO',   name:'Decentralized Social',  delistDate:'2024-11-08'}, // suspended 2pm ET 2024-11-08
+    {sym:'ANT',    name:'Aragon',                delistDate:null},
+    {sym:'BIT',    name:'BitDAO',                delistDate:null},
+    {sym:'BOND',   name:'BarnBridge',            delistDate:null},
+    {sym:'COVAL',  name:'Circuits of Value',     delistDate:null},
+    {sym:'CRPT',   name:'Crypterium',            delistDate:null},
+    {sym:'DDX',    name:'DerivaDAO',             delistDate:null},
+    {sym:'DYP',    name:'DeFi Yield Protocol',   delistDate:null},
+    {sym:'ERN',    name:'Ethernity Chain',       delistDate:null},
+    {sym:'FX',     name:'Function X',            delistDate:null},
+    {sym:'GNT',    name:'Golem',                 delistDate:null},
+    {sym:'JUP',    name:'Jupiter',               delistDate:null},
+    {sym:'KEEP',   name:'Keep Network',          delistDate:null},
+    {sym:'LOOM',   name:'Loom Network',          delistDate:null},
+    {sym:'MCO2',   name:'Moss Carbon Credit',    delistDate:null},
+    {sym:'MEDIA',  name:'Media Network',         delistDate:null},
+    {sym:'MIR',    name:'Mirror Protocol',       delistDate:null},
+    {sym:'MTL',    name:'Metal',                 delistDate:null},
+    {sym:'MULTI',  name:'Multichain',            delistDate:null},
+    {sym:'MXC',    name:'MXC',                   delistDate:null},
+    {sym:'NEST',   name:'Nest Protocol',         delistDate:null},
+    {sym:'NU',     name:'NuCypher',              delistDate:null},
+    {sym:'OMG',    name:'OMG Network',           delistDate:null},
+    {sym:'OOKI',   name:'Ooki Protocol',         delistDate:null},
+    {sym:'PLA',    name:'PlayDapp',              delistDate:null},
+    {sym:'POLY',   name:'Polymath Network',      delistDate:null},
+    {sym:'QSP',    name:'Quantstamp',            delistDate:null},
+    {sym:'QUICK',  name:'QuickSwap',             delistDate:null},
+    {sym:'RAI',    name:'Rai Reflex Index',      delistDate:null},
+    {sym:'REN',    name:'Ren',                   delistDate:null},
+    {sym:'REP',    name:'Augur',                 delistDate:null},
+    {sym:'RGT',    name:'Rari Governance Token', delistDate:null},
+    {sym:'RLY',    name:'Rally',                 delistDate:null},
+    {sym:'TONE',   name:'TE-FOOD',               delistDate:null},
+    {sym:'TRIBE',  name:'Tribe',                 delistDate:null},
+    {sym:'TRU',    name:'TrueFi',                delistDate:null},
+    {sym:'TVK',    name:'The Virtua Kolect',     delistDate:null},
+    {sym:'UNFI',   name:'Unifi Protocol DAO',    delistDate:null},
+    {sym:'UPI',    name:'Pawtocol',              delistDate:null},
+    {sym:'UST',    name:'TerraClassicUSD',       delistDate:null},
+    {sym:'VGX',    name:'Voyager Token',         delistDate:null},
+    {sym:'WAMPL',  name:'Wrapped Ampleforth',    delistDate:null},
+    {sym:'WLUNA',  name:'Wrapped Luna Classic',  delistDate:null},
+    {sym:'YFII',   name:'DFI.Money',             delistDate:null},
 ];
 
 // ===== DATA PROCESSING =====
