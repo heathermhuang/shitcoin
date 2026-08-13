@@ -40,7 +40,7 @@
 
 import { readFile, writeFile } from 'node:fs/promises';
 import { createHash } from 'node:crypto';
-import { ProxyAgent } from 'undici';
+// undici is imported lazily below — see binanceDispatcher.
 
 const ROOT = new URL('..', import.meta.url).pathname;
 const INDEX = ROOT + 'index.html';
@@ -50,7 +50,14 @@ const BINANCE_BASE = 'https://www.binance.com';
 // binance.com blocks datacenter IPs; in CI route the Binance fetch through a
 // residential HTTP proxy via $PROXY_URL. Empty = direct (works from a dev Mac).
 const PROXY_URL = process.env.PROXY_URL || '';
-const binanceDispatcher = PROXY_URL ? new ProxyAgent(PROXY_URL) : undefined;
+// Imported only when a proxy is actually configured. undici is needed for exactly
+// one thing — routing the Binance call through PROXY_URL in CI — so a top-level
+// import made the whole script unrunnable whenever undici itself could not load,
+// including the self-tests and the entire Coinbase path, neither of which touch it.
+// (undici 7.28.0 does not load on Node 24.18: "Class extends value undefined" from
+// lib/mock/mock-errors.js. CI is on Node 22 and unaffected, but local runs died.)
+// Same lazy-dispatcher pattern as relay/server.mjs.
+const binanceDispatcher = PROXY_URL ? new (await import('undici')).ProxyAgent(PROXY_URL) : undefined;
 const CMS_PATH = '/bapi/composite/v1/public/cms/article/list/query';
 // Binance splits these across catalogs AND moves them without notice. Monitoring-tag
 // notices lived in 161 ("Delisting") until 2026-06-18, then moved to 49 ("Latest
@@ -247,10 +254,11 @@ function diffBinance(events, tracked) {
 // old-format snapshot flooding every product as "changed", and wind-down
 // detection never firing at all.
 function selftestCb() {
-  const P = (status, td, co) => ({ status, trading_disabled: td, cancel_only: co });
+  // (status, trading_disabled, cancel_only, limit_only)
+  const P = (status, td, co, lo = false) => ({ status, trading_disabled: td, cancel_only: co, limit_only: lo });
   const checks = [];
 
-  // 1. Previous snapshot predates cancel_only (field absent) — must report nothing.
+  // 1. Previous snapshot predates these fields (absent) — must report nothing.
   const legacyPrev = { 'AAA-USD': { status: 'online', trading_disabled: false } };
   const legacyNow = { 'AAA-USD': P('online', false, false) };
   const legacy = diffCoinbase(legacyNow, legacyPrev);
@@ -264,26 +272,43 @@ function selftestCb() {
   checks.push(['sole pair -> cancel_only reported as wind-down',
     wd.windDown.length === 1 && wd.windDown[0].id === 'BBB-USD' && !wd.changes.length]);
 
-  // 3. Same flip while another pair still trades freely — housekeeping, not a signal.
+  // 3. limit-only is the state Coinbase actually used before the 2026-08-07
+  //    suspensions, so it must fire too — this is the case that matters most.
+  const lo = diffCoinbase(
+    { 'LLL-USD': P('online', false, false, true) },
+    { 'LLL-USD': P('online', false, false, false) });
+  checks.push(['sole pair -> limit_only reported as wind-down',
+    lo.windDown.length === 1 && !lo.changes.length]);
+
+  // 4. Same flip while another pair still trades freely — housekeeping, not a signal.
   const churn = diffCoinbase(
     { 'CCC-USD': P('online', false, true), 'CCC-EUR': P('online', false, false) },
     { 'CCC-USD': P('online', false, false), 'CCC-EUR': P('online', false, false) });
-  checks.push(['cancel_only on one pair while asset trades = churn',
+  checks.push(['restriction on one pair while asset trades freely = churn',
     churn.pairChurn.length === 1 && !churn.windDown.length && !churn.changes.length]);
 
-  // 4. A real delisting must still classify as a delisting, not as wind-down.
+  // 5. A real delisting must still classify as a delisting, not as wind-down.
   const del = diffCoinbase(
     { 'DDD-USD': P('delisted', true, false) },
     { 'DDD-USD': P('online', false, false) });
   checks.push(['last pair delisted still reported as delisting',
     del.changes.length === 1 && !del.windDown.length]);
 
-  // 5. An already-cancel_only market must not re-report every single day.
+  // 6. The 21 permanently limit-only markets (stablecoin/FX, INR, launch ramps)
+  //    must stay silent once baselined, or every run reports the same 13 assets.
   const steady = diffCoinbase(
-    { 'EEE-USD': P('online', false, true) },
-    { 'EEE-USD': P('online', false, true) });
-  checks.push(['steady-state cancel_only is not re-reported',
+    { 'EEE-USD': P('online', false, true), 'FFF-USD': P('online', false, false, true) },
+    { 'EEE-USD': P('online', false, true), 'FFF-USD': P('online', false, false, true) });
+  checks.push(['steady-state restrictions are not re-reported',
     !steady.windDown.length && !steady.changes.length && !steady.pairChurn.length]);
+
+  // 7. Escalation limit-only -> cancel-only must not re-fire as a new wind-down
+  //    (already warned), but must still re-hash so the PR is not silently reused.
+  const esc = diffCoinbase(
+    { 'GGG-USD': P('online', false, true, false) },
+    { 'GGG-USD': P('online', false, false, true) });
+  checks.push(['escalation within restricted states is not a fresh wind-down',
+    !esc.windDown.length && !esc.changes.length]);
 
   // 6. Wind-down must reach the PR signature, or the Action reuses the branch
   //    and the finding never produces a notification.
@@ -303,18 +328,23 @@ async function fetchCoinbase() {
   if (!r.ok) throw new Error(`Coinbase HTTP ${r.status}`);
   const arr = await r.json();
   const snap = {};
-  // cancel_only is the early warning. Coinbase walks a market down —
-  // limit_only, then cancel_only, then status: delisted — so cancel_only is
-  // typically the last state before the asset is gone, and status alone only
-  // tells us after the fact. limit_only is deliberately NOT captured: 21
-  // products carry it right now and nearly all are stablecoin/FX pairs, INR
-  // markets and new-listing ramps that sit there permanently, so diffing it
-  // would manufacture exactly the false positives the pair-churn split exists
-  // to prevent.
+  // The early warning. Coinbase walks a market down through order-book
+  // restrictions before status ever changes: the five assets suspended on
+  // 2026-08-07 (LRC, FIS, PIRATE, IDEX, OMNI) had their books moved to
+  // limit-only first. status alone only tells us afterwards.
+  //
+  // limit_only is captured even though 21 products sit in it permanently
+  // (stablecoin/FX pairs, INR markets, new-listing ramps). That looked like a
+  // false-positive generator at first glance, but detection is TRANSITION
+  // based — a market already limit-only never transitions into it — so the
+  // permanent residents are silent as long as the snapshot has them baselined.
+  // Capturing only cancel_only would have been near-useless: zero products are
+  // in that state right now, so the signal would rarely have fired at all.
   for (const p of arr) snap[p.id] = {
     status: p.status,
     trading_disabled: !!p.trading_disabled,
     cancel_only: !!p.cancel_only,
+    limit_only: !!p.limit_only,
   };
   return snap;
 }
@@ -331,7 +361,9 @@ function findingsSignature(binanceNew, cbChanges, cbWindDown = []) {
   // Added only when non-empty so that shipping wind-down detection does not
   // change the signature of every pre-existing finding (which would strand the
   // open PR on a dead branch and re-notify for something already triaged).
-  if (cbWindDown.length) payload.w = cbWindDown.map(c => `${c.id}:cancel_only`).sort();
+  // Includes WHICH restriction, so an escalation (limit-only -> cancel-only)
+  // re-hashes and opens a new PR rather than silently updating the old one.
+  if (cbWindDown.length) payload.w = cbWindDown.map(c => `${c.id}:${restrictionLabel(c.to)}`).sort();
   return createHash('sha256').update(JSON.stringify(payload)).digest('hex').slice(0, 12);
 }
 
@@ -341,17 +373,26 @@ function findingsSignature(binanceNew, cbChanges, cbWindDown = []) {
 // -USD). Reported together, six pair removals read as six delistings — the kind of
 // noise that teaches you to stop opening the PR. So split them: an asset that still
 // has an online pair is churn; one that just lost its last is a delisting.
+// Coerce every field with !!: snapshots written before these were captured have
+// them undefined, and `undefined !== false` would report all 832 products as
+// changed on the first run after this shipped.
+const restricted = v => !!v.trading_disabled || !!v.cancel_only || !!v.limit_only;
+const restrictionLabel = v =>
+  [v.trading_disabled && 'trading_disabled', v.cancel_only && 'cancel_only', v.limit_only && 'limit_only']
+    .filter(Boolean).join('+') || 'none';
+
 function diffCoinbase(current, previous) {
   if (!previous) return { baseline: true, changes: [], pairChurn: [], windDown: [] };
   const baseOf = id => id.split('-')[0];
-  // "Healthy" now also requires !cancel_only: a cancel-only market accepts no new
-  // orders, so an asset whose every remaining pair is cancel-only has effectively
-  // stopped trading even though status still reads "online". That makes the
-  // delisting/churn split below slightly more sensitive than before, which is the
-  // point — it is the difference between warning now and reporting afterwards.
+  // "Healthy" now means online AND unrestricted. A book in limit-only or
+  // cancel-only is not freely tradeable, so an asset whose every remaining pair
+  // is restricted has effectively stopped trading even though status still reads
+  // "online". That makes the delisting/churn split below more sensitive than
+  // before, which is the point — it is the difference between warning now and
+  // reporting afterwards.
   const stillTrading = new Set();
   for (const [id, v] of Object.entries(current)) {
-    if (v.status === 'online' && !v.trading_disabled && !v.cancel_only) stillTrading.add(baseOf(id));
+    if (v.status === 'online' && !restricted(v)) stillTrading.add(baseOf(id));
   }
   const changes = [], pairChurn = [], windDown = [];
   for (const [id, now] of Object.entries(current)) {
@@ -361,12 +402,12 @@ function diffCoinbase(current, previous) {
     // have the field undefined, and `undefined !== false` would report all 832
     // products as changed on the first run after this shipped.
     const statusChanged = was.status !== now.status || !!was.trading_disabled !== !!now.trading_disabled;
-    const newlyCancelOnly = !!now.cancel_only && !was.cancel_only;
+    const newlyRestricted = restricted(now) && !restricted(was);
     if (statusChanged) {
       (stillTrading.has(baseOf(id)) ? pairChurn : changes).push({ id, from: was, to: now });
-    } else if (newlyCancelOnly) {
-      // Same precision rule as delistings: one pair going cancel-only while the
-      // asset still trades elsewhere is housekeeping, not a signal.
+    } else if (newlyRestricted) {
+      // Same precision rule as delistings: one pair getting restricted while the
+      // asset still trades freely elsewhere is housekeeping, not a signal.
       (stillTrading.has(baseOf(id)) ? pairChurn : windDown).push({ id, from: was, to: now });
     }
   }
@@ -420,9 +461,9 @@ async function main() {
     // only forward-looking Coinbase signal we have — unlike Binance there is no
     // announcement feed being read, so without this we always learn afterwards.
     if (cb.windDown.length) {
-      lines.push(`\n## Coinbase — ${cb.windDown.length} market(s) entering wind-down (cancel-only)`);
-      lines.push(`_Still listed as online but accepting no new orders, and no unrestricted pair left for the asset. Usually the last step before delisting._`);
-      for (const c of cb.windDown) lines.push(`- **${c.id}** → cancel_only`);
+      lines.push(`\n## Coinbase — ${cb.windDown.length} market(s) entering wind-down`);
+      lines.push(`_Still listed as online, but the order book is restricted and the asset has no freely-trading pair left. This is the state Coinbase moved LRC/FIS/PIRATE/IDEX/OMNI through before suspending them on 2026-08-07._`);
+      for (const c of cb.windDown) lines.push(`- **${c.id}** → ${restrictionLabel(c.to)}`);
     }
     if (cb.pairChurn.length) {
       lines.push(`\n<details><summary>${cb.pairChurn.length} routine quote-pair removal(s) — asset still trading, no action needed</summary>\n`);

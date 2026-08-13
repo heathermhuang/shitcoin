@@ -1890,34 +1890,41 @@ function fmtPrice(p) {
 const CB_DELISTED = [
     {sym:'BSV',    name:'Bitcoin SV',          delistDate:'2024-01-09'}, // trading suspended Aug 2021 (51% attack); fully deprecated Jan 2024
     {sym:'WBTC',   name:'Wrapped Bitcoin',     delistDate:'2024-12-19'},
+    {sym:'MPL',    name:'Maple (old token)',   delistDate:'2025-04-30'}, // migrated to SYRUP; Coinbase did not migrate on users' behalf. Suspended 5pm ET 2025-04-30 (@CoinbaseAssets)
     {sym:'GAL',    name:'Galxe',               delistDate:'2025-05-02'},
     {sym:'LIT',    name:'Litentry',            delistDate:'2025-05-02'},
     {sym:'DAR',    name:'Mines of Dalarnia',   delistDate:'2025-05-02'},
     {sym:'ORN',    name:'Orion Protocol',      delistDate:'2025-05-02'},
     {sym:'PRQ',    name:'PARSIQ',              delistDate:'2025-05-02'},
     {sym:'MOVE',   name:'Movement',            delistDate:'2025-05-15'},
+    {sym:'SEAM',   name:'Seamless Protocol',   delistDate:'2025-05-18'}, // protocol announced it would terminate core services 2025-06-30; suspended 6pm UTC 2025-05-18
     {sym:'MOBILE', name:'Helium Mobile',       delistDate:'2025-06-26'},
     {sym:'RNDR',   name:'Render (old token)',  delistDate:'2025-06-26'},
     {sym:'RBN',    name:'Ribbon Finance',      delistDate:'2025-06-26'},
     {sym:'SYN',    name:'Synapse',             delistDate:'2025-06-26'},
+    {sym:'MATIC',  name:'Polygon (old token)', delistDate:'2025-10-14'}, // Polygon's migration to POL; balances auto-converted 1:1, trading permanently disabled 2025-10-14 (staking disabled 10-07)
     {sym:'CLV',    name:'Clover Finance',      delistDate:'2025-11-26'},
     {sym:'EOS',    name:'EOS',                 delistDate:'2025-11-26'},
     {sym:'LOKA',   name:'League of Kingdoms',  delistDate:'2025-11-26'},
     {sym:'MUSE',   name:'Muse DAO',            delistDate:'2025-11-26'},
     {sym:'WCFG',   name:'Wrapped Centrifuge',  delistDate:'2025-11-26'},
+    {sym:'RONIN',  name:'Ronin (old token)',   delistDate:'2026-03-30'}, // Ronin migrated to a new Ethereum L2; Coinbase did not migrate on users' behalf. Suspended 2pm ET 2026-03-30 (@CoinbaseMarkets)
     {sym:'DAI',    name:'Dai',                 delistDate:'2026-05-04'},
     {sym:'TIME',   name:'Chrono.tech',         delistDate:'2026-05-11'},
     // Detected by scripts/check-delistings.mjs: ACX-USD was online on 2026-07-28
     // and delisted/trading_disabled on 2026-07-29 — 5 days before Binance
     // announced its own ACX delisting (2026-08-17).
     {sym:'ACX',    name:'Across Protocol',     delistDate:'2026-07-29'},
-    // Detected by the 2026-08-08 run (PR #5): each lost its last online pair.
+    // Found by the 2026-08-08 detector run (PR #5), but the date recorded then was
+    // the day the CI job NOTICED, not the day Coinbase acted. Coinbase suspended all
+    // five on 2026-08-07 around 2pm ET, order books moved to limit-only first.
+    // Corrected to the announced date so this column means one thing throughout.
     // Names are Coinbase's own — note PIRATE is Pirate Nation, not Pirate Chain (ARRR).
-    {sym:'LRC',    name:'Loopring',            delistDate:'2026-08-08'},
-    {sym:'FIS',    name:'Stafi',               delistDate:'2026-08-08'},
-    {sym:'PIRATE', name:'Pirate Nation',       delistDate:'2026-08-08'},
-    {sym:'IDEX',   name:'IDEX',                delistDate:'2026-08-08'},
-    {sym:'OMNI',   name:'Omni Network',        delistDate:'2026-08-08'},
+    {sym:'LRC',    name:'Loopring',            delistDate:'2026-08-07'},
+    {sym:'FIS',    name:'Stafi',               delistDate:'2026-08-07'},
+    {sym:'PIRATE', name:'Pirate Nation',       delistDate:'2026-08-07'},
+    {sym:'IDEX',   name:'IDEX',                delistDate:'2026-08-07'},
+    {sym:'OMNI',   name:'Omni Network',        delistDate:'2026-08-07'},
 ];
 
 // ===== DATA PROCESSING =====
