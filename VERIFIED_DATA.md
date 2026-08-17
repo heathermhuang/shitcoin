@@ -158,3 +158,49 @@ naming/date metadata rather than new rows. Dates are best-effort from announceme
   the live CoinGecko markets API (symbol/name confirmed). Delisted-tab name+mcap coverage went from
   ~22% to ~78% per page. Remaining "N pairs" rows are coins CoinGecko itself dropped (e.g. VGX/Voyager).
 - **Privacy policy** (worker.js PRIVACY_HTML) updated to disclose the client-side direct-fetch fallback.
+
+---
+
+## 2026-08-14 SESSION — full re-audit against the announcement archive
+
+Method: swept catalogs **161 and 49, pages 1–6 each (600 articles, 2023-08-16 → 2026-08-14)**
+and diffed every `Binance Will Delist … on YYYY-MM-DD` and `Extend the Monitoring Tag …`
+title against `TRACKED_TOKENS`, then cross-checked every status against live `exchangeInfo`.
+
+### Result after this session
+| Check | Result |
+|-------|--------|
+| Announced delistings matching exactly | **105 / 105** |
+| Announced assets missing from dataset | **0** |
+| delistDate disagreements | **0** |
+| Monitoring-tag disagreements (10 notices, back to 2026-01-02) | **0** |
+| Claimed `delisted` but still trading | **0** |
+| Claimed `monitoring`/`restored` with no live pair | **0** |
+
+### What was wrong (and is now fixed)
+- **28 delistDates disagreed with the official notice**, all before 2025-11-12. Five batch dates
+  matched *no announcement at all* (`2024-02-06`, `2025-02-20`, `2025-04-16`, `2025-06-02`,
+  `2025-09-30`) and `2025-07-25` was a pair-removal date. Worst case: **XMR was dated 2025-02-20;
+  Binance delisted Monero 2024-02-20** — off by exactly one year.
+- **18 delisted assets were absent entirely**: WTC, PNT, OMG, WAVES, WNXM, XEM, BOND, EPX, FOR,
+  VGX, IDRT, OAX, REN, WRX, BAKE, SLF, KDA, UTK. Added with announced dates (UTK's notice states
+  no effective date, so its delistDate is null).
+- **TRU monDate was 2026-04-17; the notice says 2026-04-14.**
+- **PDA / VIB / WING carried monDate 2025-05-07 but were delisted 2025-05-02** — tagged after
+  removal is impossible. The delist date is announcement-verified, the monDate was not, so the
+  monDate is now null.
+
+### Provenance rules learned here — read before trusting a row
+1. **An empty "Announced" cell in the tables above means UNVERIFIED, not verified.** Every batch
+   with an empty cell turned out to be wrong; every batch with a filled cell verified exactly.
+2. **Monitoring-tag notices only survive in the catalogs back to 2026-01-02.** `monDate` values
+   older than that cannot be checked against the API — absence of a notice is a provenance gap,
+   not proof of error. The remaining pre-2026 monDates are in that category.
+3. `AEUR`'s 2026-07-31 date is legitimate despite matching no "Will Delist" notice — it was
+   handled by a dedicated conversion announcement (2026-07-30).
+
+### Prior open items resolved
+- #18 HIFI "needs verification" → **2025-09-17** (was 2025-11-12).
+- #26 VOXEL listed in two batches → **2025-12-17** (the 2025-09-30 entry was the wrong one).
+- #11 BETA delistDate → still unverified; BETA is not named in the 2026-02-13 notice. Left as-is
+  and flagged here rather than invented.

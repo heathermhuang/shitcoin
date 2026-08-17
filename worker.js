@@ -9,12 +9,14 @@ import { connect } from "cloudflare:sockets";
 const BINANCE_BASE  = 'https://data-api.binance.vision/api/v3';
 const COINBASE_BASE = 'https://api.exchange.coinbase.com';
 const COINGECKO_BASE = 'https://api.coingecko.com/api/v3';
+const LLAMA_BASE = 'https://stablecoins.llama.fi';
 
 // Endpoint allowlists — prevents open-proxy abuse of third-party API quotas.
 // Only paths the app actually needs are permitted; everything else returns 403.
 const BINANCE_ALLOWED  = ['/ticker/24hr', '/depth', '/exchangeInfo', '/ticker/price'];
 const COINBASE_ALLOWED = ['/products'];
 const COINGECKO_ALLOWED = ['/coins', '/simple/price'];
+const LLAMA_ALLOWED = ['/stablecoins'];
 
 function isAllowed(allowlist, subpath) {
   return allowlist.some(p => subpath === p || subpath.startsWith(p + '?') || subpath.startsWith(p + '/'));
@@ -57,6 +59,7 @@ const TTL_MAP = [
   ['/book',        300],
   ['/cg/',        1800],  // 30 min — Demo API key is capped at ~10k calls/month; a longer fresh window keeps the Worker well under it. Clients still get instant cached data on their 180s refresh.
   ['/ex/',        1800],
+  ['/llama/',      900],  // 15 min — DefiLlama is keyless and circulating supply moves slowly; the client's 180s refresh is served from cache.
 ];
 
 function getTTL(path) {
@@ -326,6 +329,18 @@ export default {
         return new Response('{"error":"not allowed"}', { status: 403, headers: { 'Content-Type': 'application/json' } });
       }
       return cachedProxy(request, COINGECKO_BASE + path.slice(3), ttl, env.CG_DEMO_KEY, proxy, relay);
+    }
+
+    // /llama/* → DefiLlama stablecoins (allowlisted endpoints only)
+    // Without this route the path fell through to the catch-all and answered
+    // 200 text/html, which smartFetch could not tell from a real response — so
+    // the stablecoin tab silently ran CoinGecko-only (no chains, no discovery).
+    if (path.startsWith('/llama/')) {
+      const sub = path.slice(6).split('?')[0];
+      if (!isAllowed(LLAMA_ALLOWED, sub)) {
+        return new Response('{"error":"not allowed"}', { status: 403, headers: { 'Content-Type': 'application/json' } });
+      }
+      return cachedProxy(request, LLAMA_BASE + path.slice(6), ttl, undefined, proxy, relay);
     }
 
     // /ex/<exchange> → exchange info

@@ -162,6 +162,10 @@ async function routeRequest(reqPath) {
     if (!url) return [Buffer.from('{"error":"unknown"}'), 'application/json', 404];
     return cachedFetch('exchange:' + ex, url, 1800);
   }
+  if (reqPath.startsWith('/llama/')) {
+    const p = reqPath.slice(6);
+    return cachedFetch('llama:' + p, 'https://stablecoins.llama.fi' + p, 900);
+  }
   return null; // serve static
 }
 

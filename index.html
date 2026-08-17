@@ -697,7 +697,17 @@ async function smartFetch(path, opts) {
                 // The proxy can answer 200 with an empty body when Cloudflare is
                 // rate-limited by CoinGecko — treat that as a miss and try direct.
                 if (isProxy) {
+                    // A proxy path with no matching Worker route falls through to the
+                    // SPA catch-all and answers 200 text/html. That is a miss, not data
+                    // — without this check it reads as success, the direct fallback never
+                    // runs, and the caller's .json() throws into a silent empty state.
+                    // (This is exactly how /llama/ went unnoticed: the stablecoin tab ran
+                    // CoinGecko-only for months instead of failing over.)
+                    const ct = r.headers.get('content-type') || '';
                     const t = await r.clone().text();
+                    if (ct.includes('text/html') || t.trimStart().startsWith('<')) {
+                        if (pref) _proxyBlocked.add(pref); lastResp = r; continue;
+                    }
                     if (_isEmptyBody(t)) { if (pref) _proxyBlocked.add(pref); lastResp = r; continue; }
                 }
                 return r;
@@ -737,7 +747,7 @@ const TRACKED_TOKENS = [
   {sym:'D', name:'DAR Open Network', status:'delisted', monDate:'2026-01-02', delistDate:'2026-06-19', restoreDate:null},
   {sym:'COS', name:'Contentos', status:'delisted', monDate:'2026-03-06', delistDate:'2026-06-19', restoreDate:null},
   {sym:'DEGO', name:'Dego Finance', status:'delisted', monDate:'2026-03-06', delistDate:'2026-04-28', restoreDate:null},
-  {sym:'TRU', name:'TrueFi', status:'delisted', monDate:'2026-04-17', delistDate:'2026-04-28', restoreDate:null},
+  {sym:'TRU', name:'TrueFi', status:'delisted', monDate:'2026-04-14', delistDate:'2026-04-28', restoreDate:null},
   {sym:'FUN', name:'FUNToken', status:'delisted', monDate:'2026-03-06', delistDate:'2026-04-23', restoreDate:null},
   {sym:'MBOX', name:'MOBOX', status:'delisted', monDate:'2026-03-06', delistDate:'2026-06-19', restoreDate:null},
   {sym:'OXT', name:'Orchid', status:'delisted', monDate:'2026-03-06', delistDate:'2026-04-23', restoreDate:null},
@@ -800,18 +810,18 @@ const TRACKED_TOKENS = [
   {sym:'BTS', name:'BitShares', status:'delisted', monDate:'2023-07-26', delistDate:'2023-12-07', restoreDate:null},
   {sym:'NBS', name:'New BitShares', status:'delisted', monDate:'2023-07-26', delistDate:'2023-12-07', restoreDate:null},
   {sym:'TORN', name:'Tornado Cash', status:'delisted', monDate:'2023-07-26', delistDate:'2023-12-07', restoreDate:null},
-  {sym:'MULTI', name:'Multichain', status:'delisted', monDate:'2023-07-26', delistDate:'2024-02-06', restoreDate:null},
+  {sym:'MULTI', name:'Multichain', status:'delisted', monDate:'2023-07-26', delistDate:'2024-02-20', restoreDate:null},
   {sym:'WAX', name:'WAX', status:'delisted', monDate:'2023-07-26', delistDate:'2024-02-06', restoreDate:null},
   {sym:'DREP', name:'DREP', status:'delisted', monDate:'2023-07-26', delistDate:'2024-04-03', restoreDate:null},
-  {sym:'LINA', name:'Linear', status:'delisted', monDate:'2023-07-26', delistDate:'2024-04-03', restoreDate:null},
-  {sym:'LOOM', name:'Loom Network', status:'delisted', monDate:'2023-07-26', delistDate:'2024-04-03', restoreDate:null},
-  {sym:'PERL', name:'PERL', status:'delisted', monDate:'2023-07-26', delistDate:'2024-04-03', restoreDate:null},
+  {sym:'LINA', name:'Linear', status:'delisted', monDate:'2023-07-26', delistDate:'2025-03-28', restoreDate:null},
+  {sym:'LOOM', name:'Loom Network', status:'delisted', monDate:'2023-07-26', delistDate:'2024-08-26', restoreDate:null},
+  {sym:'PERL', name:'PERL', status:'delisted', monDate:'2023-07-26', delistDate:'2023-12-07', restoreDate:null},
   {sym:'CVP', name:'PowerPool', status:'delisted', monDate:'2024-07-01', delistDate:'2024-08-26', restoreDate:null},
-  {sym:'MDX', name:'Mdex', status:'delisted', monDate:'2024-01-04', delistDate:'2024-08-26', restoreDate:null},
-  {sym:'MOB', name:'MobileCoin', status:'delisted', monDate:'2024-01-04', delistDate:'2024-08-26', restoreDate:null},
-  {sym:'VAI', name:'Vai', status:'delisted', monDate:'2024-01-04', delistDate:'2024-08-26', restoreDate:null},
+  {sym:'MDX', name:'Mdex', status:'delisted', monDate:'2024-01-04', delistDate:'2024-07-22', restoreDate:null},
+  {sym:'MOB', name:'MobileCoin', status:'delisted', monDate:'2024-01-04', delistDate:'2024-04-03', restoreDate:null},
+  {sym:'VAI', name:'Vai', status:'delisted', monDate:'2024-01-04', delistDate:'2024-02-20', restoreDate:null},
   {sym:'OOKI', name:'Ooki Protocol', status:'delisted', monDate:'2023-07-26', delistDate:'2024-11-06', restoreDate:null},
-  {sym:'REEF', name:'Reef', status:'delisted', monDate:'2024-01-04', delistDate:'2024-11-06', restoreDate:null},
+  {sym:'REEF', name:'Reef', status:'delisted', monDate:'2024-01-04', delistDate:'2024-08-26', restoreDate:null},
   {sym:'GFT', name:'Gifto', status:'delisted', monDate:'2023-07-26', delistDate:'2024-12-10', restoreDate:null},
   {sym:'IRIS', name:'IRISnet', status:'delisted', monDate:'2024-07-01', delistDate:'2024-12-10', restoreDate:null},
   {sym:'KEY', name:'SelfKey', status:'delisted', monDate:'2024-10-03', delistDate:'2024-12-10', restoreDate:null},
@@ -819,43 +829,43 @@ const TRACKED_TOKENS = [
   {sym:'BLZ', name:'Bluzelle', status:'delisted', monDate:'2024-10-03', delistDate:'2024-12-25', restoreDate:null},
   {sym:'BAL', name:'Balancer', status:'delisted', monDate:'2024-07-01', delistDate:'2025-02-20', restoreDate:null},
   {sym:'CTXC', name:'Cortex', status:'delisted', monDate:'2024-07-01', delistDate:'2025-02-20', restoreDate:null},
-  {sym:'DOCK', name:'Dock', status:'delisted', monDate:'2024-07-01', delistDate:'2025-02-20', restoreDate:null},
+  {sym:'DOCK', name:'Dock', status:'delisted', monDate:'2024-07-01', delistDate:'2024-07-22', restoreDate:null},
   {sym:'HARD', name:'Kava Lend', status:'delisted', monDate:'2024-07-01', delistDate:'2025-02-20', restoreDate:null},
-  {sym:'XMR', name:'Monero', status:'delisted', monDate:'2024-01-04', delistDate:'2025-02-20', restoreDate:null},
-  {sym:'CLV', name:'Clover Finance', status:'delisted', monDate:'2024-10-03', delistDate:'2025-04-16', restoreDate:null},
+  {sym:'XMR', name:'Monero', status:'delisted', monDate:'2024-01-04', delistDate:'2024-02-20', restoreDate:null},
+  {sym:'CLV', name:'Clover Finance', status:'delisted', monDate:'2024-10-03', delistDate:'2025-02-24', restoreDate:null},
   {sym:'CREAM', name:'Cream Finance', status:'delisted', monDate:'2023-07-26', delistDate:'2025-04-16', restoreDate:null},
   {sym:'ELF', name:'aelf', status:'delisted', monDate:'2023-07-26', delistDate:'2025-04-16', restoreDate:null},
-  {sym:'POLS', name:'Polkastarter', status:'delisted', monDate:'2024-07-01', delistDate:'2025-04-16', restoreDate:null},
+  {sym:'POLS', name:'Polkastarter', status:'delisted', monDate:'2024-07-01', delistDate:'2024-07-22', restoreDate:null},
   {sym:'PROS', name:'Prosper', status:'delisted', monDate:'2024-10-03', delistDate:'2025-04-16', restoreDate:null},
   {sym:'SNT', name:'Status', status:'delisted', monDate:'2024-07-01', delistDate:'2025-04-16', restoreDate:null},
-  {sym:'STMX', name:'StormX', status:'delisted', monDate:'2025-01-02', delistDate:'2025-04-16', restoreDate:null},
-  {sym:'UNFI', name:'Unifi Protocol', status:'delisted', monDate:'2023-07-26', delistDate:'2025-04-16', restoreDate:null},
-  {sym:'VITE', name:'VITE', status:'delisted', monDate:'2024-10-03', delistDate:'2025-04-16', restoreDate:null},
-  {sym:'ALPACA', name:'Alpaca Finance', status:'delisted', monDate:'2025-03-04', delistDate:'2025-06-02', restoreDate:null},
-  {sym:'BURGER', name:'BurgerCities', status:'delisted', monDate:'2025-03-04', delistDate:'2025-06-02', restoreDate:null},
-  {sym:'COMBO', name:'COMBO', status:'delisted', monDate:'2025-03-04', delistDate:'2025-06-02', restoreDate:null},
+  {sym:'STMX', name:'StormX', status:'delisted', monDate:'2025-01-02', delistDate:'2025-02-24', restoreDate:null},
+  {sym:'UNFI', name:'Unifi Protocol', status:'delisted', monDate:'2023-07-26', delistDate:'2024-11-06', restoreDate:null},
+  {sym:'VITE', name:'VITE', status:'delisted', monDate:'2024-10-03', delistDate:'2025-02-24', restoreDate:null},
+  {sym:'ALPACA', name:'Alpaca Finance', status:'delisted', monDate:'2025-03-04', delistDate:'2025-05-02', restoreDate:null},
+  {sym:'BURGER', name:'BurgerCities', status:'delisted', monDate:'2025-03-04', delistDate:'2025-03-28', restoreDate:null},
+  {sym:'COMBO', name:'COMBO', status:'delisted', monDate:'2025-03-04', delistDate:'2025-03-28', restoreDate:null},
   {sym:'TROY', name:'TROY', status:'delisted', monDate:'2023-07-26', delistDate:'2025-06-02', restoreDate:null},
   {sym:'ALPHA', name:'Stella', status:'delisted', monDate:'2025-06-05', delistDate:'2025-07-04', restoreDate:null},
   {sym:'BSW', name:'Biswap', status:'delisted', monDate:'2025-05-07', delistDate:'2025-07-04', restoreDate:null},
   {sym:'KMD', name:'Komodo', status:'delisted', monDate:'2025-06-05', delistDate:'2025-07-04', restoreDate:null},
   {sym:'LEVER', name:'LeverFi', status:'delisted', monDate:'2025-06-05', delistDate:'2025-07-04', restoreDate:null},
   {sym:'LTO', name:'LTO Network', status:'delisted', monDate:'2025-05-07', delistDate:'2025-07-04', restoreDate:null},
-  {sym:'AMB', name:'Ambrosus', status:'delisted', monDate:'2023-07-26', delistDate:'2025-07-25', restoreDate:null},
-  {sym:'ANT', name:'Aragon', status:'delisted', monDate:'2024-01-04', delistDate:'2025-07-25', restoreDate:null},
+  {sym:'AMB', name:'Ambrosus', status:'delisted', monDate:'2023-07-26', delistDate:'2025-02-24', restoreDate:null},
+  {sym:'ANT', name:'Aragon', status:'delisted', monDate:'2024-01-04', delistDate:'2024-02-20', restoreDate:null},
   {sym:'FIRO', name:'Firo', status:'delisted', monDate:'2024-01-04', delistDate:'2025-07-25', restoreDate:null},
-  {sym:'AERGO', name:'Aergo', status:'delisted', monDate:'2025-03-04', delistDate:'2025-09-30', restoreDate:null},
-  {sym:'AST', name:'AirSwap', status:'delisted', monDate:'2025-03-04', delistDate:'2025-09-30', restoreDate:null},
+  {sym:'AERGO', name:'Aergo', status:'delisted', monDate:'2025-03-04', delistDate:'2025-03-28', restoreDate:null},
+  {sym:'AST', name:'AirSwap', status:'delisted', monDate:'2025-03-04', delistDate:'2025-03-28', restoreDate:null},
   {sym:'BADGER', name:'Badger', status:'delisted', monDate:'2025-03-04', delistDate:'2025-09-30', restoreDate:null},
-  {sym:'KP3R', name:'Keep3rV1', status:'delisted', monDate:'2024-01-04', delistDate:'2025-09-30', restoreDate:null},
+  {sym:'KP3R', name:'Keep3rV1', status:'delisted', monDate:'2024-01-04', delistDate:'2024-11-06', restoreDate:null},
   {sym:'NULS', name:'NULS', status:'delisted', monDate:'2025-03-04', delistDate:'2025-09-30', restoreDate:null},
-  {sym:'PDA', name:'PlayDapp', status:'delisted', monDate:'2025-05-07', delistDate:'2025-09-30', restoreDate:null},
+  {sym:'PDA', name:'PlayDapp', status:'delisted', monDate:null, delistDate:'2025-05-02', restoreDate:null},
   {sym:'UFT', name:'UniLend', status:'delisted', monDate:'2025-04-03', delistDate:'2025-09-30', restoreDate:null},
-  {sym:'VIB', name:'Viberate', status:'delisted', monDate:'2025-05-07', delistDate:'2025-09-30', restoreDate:null},
+  {sym:'VIB', name:'Viberate', status:'delisted', monDate:null, delistDate:'2025-05-02', restoreDate:null},
   {sym:'VIDT', name:'VIDT DAO', status:'delisted', monDate:'2025-04-03', delistDate:'2025-09-30', restoreDate:null},
-  {sym:'VOXEL', name:'Voxies', status:'delisted', monDate:'2025-05-07', delistDate:'2025-09-30', restoreDate:null},
-  {sym:'WING', name:'Wing Finance', status:'delisted', monDate:'2025-05-07', delistDate:'2025-09-30', restoreDate:null},
+  {sym:'VOXEL', name:'Voxies', status:'delisted', monDate:'2025-05-07', delistDate:'2025-12-17', restoreDate:null},
+  {sym:'WING', name:'Wing Finance', status:'delisted', monDate:null, delistDate:'2025-05-02', restoreDate:null},
   {sym:'FLM', name:'Flamingo', status:'delisted', monDate:'2025-05-07', delistDate:'2025-11-12', restoreDate:null},
-  {sym:'HIFI', name:'Hifi Finance', status:'delisted', monDate:'2025-06-05', delistDate:'2025-11-12', restoreDate:null},
+  {sym:'HIFI', name:'Hifi Finance', status:'delisted', monDate:'2025-06-05', delistDate:'2025-09-17', restoreDate:null},
   {sym:'FIS', name:'StaFi', status:'delisted', monDate:'2025-06-05', delistDate:'2025-12-17', restoreDate:null},
   {sym:'REI', name:'REI Network', status:'delisted', monDate:'2025-06-05', delistDate:'2025-12-17', restoreDate:null},
   {sym:'ACA', name:'Acala Token', status:'delisted', monDate:'2026-01-02', delistDate:'2026-02-13', restoreDate:null},
@@ -866,6 +876,30 @@ const TRACKED_TOKENS = [
   {sym:'NKN', name:'NKN', status:'delisted', monDate:'2025-05-07', delistDate:'2026-02-13', restoreDate:null},
   {sym:'BETA', name:'Beta Finance', status:'delisted', monDate:'2023-10-04', delistDate:'2026-02-13', restoreDate:null},
   {sym:'MLN', name:'Enzyme', status:'delisted', monDate:'2026-04-14', delistDate:'2026-05-27', restoreDate:null},
+  // ── Delisted assets recovered from the announcement archive, added 2026-08-14 ──
+  // Every delistDate below is the effective date in the official "Binance Will
+  // Delist …" notice. monDate is null where no monitoring notice could be found:
+  // catalog 161 carries none before 2026-06-18, so a tag date cannot be verified.
+  {sym:'WTC', name:'Waltonchain', status:'delisted', monDate:'2023-10-04', delistDate:'2023-12-07', restoreDate:null},
+  {sym:'PNT', name:'pNetwork', status:'delisted', monDate:null, delistDate:'2024-04-03', restoreDate:null},
+  {sym:'OMG', name:'OMG Network', status:'delisted', monDate:null, delistDate:'2024-06-17', restoreDate:null},
+  {sym:'WAVES', name:'Waves', status:'delisted', monDate:null, delistDate:'2024-06-17', restoreDate:null},
+  {sym:'WNXM', name:'Wrapped NXM', status:'delisted', monDate:null, delistDate:'2024-06-17', restoreDate:null},
+  {sym:'XEM', name:'NEM', status:'delisted', monDate:'2023-10-04', delistDate:'2024-06-17', restoreDate:null},
+  {sym:'BOND', name:'BarnBridge', status:'delisted', monDate:'2023-10-04', delistDate:'2024-07-22', restoreDate:null},
+  {sym:'EPX', name:'Ellipsis X', status:'delisted', monDate:null, delistDate:'2024-08-26', restoreDate:null},
+  {sym:'FOR', name:'ForTube', status:'delisted', monDate:null, delistDate:'2024-08-26', restoreDate:null},
+  {sym:'VGX', name:'Voyager Token', status:'delisted', monDate:null, delistDate:'2024-08-26', restoreDate:null},
+  {sym:'IDRT', name:'Rupiah Token', status:'delisted', monDate:null, delistDate:'2024-11-06', restoreDate:null},
+  {sym:'OAX', name:'OAX', status:'delisted', monDate:null, delistDate:'2024-12-10', restoreDate:null},
+  {sym:'REN', name:'Ren', status:'delisted', monDate:null, delistDate:'2024-12-10', restoreDate:null},
+  {sym:'WRX', name:'WazirX', status:'delisted', monDate:null, delistDate:'2024-12-25', restoreDate:null},
+  {sym:'BAKE', name:'BakerySwap', status:'delisted', monDate:null, delistDate:'2025-09-17', restoreDate:null},
+  {sym:'SLF', name:'Self Chain', status:'delisted', monDate:null, delistDate:'2025-09-17', restoreDate:null},
+  {sym:'KDA', name:'Kadena', status:'delisted', monDate:null, delistDate:'2025-11-12', restoreDate:null},
+  // Delisted via the 2026-04-14 rebranding notice, which states no effective date
+  // in its title; confirmed gone from exchangeInfo, so the date stays null.
+  {sym:'UTK', name:'Utrust', status:'delisted', monDate:null, delistDate:null, restoreDate:null},
   {sym:'ZEN', name:'Horizen', status:'restored', monDate:'2024-01-04', delistDate:null, restoreDate:'2024-07-01'},
   {sym:'ZEC', name:'Zcash', status:'restored', monDate:'2024-01-04', delistDate:null, restoreDate:'2025-07-09'},
   {sym:'CVX', name:'Convex Finance', status:'restored', monDate:'2024-07-01', delistDate:null, restoreDate:'2025-01-02'},
@@ -874,8 +908,10 @@ const TRACKED_TOKENS = [
   {sym:'FLOW', name:'Flow', status:'restored', monDate:'2026-01-02', delistDate:null, restoreDate:'2026-03-06'},
 ];
 
-// Total: 144 tokens
-// delisted: 96
+// Totals for the literal above — the auto-transition below moves any 'delisting'
+// entry whose date has passed into 'delisted', so the rendered counts differ.
+// Total: 162 tokens
+// delisted: 114
 // delisting: 10
 // monitoring: 32
 // restored: 6
@@ -2450,27 +2486,33 @@ window.cbDoRefresh = cbDoRefresh;
 // ===== STABLECOIN MODULE =====
 let scInitialized = false;
 (function() {
+// llamaId = DeFi Llama /stablecoins asset id — verify against the live API when
+// editing (https://stablecoins.llama.fi/stablecoins). 18 of these 20 were once
+// cross-wired (DAI carried BUSD's id, FRAX carried DAI's); the merge below now
+// discards a llama match whose symbol differs from `sym`, so a wrong id degrades
+// to the CoinGecko fallback instead of rendering another coin's data.
+// `pegType` only needs stating for non-USD pegs.
 const SC_HARDCODED = [
   { llamaId:'1',  sym:'USDT',  name:'Tether',           cgId:'tether',               mech:'fiat', chains_hint:20, icon:'https://coin-images.coingecko.com/coins/images/325/small/Tether.png',    exchanges:['binance','coinbase','kraken','okx','bybit','bitfinex','kucoin','gate'] },
   { llamaId:'2',  sym:'USDC',  name:'USD Coin',          cgId:'usd-coin',             mech:'fiat', chains_hint:15, icon:'https://coin-images.coingecko.com/coins/images/6319/small/usdc.png',      exchanges:['binance','coinbase','kraken','okx','bybit','kucoin','bitget'] },
-  { llamaId:'4',  sym:'DAI',   name:'Dai',               cgId:'dai',                  mech:'cdp',  chains_hint:12, icon:'https://coin-images.coingecko.com/coins/images/9956/small/Badge_Dai.png', exchanges:['coinbase','kraken','binance','okx','kucoin','gate'] },
-  { llamaId:'149',sym:'USDE',  name:'USDe',              cgId:'ethena-usde',          mech:'cdp',  chains_hint:5,  icon:'https://coin-images.coingecko.com/coins/images/33613/small/USDE.png',     exchanges:['binance','okx','bybit','kucoin','bitget'] },
-  { llamaId:'161',sym:'FDUSD', name:'First Digital USD', cgId:'first-digital-usd',   mech:'fiat', chains_hint:3,  icon:'https://coin-images.coingecko.com/coins/images/31079/small/firstfigital.png', exchanges:['binance'] },
-  { llamaId:'5',  sym:'FRAX',  name:'Frax',              cgId:'frax',                 mech:'algo', chains_hint:12, icon:'https://coin-images.coingecko.com/coins/images/13422/small/FRAX_icon.png', exchanges:['okx','gate','kucoin'] },
-  { llamaId:'6',  sym:'TUSD',  name:'TrueUSD',           cgId:'true-usd',             mech:'fiat', chains_hint:5,  icon:'https://coin-images.coingecko.com/coins/images/3449/small/tusd.png',       exchanges:['binance','okx','kucoin','gate'] },
-  { llamaId:'146',sym:'PYUSD', name:'PayPal USD',        cgId:'paypal-usd',           mech:'fiat', chains_hint:2,  icon:'https://coin-images.coingecko.com/coins/images/31212/small/PYUSD.png',     exchanges:['coinbase','kraken'] },
-  { llamaId:'8',  sym:'USDD',  name:'USDD',              cgId:'usdd',                 mech:'algo', chains_hint:4,  icon:'https://coin-images.coingecko.com/coins/images/25380/small/USDD.png',      exchanges:['bybit','okx','kucoin','gate','bitget'] },
-  { llamaId:'7',  sym:'USDP',  name:'Pax Dollar',        cgId:'paxos-standard',       mech:'fiat', chains_hint:2,  icon:'https://coin-images.coingecko.com/coins/images/6013/small/Pax_Dollar.png', exchanges:['kraken','bitfinex'] },
-  { llamaId:'9',  sym:'GUSD',  name:'Gemini Dollar',     cgId:'gemini-dollar',        mech:'fiat', chains_hint:2,  icon:'https://coin-images.coingecko.com/coins/images/5992/small/gemini-dollar-gusd.png', exchanges:['kraken','bitfinex'] },
-  { llamaId:'11', sym:'LUSD',  name:'Liquity USD',       cgId:'liquity-usd',          mech:'cdp',  chains_hint:3,  icon:'https://coin-images.coingecko.com/coins/images/14666/small/Group_3.png',   exchanges:['kraken','kucoin','gate'] },
-  { llamaId:'133',sym:'GHO',   name:'GHO',               cgId:'gho',                  mech:'cdp',  chains_hint:2,  icon:'https://coin-images.coingecko.com/coins/images/30663/small/gho-token-logo.png', exchanges:['kraken','okx'] },
-  { llamaId:'132',sym:'crvUSD',name:'Curve USD',         cgId:'crvusd',               mech:'cdp',  chains_hint:1,  icon:'https://coin-images.coingecko.com/coins/images/30118/small/crvusd.png',    exchanges:['okx','gate'] },
-  { llamaId:'10', sym:'sUSD',  name:'Synthetix USD',     cgId:'nusd',                 mech:'cdp',  chains_hint:2,  icon:'https://coin-images.coingecko.com/coins/images/5013/small/sUSD.png',       exchanges:['kraken','kucoin'] },
-  { llamaId:'12', sym:'MIM',   name:'Magic Internet $',  cgId:'magic-internet-money', mech:'cdp',  chains_hint:7,  icon:'https://coin-images.coingecko.com/coins/images/16786/small/mimlogopng.png', exchanges:['gate','kucoin'] },
-  { llamaId:'3',  sym:'BUSD',  name:'Binance USD',       cgId:'binance-usd',          mech:'fiat', chains_hint:3,  icon:'https://coin-images.coingecko.com/coins/images/9576/small/BUSD.png',       exchanges:['binance'] },
-  { llamaId:'15', sym:'UST',   name:'TerraUSD (Classic)',cgId:'terrausd',             mech:'algo', chains_hint:2, depegged:true, icon:'https://coin-images.coingecko.com/coins/images/21150/small/UST.png', exchanges:[] },
-  { llamaId:'23', sym:'EURS',  name:'STASIS EURO',       cgId:'stasis-eurs',          mech:'fiat', chains_hint:2,  icon:'https://coin-images.coingecko.com/coins/images/5164/small/EURS_300x300.png', exchanges:['kraken','bitfinex','gate'] },
-  { llamaId:'29', sym:'EURT',  name:'Euro Tether',       cgId:'tether-eurt',          mech:'fiat', chains_hint:2,  icon:'https://coin-images.coingecko.com/coins/images/17385/small/Tether_logo.png', exchanges:['kraken','bitfinex'] },
+  { llamaId:'5',  sym:'DAI',   name:'Dai',               cgId:'dai',                  mech:'cdp',  chains_hint:12, icon:'https://coin-images.coingecko.com/coins/images/9956/small/Badge_Dai.png', exchanges:['coinbase','kraken','binance','okx','kucoin','gate'] },
+  { llamaId:'146',sym:'USDE',  name:'USDe',              cgId:'ethena-usde',          mech:'cdp',  chains_hint:5,  icon:'https://coin-images.coingecko.com/coins/images/33613/small/USDE.png',     exchanges:['binance','okx','bybit','kucoin','bitget'] },
+  { llamaId:'119',sym:'FDUSD', name:'First Digital USD', cgId:'first-digital-usd',   mech:'fiat', chains_hint:3,  icon:'https://coin-images.coingecko.com/coins/images/31079/small/firstfigital.png', exchanges:['binance'] },
+  { llamaId:'6',  sym:'FRAX',  name:'Frax',              cgId:'frax',                 mech:'algo', chains_hint:12, icon:'https://coin-images.coingecko.com/coins/images/13422/small/FRAX_icon.png', exchanges:['okx','gate','kucoin'] },
+  { llamaId:'7',  sym:'TUSD',  name:'TrueUSD',           cgId:'true-usd',             mech:'fiat', chains_hint:5,  icon:'https://coin-images.coingecko.com/coins/images/3449/small/tusd.png',       exchanges:['binance','okx','kucoin','gate'] },
+  { llamaId:'120',sym:'PYUSD', name:'PayPal USD',        cgId:'paypal-usd',           mech:'fiat', chains_hint:2,  icon:'https://coin-images.coingecko.com/coins/images/31212/small/PYUSD.png',     exchanges:['coinbase','kraken'] },
+  { llamaId:'14',  sym:'USDD',  name:'USDD',              cgId:'usdd',                 mech:'algo', chains_hint:4,  icon:'https://coin-images.coingecko.com/coins/images/25380/small/USDD.png',      exchanges:['bybit','okx','kucoin','gate','bitget'] },
+  { llamaId:'11',  sym:'USDP',  name:'Pax Dollar',        cgId:'paxos-standard',       mech:'fiat', chains_hint:2,  icon:'https://coin-images.coingecko.com/coins/images/6013/small/Pax_Dollar.png', exchanges:['kraken','bitfinex'] },
+  { llamaId:'19',  sym:'GUSD',  name:'Gemini Dollar',     cgId:'gemini-dollar',        mech:'fiat', chains_hint:2,  icon:'https://coin-images.coingecko.com/coins/images/5992/small/gemini-dollar-gusd.png', exchanges:['kraken','bitfinex'] },
+  { llamaId:'8', sym:'LUSD',  name:'Liquity USD',       cgId:'liquity-usd',          mech:'cdp',  chains_hint:3,  icon:'https://coin-images.coingecko.com/coins/images/14666/small/Group_3.png',   exchanges:['kraken','kucoin','gate'] },
+  { llamaId:'118',sym:'GHO',   name:'GHO',               cgId:'gho',                  mech:'cdp',  chains_hint:2,  icon:'https://coin-images.coingecko.com/coins/images/30663/small/gho-token-logo.png', exchanges:['kraken','okx'] },
+  { llamaId:'110',sym:'crvUSD',name:'Curve USD',         cgId:'crvusd',               mech:'cdp',  chains_hint:1,  icon:'https://coin-images.coingecko.com/coins/images/30118/small/crvusd.png',    exchanges:['okx','gate'] },
+  { llamaId:'22', sym:'sUSD',  name:'Synthetix USD',     cgId:'nusd',                 mech:'cdp',  chains_hint:2,  icon:'https://coin-images.coingecko.com/coins/images/5013/small/sUSD.png',       exchanges:['kraken','kucoin'] },
+  { llamaId:'10', sym:'MIM',   name:'Magic Internet $',  cgId:'magic-internet-money', mech:'cdp',  chains_hint:7,  icon:'https://coin-images.coingecko.com/coins/images/16786/small/mimlogopng.png', exchanges:['gate','kucoin'] },
+  { llamaId:'4',  sym:'BUSD',  name:'Binance USD',       cgId:'binance-usd',          mech:'fiat', chains_hint:3,  icon:'https://coin-images.coingecko.com/coins/images/9576/small/BUSD.png',       exchanges:['binance'] },
+  { llamaId:'3', sym:'USTC', name:'TerraUSD (Classic)',cgId:'terrausd',             mech:'algo', chains_hint:2, depegged:true, icon:'https://coin-images.coingecko.com/coins/images/21150/small/UST.png', exchanges:[] },
+  { llamaId:'51', sym:'EURS',  name:'STASIS EURO',       cgId:'stasis-eurs',          mech:'fiat', pegType:'peggedEUR', chains_hint:2,  icon:'https://coin-images.coingecko.com/coins/images/5164/small/EURS_300x300.png', exchanges:['kraken','bitfinex','gate'] },
+  { llamaId:'49', sym:'EURT',  name:'Euro Tether',       cgId:'tether-eurt',          mech:'fiat', pegType:'peggedEUR', chains_hint:2,  icon:'https://coin-images.coingecko.com/coins/images/17385/small/Tether_logo.png', exchanges:['kraken','bitfinex'] },
 ];
 const SC_CHAIN_SLUG={Ethereum:'ethereum',BSC:'bsc',Tron:'tron',Solana:'solana',Arbitrum:'arbitrum',Polygon:'polygon',Optimism:'optimism',Avalanche:'avalanche',Base:'base',Fantom:'fantom',Algorand:'algorand',Near:'near',Stellar:'stellar',Cosmos:'cosmos',Aptos:'aptos',Sui:'sui',Celo:'celo',Gnosis:'gnosis',Moonbeam:'moonbeam','zkSync Era':'zksync-era',Linea:'linea',Scroll:'scroll',Manta:'manta',Mantle:'mantle',Blast:'blast',TON:'ton',Cardano:'cardano',Hedera:'hedera'};
 const SC_CONTRACTS={USDT:{Ethereum:'https://etherscan.io/token/0xdAC17F958D2ee523a2206206994597C13D831ec7',BSC:'https://bscscan.com/token/0x55d398326f99059fF775485246999027B3197955',Tron:'https://tronscan.org/#/token20/TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t',Solana:'https://solscan.io/token/Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB',Arbitrum:'https://arbiscan.io/token/0xFd086bC7CD5C481DCC9C85ebE478A1C0b69FCbb9',Polygon:'https://polygonscan.com/token/0xc2132D05D31c914a87C6611C10748AEb04B58e8F',Avalanche:'https://snowtrace.io/token/0x9702230A8Ea53601f5cD2dc00fDBc13d4dF4A8c7',Optimism:'https://optimistic.etherscan.io/token/0x94b008aA00579c1307B0EF2c499aD98a8ce58e58',Base:'https://basescan.org/token/0xfde4C96c8593536E31F229EA8f37b2ADa2699bb2',TON:'https://tonscan.org/jetton/EQCxE6mUtQJKFnGfaROTKOt1lZbDiiX1kCixRv7Nw2Id_sDs'},USDC:{Ethereum:'https://etherscan.io/token/0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48',BSC:'https://bscscan.com/token/0x8AC76a51cc950d9822D68b83fE1Ad97B32Cd580d',Solana:'https://solscan.io/token/EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v',Arbitrum:'https://arbiscan.io/token/0xaf88d065e77c8cC2239327C5EDb3A432268e5831',Polygon:'https://polygonscan.com/token/0x3c499c542cEF5E3811e1192ce70d8cC03d5c3359',Optimism:'https://optimistic.etherscan.io/token/0x0b2C639c533813f4Aa9D7837CAf62653d097Ff85',Base:'https://basescan.org/token/0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913'},DAI:{Ethereum:'https://etherscan.io/token/0x6B175474E89094C44Da98b954EedeAC495271d0F',BSC:'https://bscscan.com/token/0x1AF3F329e8BE154074D8769D1FFa4eE058B1DBc3',Polygon:'https://polygonscan.com/token/0x8f3Cf7ad23Cd3CaDbD9735AFf958023239c6A063',Arbitrum:'https://arbiscan.io/token/0xDA10009cBd5D07dd0CeCc66161FC93D7c9000da1',Base:'https://basescan.org/token/0x50c5725949A6F0c72E6C4a641F24049A917DB0Cb'}};
@@ -2512,7 +2554,13 @@ function scRenderAll(){scRenderStats();scRenderTable()}
 
 function scSetProgress(pct,txt){const f=document.getElementById('sc-lprog');const l=document.getElementById('sc-ltxt');if(f)f.style.width=pct+'%';if(l)l.textContent=txt}
 
-async function scFetchData(){scSetProgress(10,'Fetching peg data...');let llamaCoins=[];try{const r=await smartFetch('/llama/stablecoins?includePrices=true');const d=await r.json();llamaCoins=d.peggedAssets||[];scSetProgress(50,'Fetching market data...')}catch(e){scSetProgress(50,'Using fallback data...')}const llamaById={};llamaCoins.forEach(c=>{llamaById[String(c.id)]=c});let cgData=[];try{const ids=SC_HARDCODED.map(h=>h.cgId).join(',');const r=await smartFetch(`/cg/coins/markets?vs_currency=usd&ids=${ids}&per_page=50`);cgData=await r.json().catch(()=>[]);scSetProgress(80,'Processing...')}catch(e){scSetProgress(80,'CoinGecko unavailable...')}const cgById={};(Array.isArray(cgData)?cgData:[]).forEach(c=>{cgById[c.id]=c});scCoins=SC_HARDCODED.map(hc=>{const llama=llamaById[hc.llamaId]||{};const cg=cgById[hc.cgId]||{};const circ=llama.circulating||{};const mcap=Object.values(circ).reduce((a,v)=>a+(typeof v==='number'?v:0),0);return{...hc,price:llama.price||cg.current_price||1.0,mcap:mcap||cg.market_cap||0,vol24h:cg.total_volume||0,change24h:cg.price_change_percentage_24h||0,chains:llama.chains||[],chainCount:(llama.chains||[]).length||hc.chains_hint||0,icon:hc.icon||cg.image||null,pegType:llama.pegType||'peggedUSD'}});llamaCoins.forEach(lc=>{if(SC_HARDCODED.find(h=>h.llamaId===String(lc.id)))return;const circ=lc.circulating||{};const mcap=circ.peggedUSD||0;if(mcap<10e6)return;if(!(lc.pegType||'').includes('USD'))return;scCoins.push({llamaId:String(lc.id),sym:lc.symbol||'?',name:lc.name||lc.symbol||'?',cgId:lc.gecko_id||null,mech:scNormMech(lc.pegMechanism),price:lc.price||1.0,mcap,vol24h:0,change24h:0,chains:lc.chains||[],chainCount:(lc.chains||[]).length,icon:null,pegType:lc.pegType})});const _discIds=[...new Set(scCoins.filter(c=>c.cgId&&(!c.icon||!c.vol24h||!c.change24h)).map(c=>c.cgId))];if(_discIds.length){try{const _r=await smartFetch(`/cg/coins/markets?vs_currency=usd&ids=${_discIds.join(',')}&per_page=250`);const _d=await _r.json().catch(()=>[]);if(Array.isArray(_d))_d.forEach(coin=>{scCoins.forEach(c=>{if(c.cgId===coin.id){if(!c.icon&&coin.image)c.icon=coin.image;if(!c.vol24h)c.vol24h=coin.total_volume||0;if(!c.change24h)c.change24h=coin.price_change_percentage_24h||0;if(!c.mcap&&coin.market_cap)c.mcap=coin.market_cap}})});}catch(e){}}scCoins.sort((a,b)=>(b.mcap||0)-(a.mcap||0));scCoins.forEach(c=>{c._risk=scCalcRisk(c);c._status=scStatus(c)});scSetProgress(100,'Done!');setTimeout(()=>{const l=document.getElementById('sc-loader');if(l)l.classList.add('hidden');const nl=document.getElementById('tnav-live');if(nl)nl.style.display='flex'},400);const now=new Date();const el=document.getElementById('sc-updTime');if(el)el.textContent='updated '+now.toLocaleTimeString();scStartTimer();scRenderAll()}
+async function scFetchData(){scSetProgress(10,'Fetching peg data...');let llamaCoins=[];try{const r=await smartFetch('/llama/stablecoins?includePrices=true');const d=await r.json();llamaCoins=d.peggedAssets||[];scSetProgress(50,'Fetching market data...')}catch(e){scSetProgress(50,'Using fallback data...')}const llamaById={};llamaCoins.forEach(c=>{llamaById[String(c.id)]=c});let cgData=[];try{const ids=SC_HARDCODED.map(h=>h.cgId).join(',');const r=await smartFetch(`/cg/coins/markets?vs_currency=usd&ids=${ids}&per_page=50`);cgData=await r.json().catch(()=>[]);scSetProgress(80,'Processing...')}catch(e){scSetProgress(80,'CoinGecko unavailable...')}const cgById={};(Array.isArray(cgData)?cgData:[]).forEach(c=>{cgById[c.id]=c});// Identity guard: if a source's symbol doesn't match ours, that id/mapping is
+// wrong — drop the source rather than render another asset's numbers under this
+// row. Without it a cross-wired llamaId silently shows a different stablecoin.
+scCoins=SC_HARDCODED.map(hc=>{let llama=llamaById[hc.llamaId]||{};if(llama.symbol&&llama.symbol.toUpperCase()!==hc.sym.toUpperCase())llama={};let cg=cgById[hc.cgId]||{};if(cg.symbol&&cg.symbol.toUpperCase()!==hc.sym.toUpperCase())cg={};const pegType=llama.pegType||hc.pegType||'peggedUSD';const circ=llama.circulating||{};const count=Object.values(circ).reduce((a,v)=>a+(typeof v==='number'?v:0),0);const price=llama.price||cg.current_price||1.0;const llamaMcap=pegType.indexOf('USD')!==-1?count:count*price;return{...hc,price,mcap:llamaMcap||cg.market_cap||0,vol24h:cg.total_volume||0,change24h:cg.price_change_percentage_24h||0,chains:llama.chains||[],chainCount:(llama.chains||[]).length||hc.chains_hint||0,icon:hc.icon||cg.image||null,pegType}});
+// Skip only ids a hardcoded row actually consumed (symbol matched too), so a
+// stale hardcoded id can't suppress the real coin from discovery.
+llamaCoins.forEach(lc=>{const lcSym=String(lc.symbol||'').toUpperCase();if(SC_HARDCODED.find(h=>h.llamaId===String(lc.id)&&h.sym.toUpperCase()===lcSym))return;const pegType=lc.pegType||'';const isUSD=pegType.indexOf('USD')!==-1;if(!isUSD&&pegType!=='peggedEUR')return;const count=(lc.circulating||{})[pegType]||0;const mcap=isUSD?count:count*(lc.price||0);if(mcap<10e6)return;if(isUSD&&(lc.price||0)>1.05)return;scCoins.push({llamaId:String(lc.id),sym:lc.symbol||'?',name:lc.name||lc.symbol||'?',cgId:lc.gecko_id||null,mech:scNormMech(lc.pegMechanism),price:lc.price||1.0,mcap,vol24h:0,change24h:0,chains:lc.chains||[],chainCount:(lc.chains||[]).length,icon:null,pegType:lc.pegType})});const _discIds=[...new Set(scCoins.filter(c=>c.cgId&&(!c.icon||!c.vol24h||!c.change24h)).map(c=>c.cgId))];if(_discIds.length){try{const _r=await smartFetch(`/cg/coins/markets?vs_currency=usd&ids=${_discIds.join(',')}&per_page=250`);const _d=await _r.json().catch(()=>[]);if(Array.isArray(_d))_d.forEach(coin=>{scCoins.forEach(c=>{if(c.cgId===coin.id){if(!c.icon&&coin.image)c.icon=coin.image;if(!c.vol24h)c.vol24h=coin.total_volume||0;if(!c.change24h)c.change24h=coin.price_change_percentage_24h||0;if(!c.mcap&&coin.market_cap)c.mcap=coin.market_cap}})});}catch(e){}}scCoins.sort((a,b)=>(b.mcap||0)-(a.mcap||0));scCoins.forEach(c=>{c._risk=scCalcRisk(c);c._status=scStatus(c)});scSetProgress(100,'Done!');setTimeout(()=>{const l=document.getElementById('sc-loader');if(l)l.classList.add('hidden');const nl=document.getElementById('tnav-live');if(nl)nl.style.display='flex'},400);const now=new Date();const el=document.getElementById('sc-updTime');if(el)el.textContent='updated '+now.toLocaleTimeString();scStartTimer();scRenderAll()}
 
 function scStartTimer(){if(scRefreshTimer)clearInterval(scRefreshTimer);scTimerSec=180;scUpdateTimer();scRefreshTimer=setInterval(()=>{scTimerSec--;if(scTimerSec<=0){clearInterval(scRefreshTimer);scFetchData()}else scUpdateTimer()},1000)}
 function scUpdateTimer(){const m=Math.floor(scTimerSec/60),s=scTimerSec%60;const el=document.getElementById('sc-refreshTimer');if(el)el.textContent=`next: ${m}:${String(s).padStart(2,'0')}`}
