@@ -75,14 +75,47 @@ const UA = 'Mozilla/5.0 (compatible; shitcoin-monitor/1.0)';
 const FLAGS = new Set(process.argv.slice(2));
 
 // ---------- Binance announcements ----------
+// One transient blip must not blind the detector for a whole day. The 2026-08-22
+// run died on a bare `fetch failed` — undici's network-level error, with no HTTP
+// status — while 08-21 and 08-23 both succeeded through the same proxy. The
+// residential egress simply drops a connection now and then, and a single attempt
+// turned that into a red job carrying no data. Retrying is the difference between
+// "we are blind" and "we have the announcements".
+//
+// 403 is deliberately NOT retried: a datacenter-IP block is a standing condition,
+// not a blip, so burning the remaining attempts on it only delays an honest
+// failure the operator needs to see.
+const FETCH_ATTEMPTS = 3;
+const RETRY_BASE_MS = 1500;
+const sleep = (ms) => new Promise(r => setTimeout(r, ms));
+
 async function fetchCatalogTitles(catalogId) {
   const url = `${BINANCE_BASE}${CMS_PATH}?type=1&catalogId=${catalogId}&pageNo=1&pageSize=50`;
   const opts = { headers: { 'User-Agent': UA } };
   if (binanceDispatcher) opts.dispatcher = binanceDispatcher;
-  const r = await fetch(url, opts);
-  if (!r.ok) throw new Error(`Binance CMS catalog ${catalogId} HTTP ${r.status}`);
-  const j = await r.json();
-  return (j?.data?.catalogs || []).flatMap(c => (c.articles || []).map(a => a.title));
+
+  let lastErr;
+  for (let attempt = 1; attempt <= FETCH_ATTEMPTS; attempt++) {
+    try {
+      const r = await fetch(url, opts);
+      if (r.status === 403) {
+        throw Object.assign(
+          new Error(`Binance CMS catalog ${catalogId} HTTP 403 (egress IP blocked)`),
+          { fatal: true },
+        );
+      }
+      if (!r.ok) throw new Error(`Binance CMS catalog ${catalogId} HTTP ${r.status}`);
+      const j = await r.json();
+      return (j?.data?.catalogs || []).flatMap(c => (c.articles || []).map(a => a.title));
+    } catch (e) {
+      lastErr = e;
+      if (e.fatal || attempt === FETCH_ATTEMPTS) break;
+      // Linear, not exponential: the observed failures are connection-level and
+      // clear in seconds, so a ramp would only push the job past its runtime.
+      await sleep(RETRY_BASE_MS * attempt);
+    }
+  }
+  throw lastErr;
 }
 
 // -> { titles: [...unique], empty: [names of catalogs that returned nothing] }

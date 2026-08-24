@@ -9,3 +9,6 @@ worker.dist.js
 CLAUDE.md
 .dev.vars
 .dev.vars.*
+# Per-run detector artifact. Committing it would make the workflow's
+# `[ -f data/pending-update.md ]` gate true on every future checkout.
+data/pending-update.md
