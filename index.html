@@ -768,7 +768,7 @@ const TRACKED_TOKENS = [
   {sym:'DODO', name:'DODO', status:'monitoring', monDate:'2026-05-22', delistDate:null, restoreDate:null},
   {sym:'EPIC', name:'Epic Chain', status:'monitoring', monDate:'2026-05-22', delistDate:null, restoreDate:null},
   {sym:'HEI', name:'Heima', status:'monitoring', monDate:'2026-05-22', delistDate:null, restoreDate:null},
-  {sym:'STORJ', name:'Storj', status:'monitoring', monDate:'2026-05-22', delistDate:null, restoreDate:null},
+  {sym:'STORJ', name:'Storj', status:'delisting', monDate:'2026-05-22', delistDate:'2026-09-03', restoreDate:null},
   {sym:'SYN', name:'Synapse', status:'monitoring', monDate:'2026-05-22', delistDate:null, restoreDate:null},
   {sym:'TLM', name:'Alien Worlds', status:'monitoring', monDate:'2026-05-22', delistDate:null, restoreDate:null},
   {sym:'ACT', name:'Act I: The AI Prophecy', status:'monitoring', monDate:'2026-06-18', delistDate:null, restoreDate:null},
@@ -776,11 +776,11 @@ const TRACKED_TOKENS = [
   {sym:'QKC', name:'QuarkChain', status:'monitoring', monDate:'2026-06-18', delistDate:null, restoreDate:null},
   // From here on the monitoring tags come from catalog 49 ("Latest Binance News"),
   // where Binance moved them after 2026-06-18. All were missed until 2026-08-12.
-  {sym:'SCRT', name:'Secret', status:'monitoring', monDate:'2026-07-03', delistDate:null, restoreDate:null},
+  {sym:'SCRT', name:'Secret', status:'delisting', monDate:'2026-07-03', delistDate:'2026-09-03', restoreDate:null},
   {sym:'LSK', name:'Lisk', status:'monitoring', monDate:'2026-07-24', delistDate:null, restoreDate:null},
   {sym:'STX', name:'Stacks', status:'monitoring', monDate:'2026-07-24', delistDate:null, restoreDate:null},
   {sym:'GLMR', name:'Moonbeam', status:'monitoring', monDate:'2026-08-11', delistDate:null, restoreDate:null},
-  {sym:'ICX', name:'ICON', status:'monitoring', monDate:'2026-08-11', delistDate:null, restoreDate:null},
+  {sym:'ICX', name:'ICON', status:'delisting', monDate:'2026-08-11', delistDate:'2026-09-03', restoreDate:null},
   {sym:'MOVR', name:'Moonriver', status:'monitoring', monDate:'2026-08-11', delistDate:null, restoreDate:null},
   {sym:'RARE', name:'SuperRare', status:'monitoring', monDate:'2026-08-11', delistDate:null, restoreDate:null},
   {sym:'SOPH', name:'Sophon', status:'monitoring', monDate:'2026-08-11', delistDate:null, restoreDate:null},
@@ -912,8 +912,8 @@ const TRACKED_TOKENS = [
 // entry whose date has passed into 'delisted', so the rendered counts differ.
 // Total: 162 tokens
 // delisted: 114
-// delisting: 10
-// monitoring: 32
+// delisting: 13
+// monitoring: 29
 // restored: 6
 
 // Auto-transition: a coin still tagged 'delisting' after its delistDate has, in
