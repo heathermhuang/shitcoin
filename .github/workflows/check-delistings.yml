@@ -76,10 +76,16 @@ jobs:
         with:
           branch: auto/delisting-update-${{ steps.detect.outputs.sig }}
           delete-branch: true
+          # pending-update.md is deliberately NOT committed. It is a per-run
+          # artifact that the detector only ever writes and never deletes, and the
+          # `changed` gate above is `[ -f data/pending-update.md ]`. Commit it once
+          # and every later checkout starts with the file already there, so the gate
+          # is true forever and a PR opens EVERY day regardless of findings — the
+          # exact noise the gate exists to prevent. body-path below still reads it
+          # straight off the runner's disk, so the PR body is unaffected.
           add-paths: |
             index.html
             data/coinbase-snapshot.json
-            data/pending-update.md
           commit-message: 'data: auto-detected delisting/monitoring changes'
           title: 'data: auto-detected Binance/Coinbase changes — needs review'
           body-path: data/pending-update.md
