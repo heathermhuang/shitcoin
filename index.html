@@ -380,7 +380,7 @@ th[data-sort][aria-sort="ascending"],th[data-sort][aria-sort="descending"]{color
           "name": "How often is data updated?",
           "acceptedAnswer": {
             "@type": "Answer",
-            "text": "Market data (prices, volume, order book depth) is refreshed every 2 minutes. Exchange info and coin lists are cached for up to 15 minutes. CoinGecko market cap data is cached for 5 minutes."
+            "text": "The Binance view refreshes every 5 minutes and the Coinbase view every 3 minutes, while the tab is open and visible. Exchange listings are cached for up to 30 minutes and CoinGecko market data for up to 30 minutes."
           }
         }
       ]
@@ -842,6 +842,24 @@ async function smartFetch(path, opts) {
     return lastResp || new Response('{"error":"all sources failed"}', { status: 502, headers: { 'Content-Type': 'application/json' } });
 }
 
+// ===== UI PREFERENCES =====
+// The Privacy Policy has always told visitors that "UI preferences (sort order,
+// active filter)" are kept in localStorage. Only the cookie-consent key ever was,
+// so the statement was untrue AND the feature was missing: a reload dropped you
+// back to the default filter and sort while the active tab survived via the hash.
+// Now it is true. Nothing here leaves the device.
+const PREFS_KEY = 'cm_prefs_v1';
+function loadPrefs() {
+    try { return JSON.parse(localStorage.getItem(PREFS_KEY)) || {}; } catch { return {}; }
+}
+function savePref(scope, patch) {
+    try {
+        const all = loadPrefs();
+        all[scope] = { ...(all[scope] || {}), ...patch };
+        localStorage.setItem(PREFS_KEY, JSON.stringify(all));
+    } catch { /* private mode, quota, disabled storage — preferences are optional */ }
+}
+
 // ===== CROSS-EXCHANGE LISTINGS =====
 // One fetch, one set of results, shared by both exchange modules.
 //
@@ -1105,7 +1123,7 @@ async function fetchMarketCaps() {
         for (let page = 1; page <= 4; page++) {
             let arr = null;
             for (let a = 0; a < 2 && !arr; a++) {
-                try { const r = await smartFetch(`/cg/coins/markets?vs_currency=usd&order=market_cap_desc&per_page=250&page=${page}`); if (r.ok) { const j = await r.json().catch(()=>[]); if (Array.isArray(j) && j.length) arr = j; } } catch(e) {}
+                try { const r = await smartFetch(`/cg/coins/markets?vs_currency=usd&order=market_cap_desc&per_page=250&page=${page}`); if (r.ok) { const j = await r.json().catch(()=>[]); if (Array.isArray(j) && j.length) arr = j; } } catch(e) { console.warn('CoinGecko sweep page ' + page + ' attempt ' + (a+1) + ' failed:', e.message); }
                 if (!arr) await new Promise(res => setTimeout(res, 600));
             }
             if (!arr) break;
@@ -1217,7 +1235,7 @@ async function fetchDepthData() {
                 const usdt = tickers.find(x => x.target === 'USDT');
                 const pick = usdt || tickers.sort((a, b) => (b.converted_volume?.usd || 0) - (a.converted_volume?.usd || 0))[0];
                 liveData[tk.sym].spread = pick.bid_ask_spread_percentage;
-            } catch(e) {}
+            } catch(e) { console.warn('spread lookup failed for ' + tk.sym + ':', e.message); }
         }));
         if (i + SPREAD_BATCH < candidates.length) await new Promise(r => setTimeout(r, SPREAD_DELAY));
     }
@@ -1233,23 +1251,29 @@ async function fetchExchangeData() {
 // ============ RISK SCORING ============
 function computeRiskScores() {
     // Gather volume/mcap stats from all active coins for percentile calculation
-    const vols = [], mcaps = [], depths = [];
+    const vols = [], mcaps = [];
     allCoins.forEach(t => {
         const ld = liveData[t.sym];
         if (!ld) return;
         if (ld.vol > 0) vols.push(ld.vol);
         if (ld.mcap > 0) mcaps.push(ld.mcap);
-        if (ld.bidDepth > 0) depths.push(ld.bidDepth + (ld.askDepth || 0));
     });
     vols.sort((a,b) => a-b);
     mcaps.sort((a,b) => a-b);
-    depths.sort((a,b) => a-b);
 
+    // Binary search over the sorted array. This runs twice per coin inside a loop
+    // over every coin, so the old linear scan was quadratic — roughly 500k
+    // comparisons per call at ~500 coins, four or more times per load. Never a
+    // measured bottleneck (a full table render is ~5 ms), but there is no reason
+    // for it to be O(n) when the array is already sorted.
     const pctile = (arr, val) => {
         if (!arr.length || val <= 0) return 0;
-        let i = 0;
-        while (i < arr.length && arr[i] < val) i++;
-        return (i / arr.length) * 100;
+        let lo = 0, hi = arr.length;
+        while (lo < hi) {
+            const mid = (lo + hi) >> 1;
+            if (arr[mid] < val) lo = mid + 1; else hi = mid;
+        }
+        return (lo / arr.length) * 100;
     };
 
     allCoins.forEach(t => {
@@ -1610,11 +1634,13 @@ function bnSortBy(key) {
     if (sort.key === key) sort.dir = sort.dir === 'desc' ? 'asc' : 'desc';
     else { sort.key = key; sort.dir = 'desc'; }
     page = 0;
+    savePref('bn', { sortKey: sort.key, sortDir: sort.dir });
     renderTable();
 }
 function bnSetFilter(f) {
     filter = f;
     page = 0;
+    savePref('bn', { filter: f });
     bnRenderAll();
 }
 function bnSetQuery(q) { query = q; page = 0; renderTable(); }
@@ -1638,6 +1664,17 @@ async function bnDoRefresh() {
 }
 
 // ============ INIT ============
+// Restore the visitor's last filter and sort. Guarded against a stale or hand-edited
+// value so a bad key cannot wedge the table on an empty view.
+{
+    const p = loadPrefs().bn || {};
+    const validFilters = ['active','highrisk','monitoring','delisting','restored','delisted','all'];
+    if (validFilters.includes(p.filter)) filter = p.filter;
+    const validSorts = ['symbol','status','risk','daysOnMon','monDate','delistDate','price','change','vol','mcap','spread'];
+    if (validSorts.includes(p.sortKey)) sort.key = p.sortKey;
+    if (p.sortDir === 'asc' || p.sortDir === 'desc') sort.dir = p.sortDir;
+}
+
 window.bnInit = fetchAllData; bnInitialized = false;
 
 // Auto-refresh every 5 min, but only while the tab is actually being looked at.
@@ -1700,6 +1737,12 @@ let allCoins = [];
 let liveData = {}; // sym -> {price, change, vol, mcap, icon, cgId, bidDepth, askDepth}
 const exchangeData = EXCHANGE_LISTINGS;   // shared; see loadExchangeListings()
 let filter = 'all', sortCol = 'risk', sortAsc = false, page = 0, query = '';
+{   // restore this tab's saved filter/sort, validated so a stale value cannot wedge the view
+    const p = loadPrefs().cb || {};
+    if (['all','online','limit','delisted','highrisk'].includes(p.filter)) filter = p.filter;
+    if (['symbol','status','risk','price','change','vol','mcap','bidDepth','askDepth'].includes(p.sortCol)) sortCol = p.sortCol;
+    if (typeof p.sortAsc === 'boolean') sortAsc = p.sortAsc;
+}
 let lastRefresh = 0;
 
 // CoinGecko ID overrides
@@ -1938,7 +1981,14 @@ function getFiltered() {
     else if (filter === 'limit') list = list.filter(c => c.limitOnly);
     else if (filter === 'delisted') list = list.filter(c => c.status === 'delisted');
     else if (filter === 'highrisk') list = list.filter(c => (c._risk >= 50 || c.limitOnly) && c.status !== 'delisted');
-    if (query) { const q = query.toLowerCase(); list = list.filter(c => c.sym.toLowerCase().includes(q)); }
+    // Match the name too, as the Binance tab does. Searching "Measurable Data"
+    // found nothing here — only "MDT" worked — on the one tab where the name is
+    // often the only human-readable label.
+    if (query) {
+        const q = query.toLowerCase();
+        list = list.filter(c => c.sym.toLowerCase().includes(q)
+            || (c.name || liveData[c.sym]?.name || '').toLowerCase().includes(q));
+    }
     // Status priority: online=0, limit-only=1, delisted=2
     const cbStatusOrder = c => c.status === 'delisted' ? 2 : c.limitOnly ? 1 : 0;
     list.sort((a, b) => {
@@ -1966,6 +2016,10 @@ function getFiltered() {
 }
 
 function cbRenderAll() {
+    // Keep the filter chips in step with `filter`. cbSetFilter toggles them, but a
+    // filter restored from saved preferences never went through it, so the table
+    // and the highlighted chip could disagree on first paint.
+    document.querySelectorAll('#cb-section .ftab').forEach(b => b.classList.toggle('active', b.dataset.f === filter));
     const list = getFiltered();
     const pages = Math.ceil(list.length / PAGE_SIZE);
     if (page >= pages) page = Math.max(0, pages - 1);
@@ -2059,8 +2113,8 @@ function cbRenderAll() {
 }
 
 // ===== CONTROLS =====
-function cbSetFilter(f) { filter = f; page = 0; document.querySelectorAll('#cb-section .ftab').forEach(b => b.classList.toggle('active', b.dataset.f === f)); cbRenderAll(); }
-function cbSortBy(col) { if (sortCol === col) sortAsc = !sortAsc; else { sortCol = col; sortAsc = col === 'symbol'; } cbRenderAll(); }
+function cbSetFilter(f) { filter = f; page = 0; savePref('cb', { filter: f }); document.querySelectorAll('#cb-section .ftab').forEach(b => b.classList.toggle('active', b.dataset.f === f)); cbRenderAll(); }
+function cbSortBy(col) { if (sortCol === col) sortAsc = !sortAsc; else { sortCol = col; sortAsc = col === 'symbol'; } savePref('cb', { sortCol, sortAsc }); cbRenderAll(); }
 function cbSetQuery(q) { query = q; page = 0; cbRenderAll(); }
 function cbSetPage(p) { page = Math.max(0, p); cbRenderAll(); window.scrollTo({top: document.querySelector('#cb-section .tbl-wrap').offsetTop - 80, behavior:'smooth'}); }
 
@@ -2090,7 +2144,7 @@ async function fetchDepth(sym) {
         asks.forEach(([p, s]) => { const px = parseFloat(p); if (px <= high) askSum += px * parseFloat(s); });
         liveData[sym].bidDepth = bidSum;
         liveData[sym].askDepth = askSum;
-    } catch(e) {}
+    } catch(e) { console.warn('depth lookup failed for ' + sym + ':', e.message); }
 }
 
 async function fetchCoinGeckoData() {
@@ -2116,7 +2170,7 @@ async function fetchCoinGeckoData() {
         for (let page = 1; page <= 4; page++) {
             let arr = null;
             for (let a = 0; a < 2 && !arr; a++) {
-                try { const r = await smartFetch(`/cg/coins/markets?vs_currency=usd&order=market_cap_desc&per_page=250&page=${page}`); if (r.ok) { const j = await r.json().catch(()=>[]); if (Array.isArray(j) && j.length) arr = j; } } catch(e) {}
+                try { const r = await smartFetch(`/cg/coins/markets?vs_currency=usd&order=market_cap_desc&per_page=250&page=${page}`); if (r.ok) { const j = await r.json().catch(()=>[]); if (Array.isArray(j) && j.length) arr = j; } } catch(e) { console.warn('CoinGecko sweep page ' + page + ' attempt ' + (a+1) + ' failed:', e.message); }
                 if (!arr) await new Promise(res => setTimeout(res, 600));
             }
             if (!arr) break;
