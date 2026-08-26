@@ -428,7 +428,7 @@ export default {
     // SEO: robots.txt
     if (url.pathname === '/robots.txt') {
       return new Response(
-        'User-agent: *\nAllow: /\nDisallow: /api/\nDisallow: /cb/\nDisallow: /cg/\nDisallow: /ex/\nSitemap: https://shitcoin.io/sitemap.xml\n',
+        'User-agent: *\nAllow: /\nDisallow: /api/\nDisallow: /cb/\nDisallow: /cg/\nDisallow: /ex/\nDisallow: /llama/\nSitemap: https://shitcoin.io/sitemap.xml\n',
         { headers: { 'Content-Type': 'text/plain; charset=utf-8', 'Cache-Control': 'public, max-age=86400' } }
       );
     }
