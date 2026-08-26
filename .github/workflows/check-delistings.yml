@@ -25,6 +25,9 @@ permissions:
 jobs:
   check:
     runs-on: ubuntu-latest
+    # The detector makes paged upstream calls through a proxy; without a bound a
+    # hung fetch would sit on a runner for the default 6 hours.
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
 
@@ -41,6 +44,16 @@ jobs:
         env:
           PROXY_URL: ${{ secrets.PROXY_URL }}
         run: |
+          # `bash -e` alone does not set pipefail, so `node ... | tee` reported
+          # tee's exit status: a detector that threw exited non-zero, tee exited
+          # 0, the step passed, changed=false, and the job went green having
+          # checked nothing — the exact outcome the BINANCE_FETCH_FAILED gate
+          # below exists to prevent. That gate only catches a detector that
+          # survives long enough to print; this catches one that dies.
+          # Safe because the detector exits 0 on its normal path whether or not
+          # it finds changes, and non-zero only on a real crash.
+          set -o pipefail
+
           # Grep stdout, not the report file: when the Binance fetch dies and
           # Coinbase is quiet there are no "changes", so no file is ever written —
           # yet that is precisely the run we must not let pass silently.
