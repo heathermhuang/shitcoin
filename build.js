@@ -3,7 +3,11 @@
 const fs = require('fs');
 const path = require('path');
 
-const html = fs.readFileSync(path.join(__dirname, 'index.html'), 'utf8');
+const { injectTrackedTokens } = require('./lib/tracked-tokens.cjs');
+
+const html = injectTrackedTokens(
+  fs.readFileSync(path.join(__dirname, 'index.html'), 'utf8')
+);
 const template = fs.readFileSync(path.join(__dirname, 'worker.js'), 'utf8');
 
 // Escape backticks and ${} in the HTML so it's safe inside a template literal

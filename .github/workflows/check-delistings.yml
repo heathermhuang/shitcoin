@@ -83,8 +83,11 @@ jobs:
           # is true forever and a PR opens EVERY day regardless of findings — the
           # exact noise the gate exists to prevent. body-path below still reads it
           # straight off the runner's disk, so the PR body is unaffected.
+          # The detector now edits data/tracked-tokens.json, not index.html —
+          # index.html carries only the __TRACKED_TOKENS__ placeholder that
+          # build.js fills. Leaving index.html here would silently commit nothing.
           add-paths: |
-            index.html
+            data/tracked-tokens.json
             data/coinbase-snapshot.json
           commit-message: 'data: auto-detected delisting/monitoring changes'
           title: 'data: auto-detected Binance/Coinbase changes — needs review'
