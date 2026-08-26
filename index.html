@@ -546,10 +546,29 @@ const CG_TO_CMC = {
 // CoinGecko, which makes the proxy return 502 / [] — transparently fall back to
 // fetching the upstream API directly from the browser. All upstreams send
 // Access-Control-Allow-Origin: *, so the browser (residential IP) can reach them.
-// Self-healing: once a proxy prefix is seen failing, the rest of the session goes
-// direct-first for that prefix to avoid wasted round-trips. Returns a Response so
-// existing .ok / .json() call sites keep working unchanged.
-const _proxyBlocked = new Set();
+// Self-healing: once a proxy prefix is seen failing, later calls go direct-first
+// for that prefix to avoid wasted round-trips. Returns a Response so existing
+// .ok / .json() call sites keep working unchanged.
+//
+// The demotion EXPIRES. It used to be permanent — a Set that was only ever added
+// to — so a single transient failure cost the whole session: no more Worker cache,
+// the visitor's IP exposed to the exchange on every later call, and CoinGecko
+// traffic pushed onto the strict anonymous per-IP limit, which makes the very
+// rate-limiting that triggered the fallback worse. AGENTS.md documents that a
+// /cb/products 502 immediately after a deploy is a normal cold-cache miss, so the
+// ordinary case was tripping a permanent switch. Now a prefix is retried after
+// PROXY_RETRY_MS.
+const PROXY_RETRY_MS = 2 * 60 * 1000;
+const _proxyBlocked = new Map(); // prefix -> timestamp of the failure
+function _markProxyBlocked(pref) { if (pref) _proxyBlocked.set(pref, Date.now()); }
+function _isProxyBlocked(pref) {
+    if (!pref) return false;
+    const at = _proxyBlocked.get(pref);
+    if (at === undefined) return false;
+    if (Date.now() - at < PROXY_RETRY_MS) return true;
+    _proxyBlocked.delete(pref); // cooled off — give the proxy another chance
+    return false;
+}
 function _proxyPrefix(p) {
     if (p.startsWith('/api/')) return 'api';
     if (p.startsWith('/cg/')) return 'cg';
@@ -582,7 +601,7 @@ async function smartFetch(path, opts) {
     if (/^https?:\/\//.test(path)) return fetch(path, opts);
     const pref = _proxyPrefix(path);
     const direct = _directUrl(path);
-    const proxyFirst = !(pref && _proxyBlocked.has(pref));
+    const proxyFirst = !_isProxyBlocked(pref);
     const order = proxyFirst ? [path, direct] : [direct, path];
     let lastResp = null;
     for (const url of order) {
@@ -603,16 +622,20 @@ async function smartFetch(path, opts) {
                     const ct = r.headers.get('content-type') || '';
                     const t = await r.clone().text();
                     if (ct.includes('text/html') || t.trimStart().startsWith('<')) {
-                        if (pref) _proxyBlocked.add(pref); lastResp = r; continue;
+                        _markProxyBlocked(pref); lastResp = r; continue;
                     }
-                    if (_isEmptyBody(t)) { if (pref) _proxyBlocked.add(pref); lastResp = r; continue; }
+                    if (_isEmptyBody(t)) { _markProxyBlocked(pref); lastResp = r; continue; }
                 }
                 return r;
             }
-            if (isProxy && pref) _proxyBlocked.add(pref);
+            if (isProxy) _markProxyBlocked(pref);
             lastResp = r;
         } catch (e) {
-            if (isProxy && pref) _proxyBlocked.add(pref);
+            // A caller-side abort says nothing about the proxy's health — don't
+            // demote the prefix for it, and don't bother trying the other leg with
+            // an already-aborted signal.
+            if (e && e.name === 'AbortError') throw e;
+            if (isProxy) _markProxyBlocked(pref);
         }
     }
     return lastResp || new Response('{"error":"all sources failed"}', { status: 502, headers: { 'Content-Type': 'application/json' } });
@@ -1674,21 +1697,56 @@ function bnSetFilter(f) {
 function bnSetQuery(q) { query = q; page = 0; renderTable(); }
 function bnSetPage(p) { page = Math.max(0, p); renderTable(); window.scrollTo({top: document.querySelector('.tbl-wrap').offsetTop - 80, behavior:'smooth'}); }
 
+// One refresh at a time. The button and the interval both land here, so without
+// this a mashed button — or a tick arriving while a slow run is still going —
+// starts overlapping chains against the same rate-limited upstreams.
+let bnRefreshInFlight = null;
 async function bnDoRefresh() {
+    if (bnRefreshInFlight) return bnRefreshInFlight;
     const btn = document.getElementById('bn-refreshBtn');
     btn.classList.add('spinning');
     // Don't clear liveData - keep old data as fallback if refresh fails
-    await fetchAllData();
-    btn.classList.remove('spinning');
-    window._lastRefresh = Date.now();
+    bnRefreshInFlight = fetchAllData().finally(() => {
+        bnRefreshInFlight = null;
+        btn.classList.remove('spinning');
+        window._lastRefresh = Date.now();
+    });
+    return bnRefreshInFlight;
 }
 
 // ============ INIT ============
 window.bnInit = fetchAllData; bnInitialized = false;
-setInterval(bnDoRefresh, 5 * 60 * 1000); // Auto-refresh every 5 min
 
-// Countdown timer
-setInterval(() => {
+// Auto-refresh every 5 min, but only while the tab is actually being looked at.
+// This used to be a bare setInterval registered at module evaluation — before
+// switchExchange had run, regardless of which tab the visitor landed on, and it
+// never stopped. A tab left open overnight ran ~96 full refresh cycles into an
+// empty room. Re-parsing exchangeInfo each time cost 271 ms of blocked main
+// thread per cycle before the projection landed.
+//
+// On becoming visible again we refresh once if the interval was missed, so
+// coming back to the tab shows current data rather than whatever was on screen
+// when it was hidden.
+function bnStartAutoRefresh() {
+    if (bnRefreshInterval) return;
+    bnRefreshInterval = setInterval(() => { if (!document.hidden) bnDoRefresh(); }, 5 * 60 * 1000);
+}
+function bnStopAutoRefresh() {
+    if (!bnRefreshInterval) return;
+    clearInterval(bnRefreshInterval);
+    bnRefreshInterval = null;
+}
+document.addEventListener('visibilitychange', () => {
+    if (document.hidden) { bnStopAutoRefresh(); return; }
+    bnStartAutoRefresh();
+    if (bnInitialized && Date.now() - (window._lastRefresh || 0) > 5 * 60 * 1000) bnDoRefresh();
+});
+if (!document.hidden) bnStartAutoRefresh();
+
+// Countdown timer — also idle while hidden; it only writes to an element nobody
+// can see, and it fired every second for the life of the page.
+bnTimerInterval = setInterval(() => {
+    if (document.hidden) return;
     const el = document.getElementById('bn-refreshTimer');
     if (!el) return;
     const elapsed = (Date.now() - (window._lastRefresh || Date.now())) / 1000;
@@ -2300,7 +2358,13 @@ async function fetchDepthBatch() {
     cbRenderAll();
 }
 
+// One refresh at a time — see the note on bnDoRefresh. This one matters more:
+// each run kicks off fetchDepthBatch(), which walks up to 150 order books
+// sequentially and takes ~23 s, so overlapping runs are easy to provoke.
+let cbRefreshInFlight = false;
 async function cbDoRefresh() {
+    if (cbRefreshInFlight) return;
+    cbRefreshInFlight = true;
     const btn = document.getElementById('cb-refreshBtn');
     btn.classList.add('spinning');
     try {
@@ -2318,18 +2382,28 @@ async function cbDoRefresh() {
     } catch(e) { console.error('[CB] refresh error:', e); }
     // Re-run enrichment so coins left blank by an earlier rate-limit window get another
     // chance to resolve their name/mcap/logo (now scoped to just the missing ones).
-    fetchCoinGeckoData();
-    fetchDepthBatch(); // refresh order-book depth too — was previously fetched only once at init
-    btn.classList.remove('spinning');
+    // The in-flight flag is held until BOTH background chains settle, so the next
+    // tick cannot start a second depth walk on top of a running one.
+    Promise.allSettled([fetchCoinGeckoData(), fetchDepthBatch()])
+        .finally(() => { cbRefreshInFlight = false; btn.classList.remove('spinning'); });
 }
 
 // ===== INIT =====
 // Timeout wrapper for fetch
 function fetchWithTimeout(url, ms = 15000) {
+    // The race only decided which promise settled first; the underlying request
+    // carried on to completion after the caller had given up, holding a connection
+    // and a response body nobody would read. Abort it for real, and clear the timer
+    // when the fetch wins so it does not sit pending.
+    const ctl = new AbortController();
+    let timer;
+    const timeout = new Promise((_, rej) => {
+        timer = setTimeout(() => { ctl.abort(); rej(new Error('timeout ' + url)); }, ms);
+    });
     return Promise.race([
-        smartFetch(url).then(r => r.json()),
-        new Promise((_, rej) => setTimeout(() => rej(new Error('timeout ' + url)), ms))
-    ]);
+        smartFetch(url, { signal: ctl.signal }).then(r => r.json()),
+        timeout,
+    ]).finally(() => clearTimeout(timer));
 }
 
 async function init() {
@@ -2373,9 +2447,14 @@ async function init() {
     fetchCoinGeckoData();
     fetchDepthBatch();
 
-    // Auto-refresh every 3 min
-    setInterval(cbDoRefresh, 180000);
+    // Auto-refresh every 3 min, but only while the tab is visible. Each cycle
+    // re-walks up to 150 order books; running that into a hidden tab is pure waste.
+    setInterval(() => { if (!document.hidden) cbDoRefresh(); }, 180000);
+    document.addEventListener('visibilitychange', () => {
+        if (!document.hidden && lastRefresh && Date.now() - lastRefresh > 180000) cbDoRefresh();
+    });
     setInterval(() => {
+        if (document.hidden) return;
         if (lastRefresh) {
             const rem = Math.max(0, 180 - Math.floor((Date.now() - lastRefresh) / 1000));
             const m = Math.floor(rem / 60), s = rem % 60;
