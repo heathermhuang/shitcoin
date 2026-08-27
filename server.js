@@ -210,11 +210,29 @@ function serveStatic(reqPath, res) {
     const ext = path.extname(filePath);
     const ct = MIME[ext] || 'application/octet-stream';
     const noCache = ['.html', '.js', '.css'].includes(ext);
+
+    // index.html ships with the __TRACKED_TOKENS__ placeholder; production gets
+    // it filled by build.js, so dev has to fill it too or the page is broken
+    // locally and fine when deployed. Same shared helper, re-read each time so
+    // edits to the JSON show up on refresh without restarting the server.
+    let body = data;
+    if (path.basename(filePath) === 'index.html') {
+      try {
+        delete require.cache[require.resolve('./lib/tracked-tokens.cjs')];
+        body = require('./lib/tracked-tokens.cjs').injectTrackedTokens(data.toString('utf8'));
+      } catch (e) {
+        console.error('[DEV] tracked-token injection failed:', e.message);
+        res.writeHead(500, { 'Content-Type': 'text/plain' });
+        res.end('tracked-token injection failed: ' + e.message);
+        return;
+      }
+    }
+
     res.writeHead(200, {
       'Content-Type': ct,
       ...(noCache ? { 'Cache-Control': 'no-cache, no-store, must-revalidate' } : {}),
     });
-    res.end(data);
+    res.end(body);
   });
 }
 

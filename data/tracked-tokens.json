@@ -1,0 +1,1305 @@
+[
+  {
+    "sym": "JASMY",
+    "name": "JasmyCoin",
+    "status": "monitoring",
+    "monDate": "2023-07-26",
+    "delistDate": null,
+    "restoreDate": null
+  },
+  {
+    "sym": "FTT",
+    "name": "FTX Token",
+    "status": "monitoring",
+    "monDate": "2023-07-26",
+    "delistDate": null,
+    "restoreDate": null
+  },
+  {
+    "sym": "ARK",
+    "name": "Ark",
+    "status": "monitoring",
+    "monDate": "2023-07-26",
+    "delistDate": null,
+    "restoreDate": null
+  },
+  {
+    "sym": "ARDR",
+    "name": "Ardor",
+    "status": "delisting",
+    "monDate": "2025-05-07",
+    "delistDate": "2026-07-10",
+    "restoreDate": null
+  },
+  {
+    "sym": "PERP",
+    "name": "Perpetual Protocol",
+    "status": "delisted",
+    "monDate": "2025-05-07",
+    "delistDate": "2025-11-12",
+    "restoreDate": null
+  },
+  {
+    "sym": "MBL",
+    "name": "MovieBloc",
+    "status": "monitoring",
+    "monDate": "2024-07-01",
+    "delistDate": null,
+    "restoreDate": null
+  },
+  {
+    "sym": "AWE",
+    "name": "AWE Network",
+    "status": "monitoring",
+    "monDate": "2025-04-03",
+    "delistDate": null,
+    "restoreDate": null
+  },
+  {
+    "sym": "MOVE",
+    "name": "Movement",
+    "status": "monitoring",
+    "monDate": "2025-06-05",
+    "delistDate": null,
+    "restoreDate": null
+  },
+  {
+    "sym": "BIFI",
+    "name": "Beefy Finance",
+    "status": "delisted",
+    "monDate": "2025-06-05",
+    "delistDate": "2026-04-23",
+    "restoreDate": null
+  },
+  {
+    "sym": "MDT",
+    "name": "Measurable Data",
+    "status": "delisted",
+    "monDate": "2025-06-05",
+    "delistDate": "2026-04-23",
+    "restoreDate": null,
+    "resources": [
+      {
+        "label": "Transparency Portal",
+        "url": "https://mdt.io/transparency",
+        "note": "5M+ users across 22 markets. Real data monetization revenue (food delivery, ride-hailing, e-commerce GMV). Live consumer apps: RewardMe, MailTime, PassportMe, RewardBox. Updated monthly — this is the level of transparency exchanges want to see"
+      }
+    ]
+  },
+  {
+    "sym": "PORTAL",
+    "name": "Portal",
+    "status": "monitoring",
+    "monDate": "2025-06-05",
+    "delistDate": null,
+    "restoreDate": null
+  },
+  {
+    "sym": "WAN",
+    "name": "Wanchain",
+    "status": "delisted",
+    "monDate": "2025-10-09",
+    "delistDate": "2026-04-23",
+    "restoreDate": null
+  },
+  {
+    "sym": "DENT",
+    "name": "Dent",
+    "status": "delisted",
+    "monDate": "2025-12-01",
+    "delistDate": "2026-04-28",
+    "restoreDate": null
+  },
+  {
+    "sym": "D",
+    "name": "DAR Open Network",
+    "status": "delisted",
+    "monDate": "2026-01-02",
+    "delistDate": "2026-06-19",
+    "restoreDate": null
+  },
+  {
+    "sym": "COS",
+    "name": "Contentos",
+    "status": "delisted",
+    "monDate": "2026-03-06",
+    "delistDate": "2026-06-19",
+    "restoreDate": null
+  },
+  {
+    "sym": "DEGO",
+    "name": "Dego Finance",
+    "status": "delisted",
+    "monDate": "2026-03-06",
+    "delistDate": "2026-04-28",
+    "restoreDate": null
+  },
+  {
+    "sym": "TRU",
+    "name": "TrueFi",
+    "status": "delisted",
+    "monDate": "2026-04-14",
+    "delistDate": "2026-04-28",
+    "restoreDate": null
+  },
+  {
+    "sym": "FUN",
+    "name": "FUNToken",
+    "status": "delisted",
+    "monDate": "2026-03-06",
+    "delistDate": "2026-04-23",
+    "restoreDate": null
+  },
+  {
+    "sym": "MBOX",
+    "name": "MOBOX",
+    "status": "delisted",
+    "monDate": "2026-03-06",
+    "delistDate": "2026-06-19",
+    "restoreDate": null
+  },
+  {
+    "sym": "OXT",
+    "name": "Orchid",
+    "status": "delisted",
+    "monDate": "2026-03-06",
+    "delistDate": "2026-04-23",
+    "restoreDate": null
+  },
+  {
+    "sym": "WIF",
+    "name": "dogwifhat",
+    "status": "monitoring",
+    "monDate": "2026-03-06",
+    "delistDate": null,
+    "restoreDate": null
+  },
+  {
+    "sym": "ATA",
+    "name": "Automata Network",
+    "status": "delisted",
+    "monDate": "2026-03-13",
+    "delistDate": "2026-05-27",
+    "restoreDate": null
+  },
+  {
+    "sym": "FIO",
+    "name": "FIO Protocol",
+    "status": "delisted",
+    "monDate": "2026-03-13",
+    "delistDate": "2026-04-23",
+    "restoreDate": null
+  },
+  {
+    "sym": "GTC",
+    "name": "Gitcoin",
+    "status": "monitoring",
+    "monDate": "2026-03-13",
+    "delistDate": null,
+    "restoreDate": null
+  },
+  {
+    "sym": "PHB",
+    "name": "Phoenix",
+    "status": "delisted",
+    "monDate": "2026-03-13",
+    "delistDate": "2026-05-27",
+    "restoreDate": null
+  },
+  {
+    "sym": "QI",
+    "name": "BENQI",
+    "status": "monitoring",
+    "monDate": "2026-03-13",
+    "delistDate": null,
+    "restoreDate": null
+  },
+  {
+    "sym": "RESOLV",
+    "name": "Resolv",
+    "status": "monitoring",
+    "monDate": "2026-04-14",
+    "delistDate": null,
+    "restoreDate": null
+  },
+  {
+    "sym": "VELODROME",
+    "name": "Velodrome Finance",
+    "status": "monitoring",
+    "monDate": "2026-04-14",
+    "delistDate": null,
+    "restoreDate": null
+  },
+  {
+    "sym": "FARM",
+    "name": "Harvest Finance",
+    "status": "delisted",
+    "monDate": "2026-04-14",
+    "delistDate": "2026-05-27",
+    "restoreDate": null
+  },
+  {
+    "sym": "SYS",
+    "name": "Syscoin",
+    "status": "delisted",
+    "monDate": "2026-04-14",
+    "delistDate": "2026-05-27",
+    "restoreDate": null
+  },
+  {
+    "sym": "HIGH",
+    "name": "Highstreet",
+    "status": "delisted",
+    "monDate": "2026-04-14",
+    "delistDate": "2026-06-19",
+    "restoreDate": null
+  },
+  {
+    "sym": "NOM",
+    "name": "Nomina",
+    "status": "monitoring",
+    "monDate": "2026-04-30",
+    "delistDate": null,
+    "restoreDate": null
+  },
+  {
+    "sym": "QUICK",
+    "name": "QuickSwap",
+    "status": "monitoring",
+    "monDate": "2026-04-30",
+    "delistDate": null,
+    "restoreDate": null
+  },
+  {
+    "sym": "COOKIE",
+    "name": "Cookie DAO",
+    "status": "monitoring",
+    "monDate": "2026-05-22",
+    "delistDate": null,
+    "restoreDate": null
+  },
+  {
+    "sym": "DODO",
+    "name": "DODO",
+    "status": "monitoring",
+    "monDate": "2026-05-22",
+    "delistDate": null,
+    "restoreDate": null
+  },
+  {
+    "sym": "EPIC",
+    "name": "Epic Chain",
+    "status": "monitoring",
+    "monDate": "2026-05-22",
+    "delistDate": null,
+    "restoreDate": null
+  },
+  {
+    "sym": "HEI",
+    "name": "Heima",
+    "status": "monitoring",
+    "monDate": "2026-05-22",
+    "delistDate": null,
+    "restoreDate": null
+  },
+  {
+    "sym": "STORJ",
+    "name": "Storj",
+    "status": "delisting",
+    "monDate": "2026-05-22",
+    "delistDate": "2026-09-03",
+    "restoreDate": null
+  },
+  {
+    "sym": "SYN",
+    "name": "Synapse",
+    "status": "monitoring",
+    "monDate": "2026-05-22",
+    "delistDate": null,
+    "restoreDate": null
+  },
+  {
+    "sym": "TLM",
+    "name": "Alien Worlds",
+    "status": "monitoring",
+    "monDate": "2026-05-22",
+    "delistDate": null,
+    "restoreDate": null
+  },
+  {
+    "sym": "ACT",
+    "name": "Act I: The AI Prophecy",
+    "status": "monitoring",
+    "monDate": "2026-06-18",
+    "delistDate": null,
+    "restoreDate": null
+  },
+  {
+    "sym": "BLUR",
+    "name": "Blur",
+    "status": "monitoring",
+    "monDate": "2026-06-18",
+    "delistDate": null,
+    "restoreDate": null
+  },
+  {
+    "sym": "QKC",
+    "name": "QuarkChain",
+    "status": "monitoring",
+    "monDate": "2026-06-18",
+    "delistDate": null,
+    "restoreDate": null
+  },
+  {
+    "sym": "SCRT",
+    "name": "Secret",
+    "status": "delisting",
+    "monDate": "2026-07-03",
+    "delistDate": "2026-09-03",
+    "restoreDate": null
+  },
+  {
+    "sym": "LSK",
+    "name": "Lisk",
+    "status": "monitoring",
+    "monDate": "2026-07-24",
+    "delistDate": null,
+    "restoreDate": null
+  },
+  {
+    "sym": "STX",
+    "name": "Stacks",
+    "status": "monitoring",
+    "monDate": "2026-07-24",
+    "delistDate": null,
+    "restoreDate": null
+  },
+  {
+    "sym": "GLMR",
+    "name": "Moonbeam",
+    "status": "monitoring",
+    "monDate": "2026-08-11",
+    "delistDate": null,
+    "restoreDate": null
+  },
+  {
+    "sym": "ICX",
+    "name": "ICON",
+    "status": "delisting",
+    "monDate": "2026-08-11",
+    "delistDate": "2026-09-03",
+    "restoreDate": null
+  },
+  {
+    "sym": "MOVR",
+    "name": "Moonriver",
+    "status": "monitoring",
+    "monDate": "2026-08-11",
+    "delistDate": null,
+    "restoreDate": null
+  },
+  {
+    "sym": "RARE",
+    "name": "SuperRare",
+    "status": "monitoring",
+    "monDate": "2026-08-11",
+    "delistDate": null,
+    "restoreDate": null
+  },
+  {
+    "sym": "SOPH",
+    "name": "Sophon",
+    "status": "monitoring",
+    "monDate": "2026-08-11",
+    "delistDate": null,
+    "restoreDate": null
+  },
+  {
+    "sym": "ALCX",
+    "name": "Alchemix",
+    "status": "delisting",
+    "monDate": "2026-05-22",
+    "delistDate": "2026-07-10",
+    "restoreDate": null
+  },
+  {
+    "sym": "NFP",
+    "name": "NFPrompt",
+    "status": "delisting",
+    "monDate": "2026-04-30",
+    "delistDate": "2026-07-10",
+    "restoreDate": null
+  },
+  {
+    "sym": "POND",
+    "name": "Marlin",
+    "status": "delisting",
+    "monDate": "2026-04-30",
+    "delistDate": "2026-07-10",
+    "restoreDate": null
+  },
+  {
+    "sym": "ACX",
+    "name": "Across Protocol",
+    "status": "delisting",
+    "monDate": "2026-07-24",
+    "delistDate": "2026-08-17",
+    "restoreDate": null
+  },
+  {
+    "sym": "HFT",
+    "name": "Hashflow",
+    "status": "delisting",
+    "monDate": "2026-05-22",
+    "delistDate": "2026-08-17",
+    "restoreDate": null
+  },
+  {
+    "sym": "PIVX",
+    "name": "PIVX",
+    "status": "delisting",
+    "monDate": "2026-06-18",
+    "delistDate": "2026-08-17",
+    "restoreDate": null
+  },
+  {
+    "sym": "PYR",
+    "name": "Vulcan Forged",
+    "status": "delisting",
+    "monDate": "2026-07-03",
+    "delistDate": "2026-08-17",
+    "restoreDate": null
+  },
+  {
+    "sym": "VANRY",
+    "name": "Vanar Chain",
+    "status": "delisting",
+    "monDate": "2026-07-03",
+    "delistDate": "2026-08-17",
+    "restoreDate": null
+  },
+  {
+    "sym": "VIC",
+    "name": "Viction",
+    "status": "delisting",
+    "monDate": "2026-04-30",
+    "delistDate": "2026-08-17",
+    "restoreDate": null
+  },
+  {
+    "sym": "AEUR",
+    "name": "Binance EUR",
+    "status": "delisted",
+    "monDate": "2026-07-03",
+    "delistDate": "2026-07-31",
+    "restoreDate": null
+  },
+  {
+    "sym": "A2Z",
+    "name": "Arena-Z",
+    "status": "delisted",
+    "monDate": "2026-03-13",
+    "delistDate": "2026-04-01",
+    "restoreDate": null
+  },
+  {
+    "sym": "FORTH",
+    "name": "Ampleforth Governance",
+    "status": "delisted",
+    "monDate": "2026-03-06",
+    "delistDate": "2026-04-01",
+    "restoreDate": null
+  },
+  {
+    "sym": "HOOK",
+    "name": "Hooked Protocol",
+    "status": "delisted",
+    "monDate": "2026-03-06",
+    "delistDate": "2026-04-01",
+    "restoreDate": null
+  },
+  {
+    "sym": "IDEX",
+    "name": "IDEX",
+    "status": "delisted",
+    "monDate": "2025-06-05",
+    "delistDate": "2026-04-01",
+    "restoreDate": null
+  },
+  {
+    "sym": "LRC",
+    "name": "Loopring",
+    "status": "delisted",
+    "monDate": "2026-03-06",
+    "delistDate": "2026-04-01",
+    "restoreDate": null
+  },
+  {
+    "sym": "NTRN",
+    "name": "Neutron",
+    "status": "delisted",
+    "monDate": "2026-03-13",
+    "delistDate": "2026-04-01",
+    "restoreDate": null
+  },
+  {
+    "sym": "RDNT",
+    "name": "Radiant Capital",
+    "status": "delisted",
+    "monDate": "2026-03-13",
+    "delistDate": "2026-04-01",
+    "restoreDate": null
+  },
+  {
+    "sym": "SXP",
+    "name": "Solar",
+    "status": "delisted",
+    "monDate": "2025-12-01",
+    "delistDate": "2026-04-01",
+    "restoreDate": null
+  },
+  {
+    "sym": "BTS",
+    "name": "BitShares",
+    "status": "delisted",
+    "monDate": "2023-07-26",
+    "delistDate": "2023-12-07",
+    "restoreDate": null
+  },
+  {
+    "sym": "NBS",
+    "name": "New BitShares",
+    "status": "delisted",
+    "monDate": "2023-07-26",
+    "delistDate": "2023-12-07",
+    "restoreDate": null
+  },
+  {
+    "sym": "TORN",
+    "name": "Tornado Cash",
+    "status": "delisted",
+    "monDate": "2023-07-26",
+    "delistDate": "2023-12-07",
+    "restoreDate": null
+  },
+  {
+    "sym": "MULTI",
+    "name": "Multichain",
+    "status": "delisted",
+    "monDate": "2023-07-26",
+    "delistDate": "2024-02-20",
+    "restoreDate": null
+  },
+  {
+    "sym": "WAX",
+    "name": "WAX",
+    "status": "delisted",
+    "monDate": "2023-07-26",
+    "delistDate": "2024-02-06",
+    "restoreDate": null
+  },
+  {
+    "sym": "DREP",
+    "name": "DREP",
+    "status": "delisted",
+    "monDate": "2023-07-26",
+    "delistDate": "2024-04-03",
+    "restoreDate": null
+  },
+  {
+    "sym": "LINA",
+    "name": "Linear",
+    "status": "delisted",
+    "monDate": "2023-07-26",
+    "delistDate": "2025-03-28",
+    "restoreDate": null
+  },
+  {
+    "sym": "LOOM",
+    "name": "Loom Network",
+    "status": "delisted",
+    "monDate": "2023-07-26",
+    "delistDate": "2024-08-26",
+    "restoreDate": null
+  },
+  {
+    "sym": "PERL",
+    "name": "PERL",
+    "status": "delisted",
+    "monDate": "2023-07-26",
+    "delistDate": "2023-12-07",
+    "restoreDate": null
+  },
+  {
+    "sym": "CVP",
+    "name": "PowerPool",
+    "status": "delisted",
+    "monDate": "2024-07-01",
+    "delistDate": "2024-08-26",
+    "restoreDate": null
+  },
+  {
+    "sym": "MDX",
+    "name": "Mdex",
+    "status": "delisted",
+    "monDate": "2024-01-04",
+    "delistDate": "2024-07-22",
+    "restoreDate": null
+  },
+  {
+    "sym": "MOB",
+    "name": "MobileCoin",
+    "status": "delisted",
+    "monDate": "2024-01-04",
+    "delistDate": "2024-04-03",
+    "restoreDate": null
+  },
+  {
+    "sym": "VAI",
+    "name": "Vai",
+    "status": "delisted",
+    "monDate": "2024-01-04",
+    "delistDate": "2024-02-20",
+    "restoreDate": null
+  },
+  {
+    "sym": "OOKI",
+    "name": "Ooki Protocol",
+    "status": "delisted",
+    "monDate": "2023-07-26",
+    "delistDate": "2024-11-06",
+    "restoreDate": null
+  },
+  {
+    "sym": "REEF",
+    "name": "Reef",
+    "status": "delisted",
+    "monDate": "2024-01-04",
+    "delistDate": "2024-08-26",
+    "restoreDate": null
+  },
+  {
+    "sym": "GFT",
+    "name": "Gifto",
+    "status": "delisted",
+    "monDate": "2023-07-26",
+    "delistDate": "2024-12-10",
+    "restoreDate": null
+  },
+  {
+    "sym": "IRIS",
+    "name": "IRISnet",
+    "status": "delisted",
+    "monDate": "2024-07-01",
+    "delistDate": "2024-12-10",
+    "restoreDate": null
+  },
+  {
+    "sym": "KEY",
+    "name": "SelfKey",
+    "status": "delisted",
+    "monDate": "2024-10-03",
+    "delistDate": "2024-12-10",
+    "restoreDate": null
+  },
+  {
+    "sym": "AKRO",
+    "name": "Akropolis",
+    "status": "delisted",
+    "monDate": "2023-07-26",
+    "delistDate": "2024-12-25",
+    "restoreDate": null
+  },
+  {
+    "sym": "BLZ",
+    "name": "Bluzelle",
+    "status": "delisted",
+    "monDate": "2024-10-03",
+    "delistDate": "2024-12-25",
+    "restoreDate": null
+  },
+  {
+    "sym": "BAL",
+    "name": "Balancer",
+    "status": "delisted",
+    "monDate": "2024-07-01",
+    "delistDate": "2025-02-20",
+    "restoreDate": null
+  },
+  {
+    "sym": "CTXC",
+    "name": "Cortex",
+    "status": "delisted",
+    "monDate": "2024-07-01",
+    "delistDate": "2025-02-20",
+    "restoreDate": null
+  },
+  {
+    "sym": "DOCK",
+    "name": "Dock",
+    "status": "delisted",
+    "monDate": "2024-07-01",
+    "delistDate": "2024-07-22",
+    "restoreDate": null
+  },
+  {
+    "sym": "HARD",
+    "name": "Kava Lend",
+    "status": "delisted",
+    "monDate": "2024-07-01",
+    "delistDate": "2025-02-20",
+    "restoreDate": null
+  },
+  {
+    "sym": "XMR",
+    "name": "Monero",
+    "status": "delisted",
+    "monDate": "2024-01-04",
+    "delistDate": "2024-02-20",
+    "restoreDate": null
+  },
+  {
+    "sym": "CLV",
+    "name": "Clover Finance",
+    "status": "delisted",
+    "monDate": "2024-10-03",
+    "delistDate": "2025-02-24",
+    "restoreDate": null
+  },
+  {
+    "sym": "CREAM",
+    "name": "Cream Finance",
+    "status": "delisted",
+    "monDate": "2023-07-26",
+    "delistDate": "2025-04-16",
+    "restoreDate": null
+  },
+  {
+    "sym": "ELF",
+    "name": "aelf",
+    "status": "delisted",
+    "monDate": "2023-07-26",
+    "delistDate": "2025-04-16",
+    "restoreDate": null
+  },
+  {
+    "sym": "POLS",
+    "name": "Polkastarter",
+    "status": "delisted",
+    "monDate": "2024-07-01",
+    "delistDate": "2024-07-22",
+    "restoreDate": null
+  },
+  {
+    "sym": "PROS",
+    "name": "Prosper",
+    "status": "delisted",
+    "monDate": "2024-10-03",
+    "delistDate": "2025-04-16",
+    "restoreDate": null
+  },
+  {
+    "sym": "SNT",
+    "name": "Status",
+    "status": "delisted",
+    "monDate": "2024-07-01",
+    "delistDate": "2025-04-16",
+    "restoreDate": null
+  },
+  {
+    "sym": "STMX",
+    "name": "StormX",
+    "status": "delisted",
+    "monDate": "2025-01-02",
+    "delistDate": "2025-02-24",
+    "restoreDate": null
+  },
+  {
+    "sym": "UNFI",
+    "name": "Unifi Protocol",
+    "status": "delisted",
+    "monDate": "2023-07-26",
+    "delistDate": "2024-11-06",
+    "restoreDate": null
+  },
+  {
+    "sym": "VITE",
+    "name": "VITE",
+    "status": "delisted",
+    "monDate": "2024-10-03",
+    "delistDate": "2025-02-24",
+    "restoreDate": null
+  },
+  {
+    "sym": "ALPACA",
+    "name": "Alpaca Finance",
+    "status": "delisted",
+    "monDate": "2025-03-04",
+    "delistDate": "2025-05-02",
+    "restoreDate": null
+  },
+  {
+    "sym": "BURGER",
+    "name": "BurgerCities",
+    "status": "delisted",
+    "monDate": "2025-03-04",
+    "delistDate": "2025-03-28",
+    "restoreDate": null
+  },
+  {
+    "sym": "COMBO",
+    "name": "COMBO",
+    "status": "delisted",
+    "monDate": "2025-03-04",
+    "delistDate": "2025-03-28",
+    "restoreDate": null
+  },
+  {
+    "sym": "TROY",
+    "name": "TROY",
+    "status": "delisted",
+    "monDate": "2023-07-26",
+    "delistDate": "2025-06-02",
+    "restoreDate": null
+  },
+  {
+    "sym": "ALPHA",
+    "name": "Stella",
+    "status": "delisted",
+    "monDate": "2025-06-05",
+    "delistDate": "2025-07-04",
+    "restoreDate": null
+  },
+  {
+    "sym": "BSW",
+    "name": "Biswap",
+    "status": "delisted",
+    "monDate": "2025-05-07",
+    "delistDate": "2025-07-04",
+    "restoreDate": null
+  },
+  {
+    "sym": "KMD",
+    "name": "Komodo",
+    "status": "delisted",
+    "monDate": "2025-06-05",
+    "delistDate": "2025-07-04",
+    "restoreDate": null
+  },
+  {
+    "sym": "LEVER",
+    "name": "LeverFi",
+    "status": "delisted",
+    "monDate": "2025-06-05",
+    "delistDate": "2025-07-04",
+    "restoreDate": null
+  },
+  {
+    "sym": "LTO",
+    "name": "LTO Network",
+    "status": "delisted",
+    "monDate": "2025-05-07",
+    "delistDate": "2025-07-04",
+    "restoreDate": null
+  },
+  {
+    "sym": "AMB",
+    "name": "Ambrosus",
+    "status": "delisted",
+    "monDate": "2023-07-26",
+    "delistDate": "2025-02-24",
+    "restoreDate": null
+  },
+  {
+    "sym": "ANT",
+    "name": "Aragon",
+    "status": "delisted",
+    "monDate": "2024-01-04",
+    "delistDate": "2024-02-20",
+    "restoreDate": null
+  },
+  {
+    "sym": "FIRO",
+    "name": "Firo",
+    "status": "delisted",
+    "monDate": "2024-01-04",
+    "delistDate": "2025-07-25",
+    "restoreDate": null
+  },
+  {
+    "sym": "AERGO",
+    "name": "Aergo",
+    "status": "delisted",
+    "monDate": "2025-03-04",
+    "delistDate": "2025-03-28",
+    "restoreDate": null
+  },
+  {
+    "sym": "AST",
+    "name": "AirSwap",
+    "status": "delisted",
+    "monDate": "2025-03-04",
+    "delistDate": "2025-03-28",
+    "restoreDate": null
+  },
+  {
+    "sym": "BADGER",
+    "name": "Badger",
+    "status": "delisted",
+    "monDate": "2025-03-04",
+    "delistDate": "2025-09-30",
+    "restoreDate": null
+  },
+  {
+    "sym": "KP3R",
+    "name": "Keep3rV1",
+    "status": "delisted",
+    "monDate": "2024-01-04",
+    "delistDate": "2024-11-06",
+    "restoreDate": null
+  },
+  {
+    "sym": "NULS",
+    "name": "NULS",
+    "status": "delisted",
+    "monDate": "2025-03-04",
+    "delistDate": "2025-09-30",
+    "restoreDate": null
+  },
+  {
+    "sym": "PDA",
+    "name": "PlayDapp",
+    "status": "delisted",
+    "monDate": null,
+    "delistDate": "2025-05-02",
+    "restoreDate": null
+  },
+  {
+    "sym": "UFT",
+    "name": "UniLend",
+    "status": "delisted",
+    "monDate": "2025-04-03",
+    "delistDate": "2025-09-30",
+    "restoreDate": null
+  },
+  {
+    "sym": "VIB",
+    "name": "Viberate",
+    "status": "delisted",
+    "monDate": null,
+    "delistDate": "2025-05-02",
+    "restoreDate": null
+  },
+  {
+    "sym": "VIDT",
+    "name": "VIDT DAO",
+    "status": "delisted",
+    "monDate": "2025-04-03",
+    "delistDate": "2025-09-30",
+    "restoreDate": null
+  },
+  {
+    "sym": "VOXEL",
+    "name": "Voxies",
+    "status": "delisted",
+    "monDate": "2025-05-07",
+    "delistDate": "2025-12-17",
+    "restoreDate": null
+  },
+  {
+    "sym": "WING",
+    "name": "Wing Finance",
+    "status": "delisted",
+    "monDate": null,
+    "delistDate": "2025-05-02",
+    "restoreDate": null
+  },
+  {
+    "sym": "FLM",
+    "name": "Flamingo",
+    "status": "delisted",
+    "monDate": "2025-05-07",
+    "delistDate": "2025-11-12",
+    "restoreDate": null
+  },
+  {
+    "sym": "HIFI",
+    "name": "Hifi Finance",
+    "status": "delisted",
+    "monDate": "2025-06-05",
+    "delistDate": "2025-09-17",
+    "restoreDate": null
+  },
+  {
+    "sym": "FIS",
+    "name": "StaFi",
+    "status": "delisted",
+    "monDate": "2025-06-05",
+    "delistDate": "2025-12-17",
+    "restoreDate": null
+  },
+  {
+    "sym": "REI",
+    "name": "REI Network",
+    "status": "delisted",
+    "monDate": "2025-06-05",
+    "delistDate": "2025-12-17",
+    "restoreDate": null
+  },
+  {
+    "sym": "ACA",
+    "name": "Acala Token",
+    "status": "delisted",
+    "monDate": "2026-01-02",
+    "delistDate": "2026-02-13",
+    "restoreDate": null
+  },
+  {
+    "sym": "CHESS",
+    "name": "Tranchess",
+    "status": "delisted",
+    "monDate": "2025-12-01",
+    "delistDate": "2026-02-13",
+    "restoreDate": null
+  },
+  {
+    "sym": "DATA",
+    "name": "Streamr",
+    "status": "delisted",
+    "monDate": "2026-01-02",
+    "delistDate": "2026-02-13",
+    "restoreDate": null
+  },
+  {
+    "sym": "DF",
+    "name": "dForce",
+    "status": "delisted",
+    "monDate": "2025-12-01",
+    "delistDate": "2026-02-13",
+    "restoreDate": null
+  },
+  {
+    "sym": "GHST",
+    "name": "Aavegotchi",
+    "status": "delisted",
+    "monDate": "2025-12-01",
+    "delistDate": "2026-02-13",
+    "restoreDate": null
+  },
+  {
+    "sym": "NKN",
+    "name": "NKN",
+    "status": "delisted",
+    "monDate": "2025-05-07",
+    "delistDate": "2026-02-13",
+    "restoreDate": null
+  },
+  {
+    "sym": "BETA",
+    "name": "Beta Finance",
+    "status": "delisted",
+    "monDate": "2023-10-04",
+    "delistDate": "2026-02-13",
+    "restoreDate": null
+  },
+  {
+    "sym": "MLN",
+    "name": "Enzyme",
+    "status": "delisted",
+    "monDate": "2026-04-14",
+    "delistDate": "2026-05-27",
+    "restoreDate": null
+  },
+  {
+    "sym": "WTC",
+    "name": "Waltonchain",
+    "status": "delisted",
+    "monDate": "2023-10-04",
+    "delistDate": "2023-12-07",
+    "restoreDate": null
+  },
+  {
+    "sym": "PNT",
+    "name": "pNetwork",
+    "status": "delisted",
+    "monDate": null,
+    "delistDate": "2024-04-03",
+    "restoreDate": null
+  },
+  {
+    "sym": "OMG",
+    "name": "OMG Network",
+    "status": "delisted",
+    "monDate": null,
+    "delistDate": "2024-06-17",
+    "restoreDate": null
+  },
+  {
+    "sym": "WAVES",
+    "name": "Waves",
+    "status": "delisted",
+    "monDate": null,
+    "delistDate": "2024-06-17",
+    "restoreDate": null
+  },
+  {
+    "sym": "WNXM",
+    "name": "Wrapped NXM",
+    "status": "delisted",
+    "monDate": null,
+    "delistDate": "2024-06-17",
+    "restoreDate": null
+  },
+  {
+    "sym": "XEM",
+    "name": "NEM",
+    "status": "delisted",
+    "monDate": "2023-10-04",
+    "delistDate": "2024-06-17",
+    "restoreDate": null
+  },
+  {
+    "sym": "BOND",
+    "name": "BarnBridge",
+    "status": "delisted",
+    "monDate": "2023-10-04",
+    "delistDate": "2024-07-22",
+    "restoreDate": null
+  },
+  {
+    "sym": "EPX",
+    "name": "Ellipsis X",
+    "status": "delisted",
+    "monDate": null,
+    "delistDate": "2024-08-26",
+    "restoreDate": null
+  },
+  {
+    "sym": "FOR",
+    "name": "ForTube",
+    "status": "delisted",
+    "monDate": null,
+    "delistDate": "2024-08-26",
+    "restoreDate": null
+  },
+  {
+    "sym": "VGX",
+    "name": "Voyager Token",
+    "status": "delisted",
+    "monDate": null,
+    "delistDate": "2024-08-26",
+    "restoreDate": null
+  },
+  {
+    "sym": "IDRT",
+    "name": "Rupiah Token",
+    "status": "delisted",
+    "monDate": null,
+    "delistDate": "2024-11-06",
+    "restoreDate": null
+  },
+  {
+    "sym": "OAX",
+    "name": "OAX",
+    "status": "delisted",
+    "monDate": null,
+    "delistDate": "2024-12-10",
+    "restoreDate": null
+  },
+  {
+    "sym": "REN",
+    "name": "Ren",
+    "status": "delisted",
+    "monDate": null,
+    "delistDate": "2024-12-10",
+    "restoreDate": null
+  },
+  {
+    "sym": "WRX",
+    "name": "WazirX",
+    "status": "delisted",
+    "monDate": null,
+    "delistDate": "2024-12-25",
+    "restoreDate": null
+  },
+  {
+    "sym": "BAKE",
+    "name": "BakerySwap",
+    "status": "delisted",
+    "monDate": null,
+    "delistDate": "2025-09-17",
+    "restoreDate": null
+  },
+  {
+    "sym": "SLF",
+    "name": "Self Chain",
+    "status": "delisted",
+    "monDate": null,
+    "delistDate": "2025-09-17",
+    "restoreDate": null
+  },
+  {
+    "sym": "KDA",
+    "name": "Kadena",
+    "status": "delisted",
+    "monDate": null,
+    "delistDate": "2025-11-12",
+    "restoreDate": null
+  },
+  {
+    "sym": "UTK",
+    "name": "Utrust",
+    "status": "delisted",
+    "monDate": null,
+    "delistDate": null,
+    "restoreDate": null
+  },
+  {
+    "sym": "ZEN",
+    "name": "Horizen",
+    "status": "restored",
+    "monDate": "2024-01-04",
+    "delistDate": null,
+    "restoreDate": "2024-07-01"
+  },
+  {
+    "sym": "ZEC",
+    "name": "Zcash",
+    "status": "restored",
+    "monDate": "2024-01-04",
+    "delistDate": null,
+    "restoreDate": "2025-07-09"
+  },
+  {
+    "sym": "CVX",
+    "name": "Convex Finance",
+    "status": "restored",
+    "monDate": "2024-07-01",
+    "delistDate": null,
+    "restoreDate": "2025-01-02"
+  },
+  {
+    "sym": "SUN",
+    "name": "SUN",
+    "status": "restored",
+    "monDate": "2023-07-26",
+    "delistDate": null,
+    "restoreDate": "2025-01-02"
+  },
+  {
+    "sym": "GPS",
+    "name": "GoPlus Security",
+    "status": "restored",
+    "monDate": "2025-06-05",
+    "delistDate": null,
+    "restoreDate": "2025-10-09"
+  },
+  {
+    "sym": "FLOW",
+    "name": "Flow",
+    "status": "restored",
+    "monDate": "2026-01-02",
+    "delistDate": null,
+    "restoreDate": "2026-03-06"
+  }
+]
