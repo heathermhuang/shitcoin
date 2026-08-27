@@ -300,6 +300,31 @@ td:has(.mcap),td:has(.vol),td:has(.pct),td:has(.depth),td:has(.risk-score),td:ha
 /* EXCHANGE SECTIONS */
 .ex-section{display:none}
 .ex-section.active{display:block}
+
+/* ACCESSIBILITY
+   Only .search had a :focus style, and it removes its own outline first, so every
+   other control fell back to the browser default on a near-black ground. One
+   consistent, high-contrast ring instead. :focus-visible keeps it off mouse clicks. */
+.ftab:focus-visible,.btn:focus-visible,.tnav-tab:focus-visible,
+th[data-sort]:focus-visible,.pagination button:focus-visible,
+a:focus-visible,.search:focus-visible{
+  outline:2px solid var(--blue);outline-offset:2px;border-radius:4px}
+th[data-sort]{cursor:pointer}
+
+/* Sort direction is conveyed by a CSS triangle, which a screen reader cannot see.
+   aria-sort on the header carries the same information; this keeps the visual and
+   the announced state from drifting. */
+th[data-sort][aria-sort="ascending"],th[data-sort][aria-sort="descending"]{color:var(--text-1)}
+
+/* Seven infinite animations ran unguarded — two of them animating box-shadow,
+   which repaints, once per matching row. */
+@media (prefers-reduced-motion: reduce){
+  *,*::before,*::after{
+    animation-duration:0.001ms !important;
+    animation-iteration-count:1 !important;
+    transition-duration:0.001ms !important;
+    scroll-behavior:auto !important}
+}
 </style>
 <script type="application/ld+json">
 {
@@ -376,16 +401,16 @@ td:has(.mcap),td:has(.vol),td:has(.pct),td:has(.depth),td:has(.risk-score),td:ha
         <div class="tnav-divider"></div>
         <div class="tnav-scroll">
             <div class="tnav-tabs">
-                <button class="tnav-tab binance active" id="ex-tab-binance" onclick="switchExchange('binance')">
-                    <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path fill="#F0B90B" d="M7 1 4.8 3.2 7 5.4 9.2 3.2z"/><path fill="#F0B90B" d="M1 7 3.2 4.8 5.4 7 3.2 9.2z"/><path fill="#F0B90B" d="M13 7 10.8 4.8 8.6 7 10.8 9.2z"/><path fill="#F0B90B" d="M7 8.6 4.8 10.8 7 13 9.2 10.8z"/><path fill="#F0B90B" d="M7 4.8 5.1 6.7 7 8.6 8.9 6.7z"/></svg>
+                <button class="tnav-tab binance active" id="ex-tab-binance" aria-label="Binance monitor" onclick="switchExchange('binance')">
+                    <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true" focusable="false"><path fill="#F0B90B" d="M7 1 4.8 3.2 7 5.4 9.2 3.2z"/><path fill="#F0B90B" d="M1 7 3.2 4.8 5.4 7 3.2 9.2z"/><path fill="#F0B90B" d="M13 7 10.8 4.8 8.6 7 10.8 9.2z"/><path fill="#F0B90B" d="M7 8.6 4.8 10.8 7 13 9.2 10.8z"/><path fill="#F0B90B" d="M7 4.8 5.1 6.7 7 8.6 8.9 6.7z"/></svg>
                     Binance
                 </button>
-                <button class="tnav-tab coinbase" id="ex-tab-coinbase" onclick="switchExchange('coinbase')">
-                    <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><rect width="14" height="14" rx="3.5" fill="#0052FF"/><circle cx="7" cy="7" r="3.5" fill="#0052FF"/><circle cx="7" cy="7" r="3.5" stroke="white" stroke-width="1.5" fill="none"/><rect x="3.5" y="5.9" width="7" height="2.2" fill="#0052FF"/></svg>
+                <button class="tnav-tab coinbase" id="ex-tab-coinbase" aria-label="Coinbase monitor" onclick="switchExchange('coinbase')">
+                    <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true" focusable="false"><rect width="14" height="14" rx="3.5" fill="#0052FF"/><circle cx="7" cy="7" r="3.5" fill="#0052FF"/><circle cx="7" cy="7" r="3.5" stroke="white" stroke-width="1.5" fill="none"/><rect x="3.5" y="5.9" width="7" height="2.2" fill="#0052FF"/></svg>
                     Coinbase
                 </button>
-                <a class="tnav-tab stablecoins" id="ex-tab-stablecoins" href="https://stablecoin.io">
-                    <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><circle cx="7" cy="7" r="6.5" stroke="#22c55e" stroke-width="1"/><text x="7" y="10.5" text-anchor="middle" font-size="8" font-weight="700" fill="#22c55e" font-family="IBM Plex Mono,monospace">$</text></svg>
+                <a class="tnav-tab stablecoins" id="ex-tab-stablecoins" aria-label="Stablecoin monitor at stablecoin.io" href="https://stablecoin.io">
+                    <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true" focusable="false"><circle cx="7" cy="7" r="6.5" stroke="#22c55e" stroke-width="1"/><text x="7" y="10.5" text-anchor="middle" font-size="8" font-weight="700" fill="#22c55e" font-family="IBM Plex Mono,monospace">$</text></svg>
                     Stablecoins
                 </a>
             </div>
@@ -421,18 +446,18 @@ td:has(.mcap),td:has(.vol),td:has(.pct),td:has(.depth),td:has(.risk-score),td:ha
 <div class="tbl-wrap">
     <table>
         <thead><tr>
-            <th data-sort="symbol" onclick="bnSortBy('symbol')">Token</th>
-            <th data-sort="status" onclick="bnSortBy('status')">Status</th>
-            <th data-sort="risk" onclick="bnSortBy('risk')" title="Risk score: volume + mcap + spread + status">Risk</th>
-            <th class="col-days" data-sort="daysOnMon" onclick="bnSortBy('daysOnMon')" title="Days since monitoring tag added">Days</th>
-            <th class="col-mon" data-sort="monDate" onclick="bnSortBy('monDate')">Mon. Added</th>
-            <th data-sort="delistDate" onclick="bnSortBy('delistDate')">Delist Date</th>
-            <th data-sort="price" onclick="bnSortBy('price')">Price</th>
-            <th data-sort="change" onclick="bnSortBy('change')">24h %</th>
-            <th class="col-vol" data-sort="vol" onclick="bnSortBy('vol')">24h Vol</th>
-            <th class="col-mcap" data-sort="mcap" onclick="bnSortBy('mcap')">Mkt Cap</th>
-            <th class="col-spread" data-sort="spread" onclick="bnSortBy('spread')" title="Binance bid/ask spread % (via CoinGecko) — wider = thinner liquidity, higher delist risk">Spread</th>
-            <th class="col-also" title="Also listed on other exchanges">Also On</th>
+            <th scope="col" tabindex="0" aria-sort="none" data-sort="symbol" onclick="bnSortBy('symbol')">Token</th>
+            <th scope="col" tabindex="0" aria-sort="none" data-sort="status" onclick="bnSortBy('status')">Status</th>
+            <th scope="col" tabindex="0" aria-sort="none" data-sort="risk" onclick="bnSortBy('risk')" title="Risk score: volume + mcap + spread + status">Risk</th>
+            <th scope="col" tabindex="0" aria-sort="none" class="col-days" data-sort="daysOnMon" onclick="bnSortBy('daysOnMon')" title="Days since monitoring tag added">Days</th>
+            <th scope="col" tabindex="0" aria-sort="none" class="col-mon" data-sort="monDate" onclick="bnSortBy('monDate')">Mon. Added</th>
+            <th scope="col" tabindex="0" aria-sort="none" data-sort="delistDate" onclick="bnSortBy('delistDate')">Delist Date</th>
+            <th scope="col" tabindex="0" aria-sort="none" data-sort="price" onclick="bnSortBy('price')">Price</th>
+            <th scope="col" tabindex="0" aria-sort="none" data-sort="change" onclick="bnSortBy('change')">24h %</th>
+            <th scope="col" tabindex="0" aria-sort="none" class="col-vol" data-sort="vol" onclick="bnSortBy('vol')">24h Vol</th>
+            <th scope="col" tabindex="0" aria-sort="none" class="col-mcap" data-sort="mcap" onclick="bnSortBy('mcap')">Mkt Cap</th>
+            <th scope="col" tabindex="0" aria-sort="none" class="col-spread" data-sort="spread" onclick="bnSortBy('spread')" title="Binance bid/ask spread % (via CoinGecko) — wider = thinner liquidity, higher delist risk">Spread</th>
+            <th scope="col" class="col-also" title="Also listed on other exchanges">Also On</th>
         </tr></thead>
         <tbody id="bn-tbody"></tbody>
     </table>
@@ -492,16 +517,16 @@ td:has(.mcap),td:has(.vol),td:has(.pct),td:has(.depth),td:has(.risk-score),td:ha
 <div class="tbl-wrap">
 <table>
 <thead><tr>
-    <th data-sort="symbol" onclick="cbSortBy('symbol')">Token</th>
-    <th data-sort="status" onclick="cbSortBy('status')">Status</th>
-    <th data-sort="risk" onclick="cbSortBy('risk')" title="Risk score based on volume, mcap, exchange support">Risk</th>
-    <th data-sort="price" onclick="cbSortBy('price')">Price</th>
-    <th data-sort="change" onclick="cbSortBy('change')">24h %</th>
-    <th class="col-vol" data-sort="vol" onclick="cbSortBy('vol')">24h Vol</th>
-    <th class="col-mcap" data-sort="mcap" onclick="cbSortBy('mcap')">Mkt Cap</th>
-    <th class="col-bid" data-sort="bidDepth" onclick="cbSortBy('bidDepth')" title="Bid depth within 2% below price">Bid -2%</th>
-    <th class="col-ask" data-sort="askDepth" onclick="cbSortBy('askDepth')" title="Ask depth within 2% above price">Ask +2%</th>
-    <th class="col-also" title="Also listed on other exchanges">Also On</th>
+    <th scope="col" tabindex="0" aria-sort="none" data-sort="symbol" onclick="cbSortBy('symbol')">Token</th>
+    <th scope="col" tabindex="0" aria-sort="none" data-sort="status" onclick="cbSortBy('status')">Status</th>
+    <th scope="col" tabindex="0" aria-sort="none" data-sort="risk" onclick="cbSortBy('risk')" title="Risk score based on volume, mcap, exchange support">Risk</th>
+    <th scope="col" tabindex="0" aria-sort="none" data-sort="price" onclick="cbSortBy('price')">Price</th>
+    <th scope="col" tabindex="0" aria-sort="none" data-sort="change" onclick="cbSortBy('change')">24h %</th>
+    <th scope="col" tabindex="0" aria-sort="none" class="col-vol" data-sort="vol" onclick="cbSortBy('vol')">24h Vol</th>
+    <th scope="col" tabindex="0" aria-sort="none" class="col-mcap" data-sort="mcap" onclick="cbSortBy('mcap')">Mkt Cap</th>
+    <th scope="col" tabindex="0" aria-sort="none" class="col-bid" data-sort="bidDepth" onclick="cbSortBy('bidDepth')" title="Bid depth within 2% below price">Bid -2%</th>
+    <th scope="col" tabindex="0" aria-sort="none" class="col-ask" data-sort="askDepth" onclick="cbSortBy('askDepth')" title="Ask depth within 2% above price">Ask +2%</th>
+    <th scope="col" class="col-also" title="Also listed on other exchanges">Also On</th>
 </tr></thead>
 <tbody id="cb-tBody"><tr><td colspan="10" style="text-align:center;padding:40px;color:var(--text-3)">Loading Coinbase data... If this persists, try hard refresh (Ctrl+Shift+R)</td></tr></tbody>
 </table>
@@ -1455,6 +1480,7 @@ function renderTable() {
             if (sort.dir === 'asc') th.classList.add('asc-dir');
         }
     });
+    window.syncAriaSort('#bn-section');
 
     // Pagination
     const total = list.length;
@@ -2006,6 +2032,7 @@ function cbRenderAll() {
             if (sortAsc) th.classList.add('asc-dir');
         }
     });
+    window.syncAriaSort('#cb-section');
 
     // Update stats
     const online = allCoins.filter(c => c.status === 'online' && !c.limitOnly);
@@ -2366,6 +2393,27 @@ document.addEventListener('DOMContentLoaded', () => {
     if (hash === 'coinbase') switchExchange('coinbase');
     else switchExchange('binance');
 });
+
+// Sortable column headers are <th onclick=...>, which the keyboard cannot reach.
+// They now carry tabindex="0"; Enter and Space activate them, matching what a
+// <button> would do. Delegated so it covers both tables and any future column.
+document.addEventListener('keydown', e => {
+    if (e.key !== 'Enter' && e.key !== ' ') return;
+    const th = e.target.closest?.('th[data-sort]');
+    if (!th) return;
+    e.preventDefault();
+    th.click();
+});
+
+// Mirror the visual sort indicator into aria-sort so it is announced, not just seen.
+function syncAriaSort(section) {
+    document.querySelectorAll(`${section} th[data-sort]`).forEach(th => {
+        th.setAttribute('aria-sort',
+            !th.classList.contains('sorted') ? 'none'
+            : th.classList.contains('asc-dir') ? 'ascending' : 'descending');
+    });
+}
+window.syncAriaSort = syncAriaSort;
 
 // Keyboard shortcuts
 document.addEventListener('keydown', e => {
