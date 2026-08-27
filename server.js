@@ -91,7 +91,32 @@ function doFetch(url, timeoutMs = 8000) {
   });
 }
 
-async function cachedFetch(key, url, ttl = 120) {
+// Mirrors projectExchangeInfo() in worker.js. Binance's exchangeInfo is 16.7 MB
+// of which index.html reads three fields per symbol; forwarding the catalogue
+// costs a 16.7 MB download and ~271 ms of blocking JSON.parse per load. Keeping
+// the {symbols:[...]} shape and every symbol means the same client code works
+// unchanged against both this and the raw document smartFetch falls back to.
+// Returns null if the body is not the expected shape, and the caller forwards
+// it untouched.
+//
+// This has to exist in BOTH entry points: server.js is the dev server and
+// worker.js is production, and a projection in only one of them is exactly the
+// kind of local/prod divergence that hides bugs until deploy.
+function projectExchangeInfo(buf) {
+  try {
+    const j = JSON.parse(buf.toString());
+    if (!j || !Array.isArray(j.symbols)) return null;
+    return Buffer.from(JSON.stringify({
+      symbols: j.symbols.map(s => ({
+        baseAsset: s.baseAsset,
+        quoteAsset: s.quoteAsset,
+        status: s.status,
+      })),
+    }));
+  } catch { return null; }
+}
+
+async function cachedFetch(key, url, ttl = 120, transform = null) {
   const cached = cacheGet(key);
   if (cached) {
     const [data, ct, ts] = cached;
@@ -100,7 +125,7 @@ async function cachedFetch(key, url, ttl = 120) {
     // Stale — revalidate in background
     if (!refreshing.has(key)) {
       refreshing.add(key);
-      doFetch(url).then(([d, c]) => { cacheSet(key, d, c); refreshing.delete(key); })
+      doFetch(url).then(([d, c]) => { cacheSet(key, transform ? (transform(d) || d) : d, c); refreshing.delete(key); })
                   .catch(() => refreshing.delete(key));
     }
     return [data, ct, 200];
@@ -115,7 +140,9 @@ async function cachedFetch(key, url, ttl = 120) {
           return [data, ct, 503]; // Return as error, don't cache
         }
       } catch {} // Not JSON or array response — safe to cache
-      cacheSet(key, data, ct);
+      const out = transform ? (transform(data) || data) : data;
+      cacheSet(key, out, ct);
+      return [out, ct, 200];
     }
     return [data, ct, status < 400 ? 200 : 502];
   } catch {
@@ -145,7 +172,8 @@ const EXCHANGE_URLS = {
 async function routeRequest(reqPath) {
   if (reqPath.startsWith('/api/')) {
     const p = reqPath.slice(4);
-    return cachedFetch('binance:' + p, BINANCE_BASE + p, ttlFor(p));
+    const xf = p.startsWith('/exchangeInfo') ? projectExchangeInfo : null;
+    return cachedFetch('binance:' + p + (xf ? ':v2' : ''), BINANCE_BASE + p, ttlFor(p), xf);
   }
   if (reqPath.startsWith('/cb/')) {
     const p = reqPath.slice(3);
@@ -160,7 +188,9 @@ async function routeRequest(reqPath) {
     const ex = reqPath.slice(4);
     const url = EXCHANGE_URLS[ex];
     if (!url) return [Buffer.from('{"error":"unknown"}'), 'application/json', 404];
-    return cachedFetch('exchange:' + ex, url, 1800);
+    // /ex/binance is the same exchangeInfo document as /api/exchangeInfo.
+    const xf = ex === 'binance' ? projectExchangeInfo : null;
+    return cachedFetch('exchange:' + ex + (xf ? ':v2' : ''), url, 1800, xf);
   }
   if (reqPath.startsWith('/llama/')) {
     const p = reqPath.slice(6);

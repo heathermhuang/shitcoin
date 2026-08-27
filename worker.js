@@ -178,8 +178,44 @@ async function proxyFetch(targetUrl, proxy, headers = {}) {
   return new Response(body, { status, headers: { 'Content-Type': h['content-type'] || 'application/json' } });
 }
 
+// ---- exchangeInfo projection -----------------------------------------------
+// Binance's exchangeInfo is 16.7 MB: 3,684 symbols x 26 fields. Both consumers
+// in index.html read exactly three of them, with the same filter —
+//   symbols.filter(s => s.quoteAsset === 'USDT' && s.status === 'TRADING')
+//          .map(s => s.baseAsset)
+// — which is 484 tickers, about 2 KB of actual signal. Forwarding the catalogue
+// cost every visitor a 16.7 MB download and 271 ms of blocking JSON.parse, on
+// load and again on every 5-minute refresh.
+//
+// The projection deliberately keeps the {symbols:[...]} shape and every symbol,
+// narrowing each entry to the three fields that are read. That matters: when the
+// Worker cannot reach Binance, smartFetch falls back to fetching the RAW
+// document straight from the browser, and that leg cannot be projected. Same
+// shape and same field names on both legs means the identical client code
+// produces identical results either way — no normaliser, and no chance of the
+// proxy and fallback paths quietly disagreeing.
+//
+// Returns null if the body is not the shape we expect, in which case the caller
+// forwards it untouched.
+function projectExchangeInfo(buf) {
+  try {
+    const j = JSON.parse(new TextDecoder().decode(buf));
+    if (!j || !Array.isArray(j.symbols)) return null;
+    return JSON.stringify({
+      symbols: j.symbols.map(s => ({
+        baseAsset: s.baseAsset,
+        quoteAsset: s.quoteAsset,
+        status: s.status,
+      })),
+    });
+  } catch { return null; }
+}
+
 async function cachedProxy(request, upstream, ttl, apiKey, proxy, relay, ctx) {
   const cache = caches.default;
+  // Both /api/exchangeInfo and /ex/binance resolve to this same upstream URL —
+  // and therefore to the same cache key — so one projection covers both tabs.
+  const isExchangeInfo = upstream.startsWith(BINANCE_BASE + '/exchangeInfo');
   // CoinGecko: store cached entries for 24h so stale-while-revalidate survives rate-limit windows
   const isCoinGecko = upstream.includes('coingecko.com');
   const storageTtl = isCoinGecko ? 86400 : ttl * 10;
@@ -225,7 +261,12 @@ async function cachedProxy(request, upstream, ttl, apiKey, proxy, relay, ctx) {
     : useProxy
     ? proxyFetch(upstream, proxy, upstreamHeaders)
     : fetch(upstream, { headers: upstreamHeaders, cf: { cacheTtl: ttl, cacheEverything: true } });
-  const cacheKey = new Request(upstream, { headers: { 'Cache-Control': 'no-transform' } });
+  // Cache entries written before the projection landed hold the raw 16.7 MB
+  // document, and a cache hit is served as-is — so without a new key those would
+  // keep being served, unprojected, until the entry aged out (up to 5 hours).
+  // Versioning the key retires them the moment this deploys. Bump it again if
+  // the projected shape ever changes.
+  const cacheKey = new Request(upstream + (isExchangeInfo ? '?_shape=v2' : ''), { headers: { 'Cache-Control': 'no-transform' } });
 
   const cached = await cache.match(cacheKey);
   if (cached) {
@@ -237,9 +278,10 @@ async function cachedProxy(request, upstream, ttl, apiKey, proxy, relay, ctx) {
       // refresh that warms the cache often never landed and entries just served
       // stale until eviction.
       const revalidate = doFetch()
-        .then(r => r.ok ? r.blob().then(b => {
-          const fresh = new Response(b, { headers: {
-            'Content-Type': r.headers.get('Content-Type') || 'application/json',
+        .then(r => r.ok ? r.arrayBuffer().then(buf => {
+          const projected = isExchangeInfo ? projectExchangeInfo(buf) : null;
+          const fresh = new Response(projected ?? buf, { headers: {
+            'Content-Type': projected ? 'application/json' : (r.headers.get('Content-Type') || 'application/json'),
             'X-Cached-At': new Date().toUTCString(),
             'Cache-Control': cacheControl,
           }});
@@ -268,8 +310,11 @@ async function cachedProxy(request, upstream, ttl, apiKey, proxy, relay, ctx) {
       });
     }
     const body = await upstream_resp.arrayBuffer();
-    const ct = upstream_resp.headers.get('Content-Type') || 'application/json';
-    const response = new Response(body, {
+    // Project before caching, so the small copy is what the edge stores and what
+    // every later visitor is served.
+    const projected = isExchangeInfo ? projectExchangeInfo(body) : null;
+    const ct = projected ? 'application/json' : (upstream_resp.headers.get('Content-Type') || 'application/json');
+    const response = new Response(projected ?? body, {
       headers: {
         'Content-Type': ct,
         'X-Cached-At': new Date().toUTCString(),
