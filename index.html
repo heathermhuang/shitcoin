@@ -544,6 +544,182 @@ th[data-sort][aria-sort="ascending"],th[data-sort][aria-sort="descending"]{color
 
 <script>
 // Known differences between CoinGecko IDs and CoinMarketCap slugs
+// Symbol -> CoinGecko id. ONE map, shared by both exchange modules.
+// There used to be two — `overrides` in the Binance module (232 entries) and
+// `CG_OVERRIDES` in the Coinbase module (242) — carrying 101 of the same symbols.
+// They agreed on all 101 at the time of merging, but nothing kept them in step, so
+// adding a symbol to one tab silently left the other showing a different coin's
+// market cap. AGENTS.md warned about exactly this.
+const COIN_IDS = {
+    'CGLD':'celo','COSMOSDYDX':'dydx-chain','LSETH':'liquid-staked-ethereum','CBETH':'coinbase-wrapped-staked-eth',
+    'MSOL':'msol','JITOSOL':'jito-staked-sol','POL':'polygon-ecosystem-token','RENDER':'render-token',
+    'FET':'artificial-superintelligence-alliance','BERA':'berachain','HYPE':'hyperliquid','PEPE':'pepe',
+    'BONK':'bonk','WIF':'dogwifcoin','FLOKI':'floki','SHIB':'shiba-inu',
+    'DOGE':'dogecoin','SOL':'solana','ETH':'ethereum','BTC':'bitcoin',
+    'ADA':'cardano','DOT':'polkadot','LINK':'chainlink','AVAX':'avalanche-2',
+    'ATOM':'cosmos','NEAR':'near','ICP':'internet-computer','FIL':'filecoin',
+    'ARB':'arbitrum','OP':'optimism','SUI':'sui','SEI':'sei-network',
+    'TIA':'celestia','INJ':'injective-protocol','STX':'blockstack','TAO':'bittensor',
+    'XLM':'stellar','ALGO':'algorand','HBAR':'hedera-hashgraph','VET':'vechain',
+    'ETC':'ethereum-classic','BCH':'bitcoin-cash','LTC':'litecoin','CRO':'crypto-com-chain',
+    'GRT':'the-graph','IMX':'immutable-x','SAND':'the-sandbox','MANA':'decentraland',
+    'APE':'apecoin','AXS':'axie-infinity','AAVE':'aave','SNX':'havven',
+    'CRV':'curve-dao-token','COMP':'compound-governance-token','UNI':'uniswap','LDO':'lido-dao',
+    'ENS':'ethereum-name-service','BNB':'binancecoin','ONDO':'ondo-finance','TRUMP':'official-trump',
+    'JASMY':'jasmycoin','KSM':'kusama','FLOW':'flow','EGLD':'elrond-erd-2',
+    'DASH':'dash','MINA':'mina-protocol','RSR':'reserve-rights-token','SKL':'skale',
+    'ANKR':'ankr','STORJ':'storj','COTI':'coti','CHZ':'chiliz',
+    'BAT':'basic-attention-token','PAXG':'pax-gold','QNT':'quant-network','SPELL':'spell-token',
+    'S':'sonic-3','IP':'story-protocol','PENGU':'pudgy-penguins','FARTCOIN':'fartcoin',
+    'SPX':'spx6900','MOG':'mog-coin','GIGA':'gigachad-2','POPCAT':'popcat',
+    'WLD':'worldcoin-wld','ENA':'ethena','STRK':'starknet','W':'wormhole',
+    'PYTH':'pyth-network','JTO':'jito-governance-token','JUPITER':'jupiter-exchange-solana','FUN1':'funfair',
+    'EIGEN':'eigenlayer','MORPHO':'morpho','KAITO':'kaito','TON':'the-open-network',
+    'HNT':'helium','PENDLE':'pendle','ACH':'alchemy-pay','GLM':'golem',
+    'NKN':'nkn','OXT':'orchid-protocol','AMP':'amp-token','ROSE':'oasis-network',
+    'FLR':'flare-networks','KAVA':'kava','XCN':'onyxcoin','BLZ':'bluzelle',
+    'DNT':'district0x','CTSI':'cartesi','RLC':'iexec-rlc','OGN':'origin-protocol',
+    'REQ':'request-network','NMR':'numeraire','PERP':'perpetual-protocol','SUSHI':'sushi',
+    'BNT':'bancor','KNC':'kyber-network-crystal','LPT':'livepeer','BAL':'balancer',
+    'FARM':'harvest-finance','MLN':'melon','RPL':'rocket-pool','CVX':'convex-finance',
+    'T':'threshold-network-token','LQTY':'liquity','FORTH':'ampleforth-governance-token','LRC':'loopring',
+    'GTC':'gitcoin','OCEAN':'ocean-protocol','IDEX':'idex','XRP':'ripple',
+    'ZRX':'0x','MKR':'maker','ZEC':'zcash','XTZ':'tezos',
+    'BAND':'band-protocol','OMG':'omisego','UMA':'uma','YFI':'yearn-finance',
+    'YFII':'yfii','REN':'republic-protocol','CVC':'civic','WBTC':'wrapped-bitcoin',
+    'RUNE':'thorchain','AUDIO':'audius','ANC':'anchor-protocol','ALICE':'my-neighbor-alice',
+    'CELR':'celer-network','CLV':'clover-finance','CTX':'cryptex-finance','DYDX':'dydx-chain',
+    'ERN':'ethernity-chain','POND':'marlin','QUICK':'quickswap','SHPING':'shping',
+    'WCFG':'wrapped-centrifuge','BTRST':'braintrust','AGLD':'adventure-gold','RBN':'ribbon-finance',
+    'UNFI':'unifi-protocol-dao','GODS':'gods-unchained','ARPA':'arpa-chain','DREP':'drep-new',
+    'TVK':'terra-virtua-kolect','DEXT':'dextools','POLS':'polkastarter','XYO':'xyo-network',
+    'SUPER':'superfarm','FLY':'franklin','BOBA':'boba-network','RARE':'superrare',
+    'POWR':'power-ledger','GNS':'gains-network','SYN':'synapse-2','COVAL':'circuits-of-value',
+    'MAGIC':'magic','DYP':'defi-yield-protocol','FORT':'forta','STPT':'stp-network',
+    'VELO':'velo','LCNX':'lightcoin','BLUR':'blur','PRIME':'echelon-prime',
+    'ZETA':'zetachain','PYUSD':'paypal-usd','BADGER':'badger-dao','KRL':'kryll',
+    'META':'metadium','ACS':'access-protocol','AVT':'aventus','MNDE':'marinade',
+    'FOX':'shapeshift-fox-token','A8':'ancient8','VOXEL':'voxies','ANT':'aragon',
+    'ATA':'automata','BIT':'bitdao','BSV':'bitcoin-cash-sv','CRPT':'crypterium',
+    'DAR':'mines-of-dalarnia','DDX':'derivadao','ENJ':'enjincoin','GNT':'golem',
+    'KEEP':'keep-network','LIT':'litentry','LOKA':'league-of-kingdoms','LOOM':'loom-network-new',
+    'MATIC':'matic-network','MCO2':'moss-carbon-credit','MEDIA':'media-network','MIR':'mirror-protocol',
+    'MOBILE':'helium-mobile','MONA':'monavale','MOVE':'movement','MTL':'metal',
+    'MULTI':'multichain','MUSE':'muse-2','MXC':'mxc','NU':'nucypher',
+    'OOKI':'ooki','ORN':'orion-protocol','PLA':'playdapp','POLY':'polymath',
+    'PRQ':'parsiq','RGT':'rari-governance-token','RLY':'rally-2','RNDR':'render-token',
+    'SEAM':'seamless-protocol','SNT':'status','TIME':'chronobank','TONE':'te-food',
+    'TRIBE':'tribe-2','TRU':'truefi','WAMPL':'wrapped-ampleforth','WLUNA':'wrapped-terra',
+    'BOND':'barnbridge','REP':'augur','GAL':'project-galaxy','UST':'terrausd',
+    'PYR':'vulcan-forged','VANRY':'vanar-chain','1MBABYDOGE':'baby-doge-coin','FTT':'ftx-token',
+    'ELF':'aelf','SUN':'sun-token','ZEN':'horizen','KEY':'selfkey',
+    'ARK':'ark','FIRO':'zcoin','MBL':'moviebloc','IRIS':'iris-network',
+    'ALPHA':'stella-2','PORTAL':'portal-2','BIFI':'beefy-finance','HOOK':'hooked-protocol',
+    'NTRN':'neutron-3','RDNT':'radiant-capital','GPS':'goplus-security','D':'dar-open-network',
+    'DENT':'dent','SXP':'swipe','QI':'benqi','AWE':'stp-network',
+    'FUN':'funfair','ARDR':'ardor','WAN':'wanchain','COS':'contentos',
+    'DEGO':'dego-finance','MBOX':'mobox','FIO':'fio-protocol','PHB':'phoenix-global',
+    'A2Z':'arena-z','MDT':'measurable-data-token','FLM':'flamingo-finance','CHESS':'tranchess',
+    'GHST':'aavegotchi','ACA':'acala','BETA':'beta-finance','HIFI':'hifi-finance',
+    'DATA':'streamr','DF':'dforce-token','COMBO':'furucombo','ALPACA':'alpaca-finance',
+    'BURGER':'burger-swap','STMX':'storm','AERGO':'aergo','AST':'airswap',
+    'NULS':'nuls','PDA':'playdapp','UFT':'unlend-finance','VIB':'viberate',
+    'VIDT':'vidt-dao','WING':'wing-finance','KP3R':'keep3rv1','DOCK':'dock',
+    'HARD':'kava-lend','CTXC':'cortex','CREAM':'cream-2','PROS':'prosper',
+    'VITE':'vite','KMD':'komodo','LEVER':'leverfi','BSW':'biswap',
+    'LTO':'lto-network','AMB':'ambrosus','REI':'rei-network','FIS':'stafi',
+    'AKRO':'akropolis','REEF':'reef','GFT':'gifto','LINA':'linear-finance',
+    'GLMR':'moonbeam','ICX':'icon','MOVR':'moonriver','SOPH':'sophon',
+    'LSK':'lisk','SCRT':'secret','APT':'aptos','GMX':'gmx',
+    'CAKE':'pancakeswap-token','QKC':'quark-chain','IOST':'iostoken','KGST':'kanga-exchange',
+    'BICO':'biconomy','XNO':'nano','OSMO':'osmosis','HOT':'holotoken',
+    'WIN':'wink','TFUEL':'theta-fuel','ONE':'harmony','IOTX':'iotex',
+    'HIVE':'hive','CHR':'chromia','SC':'siacoin','VTHO':'vethor-token',
+    'DGB':'digibyte','DCR':'decred','JST':'just','TRB':'tellor',
+    'DIA':'dia-data','BEL':'bella-protocol','UTK':'utrust','XVS':'venus',
+    'CTK':'certik','STRAX':'stratis','AVA':'concierge-io','PSG':'paris-saint-germain-fan-token',
+    'JUV':'juventus-fan-token','CELO':'celo','RIF':'rif-token','RVN':'ravencoin',
+    'ZIL':'zilliqa','ONT':'ontology','ONG':'ong','MDX':'mdex',
+    'VAI':'vai','MOB':'mobilecoin','TORN':'tornado-cash','WAX':'wax',
+    'CVP':'powerpool','TLM':'alien-worlds','ACT':'act-i-the-ai-prophecy','HEI':'heima',
+    'VIC':'tomochain','VELODROME':'velodrome-finance','HFT':'hashflow','NOM':'nomina',
+    'EPIC':'epic-chain','BTS':'bitshares','SYS':'syscoin','PERL':'perlin',
+    'XMR':'monero'
+};
+
+// Symbol -> CoinMarketCap slug, for tickers whose CMC slug is not the CoinGecko id.
+// Hoisted out of getCMCSlug(), which is called once per rendered row — this
+// 148-key literal was being rebuilt 100 times per table paint.
+const CMC_SLUGS = {
+    'BTC':'bitcoin','ETH':'ethereum','BNB':'bnb','SOL':'solana',
+    'XRP':'xrp','DOGE':'dogecoin','ADA':'cardano','AVAX':'avalanche',
+    'DOT':'polkadot','LINK':'chainlink','SHIB':'shiba-inu','UNI':'uniswap',
+    'ATOM':'cosmos','FIL':'filecoin','APT':'aptos','ARB':'arbitrum',
+    'OP':'optimism','SUI':'sui','NEAR':'near-protocol','INJ':'injective',
+    'ONDO':'ondo-finance','RENDER':'render','FET':'fetch-ai','PEPE':'pepe',
+    'BONK':'bonk','FLOKI':'floki','WLD':'worldcoin-wld','WIF':'dogwifhat',
+    'MLN':'enzyme','ZEN':'horizen','ZEC':'zcash','CVX':'convex-finance',
+    'BAL':'balancer','GRT':'the-graph','IMX':'immutable','SAND':'the-sandbox',
+    'MANA':'decentraland','AAVE':'aave','CRV':'curve-dao-token','LDO':'lido-dao',
+    'ENS':'ethereum-name-service','SNX':'synthetix-network-token','SUSHI':'sushiswap','HBAR':'hedera',
+    'ALGO':'algorand','TAO':'bittensor','FLOW':'flow','JASMY':'jasmycoin',
+    'FTT':'ftx-token','ARK':'ark','ARDR':'ardor','PERP':'perpetual-protocol',
+    'MBL':'moviebloc','AWE':'stp-network','MOVE':'movement','BIFI':'beefy-finance',
+    'MDT':'measurable-data-token','PORTAL':'portal-gaming','WAN':'wanchain','DENT':'dent',
+    'COS':'contentos','DEGO':'dego-finance','FUN':'funfair','MBOX':'mobox',
+    'OXT':'orchid','ATA':'automata','FIO':'fio-protocol','GTC':'gitcoin',
+    'PHB':'phoenix-global','QI':'benqi','A2Z':'arena-z','FORTH':'ampleforth-governance-token',
+    'HOOK':'hooked-protocol','IDEX':'idex','LRC':'loopring','NTRN':'neutron-3',
+    'RDNT':'radiant-capital','SXP':'swipe','GPS':'goplus-security','SUN':'sun-token',
+    'BSW':'biswap','KMD':'komodo','LEVER':'leverfi','LTO':'lto-network',
+    'FLM':'flamingo-finance','HIFI':'hifi-finance','FIS':'stafi','REI':'rei-network',
+    'NKN':'nkn','ACA':'acala','CHESS':'tranchess','DATA':'streamr',
+    'DF':'dforce-token','GHST':'aavegotchi','BETA':'beta-finance','AERGO':'aergo',
+    'AST':'airswap','BADGER':'badger-dao','D':'mines-of-dalarnia','NULS':'nuls',
+    'VOXEL':'voxies','WING':'wing-finance','XMR':'monero','ALPACA':'alpaca-finance',
+    'STMX':'stormx','AKRO':'akropolis','BLZ':'bluzelle','REEF':'reef-finance',
+    'TIA':'celestia','SEI':'sei','STX':'stacks','STRK':'starknet',
+    'TRUMP':'official-trump','KSM':'kusama','EGLD':'multiversx','DASH':'dash',
+    'MINA':'mina-protocol','RSR':'reserve-rights-token','SKL':'skale','ANKR':'ankr',
+    'STORJ':'storj','CHZ':'chiliz','BAT':'basic-attention-token','QNT':'quant-network',
+    'TON':'toncoin','HNT':'helium','PENDLE':'pendle','ROSE':'oasis-network',
+    'KAVA':'kava','COMP':'compound','MKR':'maker','ENA':'ethena',
+    'W':'wormhole','PYTH':'pyth-network','JTO':'jito','EIGEN':'eigenlayer',
+    'MORPHO':'morpho','KAITO':'kaito','HYPE':'hyperliquid','BERA':'berachain',
+    'S':'sonic','IP':'story','PENGU':'pengu','FARTCOIN':'fartcoin',
+    'SPX':'spx6900','MOG':'mog-coin','GIGA':'gigachad','POPCAT':'popcat'
+};
+
+// Never delisting candidates anywhere: stablecoins and blue chips.
+// Split deliberately. The two modules kept separate hand-maintained lists that
+// shared 52 symbols and diverged on the rest — some of that divergence is real
+// (Binance leveraged tokens do not exist on Coinbase; EURC/PYUSD/GUSD are not on
+// Binance) and some looks accidental: ENS is excluded on Coinbase but risk-scored
+// on Binance. Structuring it as a common base plus per-exchange additions keeps
+// today's behaviour byte-identical while making every divergence explicit, so the
+// accidental ones can be settled deliberately rather than by whoever edits next.
+const EXCLUDE_COMMON = [
+    'USDC','BUSD','DAI','USD1','BTC','ETH','XRP','ADA','SOL','DOGE',
+    'DOT','SHIB','LTC','AVAX','LINK','ATOM','TON','UNI','XLM','BCH',
+    'NEAR','APT','ICP','OP','ARB','ETC','HBAR','FIL','VET','STX',
+    'SUI','SEI','TIA','INJ','THETA','EOS','XTZ','ALGO','SAND','MANA',
+    'AXS','GALA','GRT','SNX','AAVE','MKR','COMP','CRV','1INCH','LDO',
+    'RNDR','FET'
+];
+const EXCLUDE_BINANCE_ONLY = [
+    'TUSD','FDUSD','USDP','USDD','AEUR','XUSD','BFUSD','RLUSD','USDE','BTCUP',
+    'BTCDOWN','ETHUP','ETHDOWN','BNBUP','BNBDOWN','XRPUP','XRPDOWN','TRXUP','TRXDOWN','LINKUP',
+    'LINKDOWN','DOTUP','DOTDOWN','ADAUP','ADADOWN','EOSUP','EOSDOWN','LTCUP','LTCDOWN','XLMUP',
+    'XLMDOWN','UNIUP','UNIDOWN','SXPUP','SXPDOWN','FILUP','FILDOWN','AAVEUP','AAVEDOWN','SUSHIUP',
+    'SUSHIDOWN','WBTC','WBETH','BNSOL','LUNC','USTC','PAXG','EUR','EURI','OCEAN',
+    'AGIX','MATIC','FTM','UST','LUNA','BTCST','MFT','BOND','BNB','TRX',
+    'CAKE','RUNE','KAS','EGLD','ENJ','CRO','SUSHI','YFI','BAT','ZRX'
+];
+const EXCLUDE_COINBASE_ONLY = [
+    'USDT','USDS','EURC','AUDD','XSGD','PAX','PYUSD','GUSD','GYEN','MUSD',
+    'ENS'
+];
+
 const CG_TO_CMC = {
     'avalanche-2':'avalanche','hedera-hashgraph':'hedera','near':'near-protocol',
     'havven':'synthetix-network-token','binancecoin':'bnb',
@@ -696,6 +872,10 @@ const TRACKED_TOKENS = __TRACKED_TOKENS__;
 const trackedMap = {};
 TRACKED_TOKENS.forEach(t => { trackedMap[t.sym] = t; });
 
+// Never a delisting candidate here: the shared base plus Binance's own additions
+// (leveraged UP/DOWN tokens, wrapped/legacy tickers). See the lists near CG_TO_CMC.
+const EXCLUDE = new Set([...EXCLUDE_COMMON, ...EXCLUDE_BINANCE_ONLY]);
+
 // ============ LIVE DATA ============
 let allCoins = []; // Combined: tracked + discovered active coins
 let liveData = {};
@@ -705,25 +885,6 @@ let query = '';
 let sort = { key: 'risk', dir: 'desc' };
 let page = 0;
 const PAGE_SIZE = 100;
-
-// Leveraged/stable tokens to exclude
-const EXCLUDE = new Set([
-    // Stablecoins
-    'USDC','BUSD','TUSD','FDUSD','USDP','DAI','USDD','AEUR','XUSD','BFUSD','RLUSD','USD1','USDE',
-    // Leveraged tokens
-    'BTCUP','BTCDOWN','ETHUP','ETHDOWN','BNBUP','BNBDOWN','XRPUP','XRPDOWN',
-    'TRXUP','TRXDOWN','LINKUP','LINKDOWN','DOTUP','DOTDOWN','ADAUP','ADADOWN',
-    'EOSUP','EOSDOWN','LTCUP','LTCDOWN','XLMUP','XLMDOWN','UNIUP','UNIDOWN',
-    'SXPUP','SXPDOWN','FILUP','FILDOWN','AAVEUP','AAVEDOWN','SUSHIUP','SUSHIDOWN',
-    // Wrapped / legacy tokens
-    'WBTC','WBETH','BNSOL','LUNC','USTC','PAXG','EUR','EURI','OCEAN','AGIX','MATIC','FTM','UST','LUNA','BTCST','MFT','BOND',
-    // Blue chip coins — never at delisting risk
-    'BTC','ETH','BNB','XRP','ADA','SOL','DOGE','TRX','DOT','SHIB',
-    'LTC','AVAX','LINK','ATOM','TON','UNI','XLM','BCH','NEAR','APT',
-    'ICP','OP','ARB','ETC','HBAR','FIL','VET','CAKE','STX','SUI',
-    'SEI','TIA','INJ','RUNE','KAS','THETA','EOS','XTZ','ALGO','EGLD',
-    'SAND','MANA','AXS','GALA','ENJ','CRO','GRT','SNX','AAVE','MKR',
-    'COMP','CRV','1INCH','SUSHI','YFI','BAT','ZRX','LDO','RNDR','FET']);
 
 // ============ HELPERS ============
 const daysBetween = (a,b) => Math.round((new Date(b)-new Date(a))/(864e5));
@@ -858,84 +1019,7 @@ async function fetchMarketCaps() {
         const allSymsForIcons = [...new Set([...taggedSyms, ...delistedSyms, ...activeSyms])];
 
         // Manual overrides for ambiguous symbols
-        const overrides = {
-            '1MBABYDOGE':'baby-doge-coin',
-            'FTT':'ftx-token','ELF':'aelf','JASMY':'jasmycoin','MLN':'melon','SUN':'sun-token',
-            'ZEC':'zcash','ZEN':'horizen','BAL':'balancer','CVX':'convex-finance','SNT':'status',
-            'KEY':'selfkey','ARK':'ark','LOOM':'loom-network-new','ANT':'aragon','FIRO':'zcoin',
-            'MBL':'moviebloc','POLS':'polkastarter','IRIS':'iris-network','PERP':'perpetual-protocol',
-            'ALPHA':'stella-2','MOVE':'movement','PORTAL':'portal-2','BIFI':'beefy-finance',
-            'FLOW':'flow','FORTH':'ampleforth-governance-token','HOOK':'hooked-protocol',
-            'LRC':'loopring','WIF':'dogwifcoin','GTC':'gitcoin','NTRN':'neutron-3',
-            'RDNT':'radiant-capital','GPS':'goplus-security','D':'dar-open-network',
-            'DENT':'dent','SXP':'swipe','QI':'benqi','IDEX':'idex','TRU':'truefi',
-            'AWE':'stp-network','OXT':'orchid-protocol','FUN':'funfair','ARDR':'ardor',
-            'WAN':'wanchain','COS':'contentos','DEGO':'dego-finance','MBOX':'mobox',
-            'ATA':'automata','FIO':'fio-protocol','PHB':'phoenix-global','A2Z':'arena-z',
-            'MDT':'measurable-data-token','FLM':'flamingo-finance','NKN':'nkn',
-            'CHESS':'tranchess','GHST':'aavegotchi','ACA':'acala',
-            'BETA':'beta-finance','VOXEL':'voxies','HIFI':'hifi-finance',
-            'DATA':'streamr','DF':'dforce-token','COMBO':'furucombo',
-            'ALPACA':'alpaca-finance','BURGER':'burger-swap','STMX':'storm',
-            'AERGO':'aergo','AST':'airswap','BADGER':'badger-dao',
-            'NULS':'nuls','PDA':'playdapp','UFT':'unlend-finance',
-            'VIB':'viberate','VIDT':'vidt-dao','WING':'wing-finance',
-            'KP3R':'keep3rv1','DOCK':'dock','HARD':'kava-lend',
-            'CTXC':'cortex','CLV':'clover-finance','CREAM':'cream-2',
-            'PROS':'prosper','UNFI':'unifi-protocol-dao','VITE':'vite',
-            'KMD':'komodo','LEVER':'leverfi','BSW':'biswap','LTO':'lto-network',
-            'AMB':'ambrosus','FIRO':'zcoin','REI':'rei-network',
-            'FIS':'stafi','AKRO':'akropolis','BLZ':'bluzelle',
-            'REEF':'reef','OOKI':'ooki','GFT':'gifto',
-            'DREP':'drep-new','LINA':'linear-finance',
-            // Delisting 2026-08-17. Too small for the top-1000 sweep to resolve by
-            // symbol, and the bare ticker is not their id — without these, mcap "—".
-            'PYR':'vulcan-forged','VANRY':'vanar-chain',
-            // Monitoring tags from catalog 49, added 2026-08-12. Ids verified against
-            // the live API; STX ('blockstack') is already above.
-            'GLMR':'moonbeam','ICX':'icon','MOVR':'moonriver','RARE':'superrare',
-            'SOPH':'sophon','LSK':'lisk','SCRT':'secret',
-            'BTC':'bitcoin','ETH':'ethereum','BNB':'binancecoin','SOL':'solana',
-            'XRP':'ripple','DOGE':'dogecoin','ADA':'cardano','AVAX':'avalanche-2',
-            'DOT':'polkadot','LINK':'chainlink','SHIB':'shiba-inu','UNI':'uniswap',
-            'ATOM':'cosmos','FIL':'filecoin','APT':'aptos','ARB':'arbitrum',
-            'OP':'optimism','SUI':'sui','NEAR':'near','INJ':'injective-protocol',
-            'ONDO':'ondo-finance','RENDER':'render-token','FET':'artificial-superintelligence-alliance',
-            'PEPE':'pepe','BONK':'bonk','FLOKI':'floki','WLD':'worldcoin-wld',
-            'TIA':'celestia','SEI':'sei-network','STRK':'starknet','STX':'blockstack',
-            'IMX':'immutable-x','MANA':'decentraland','SAND':'the-sandbox',
-            'AAVE':'aave','CRV':'curve-dao-token','MKR':'maker','COMP':'compound-governance-token',
-            'LDO':'lido-dao','ENS':'ethereum-name-service','DYDX':'dydx-chain',
-            'GMX':'gmx','SNX':'havven','SUSHI':'sushi','CAKE':'pancakeswap-token',
-            'PENDLE':'pendle','TAO':'bittensor','HBAR':'hedera-hashgraph',
-            // Common active altcoins
-            'QKC':'quark-chain','ICX':'icon','LSK':'lisk','BNT':'bancor',
-            'IOST':'iostoken','KGST':'kanga-exchange','RPL':'rocket-pool',
-            'POND':'marlin','REQ':'request-network','BICO':'biconomy',
-            'XNO':'nano','OSMO':'osmosis','HOT':'holotoken','CVC':'civic',
-            'WIN':'wink','TFUEL':'theta-fuel','ONE':'harmony','CHZ':'chiliz',
-            'ARPA':'arpa-chain','IOTX':'iotex','RLC':'iexec-rlc','OGN':'origin-protocol',
-            'CTSI':'cartesi','HIVE':'hive','CHR':'chromia','KNC':'kyber-network-crystal',
-            'SC':'siacoin','VTHO':'vethor-token','DGB':'digibyte','DCR':'decred',
-            'STORJ':'storj','JST':'just','NMR':'numeraire','RSR':'reserve-rights-token',
-            'TRB':'tellor','KSM':'kusama','DIA':'dia-data','UMA':'uma',
-            'BEL':'bella-protocol','UTK':'utrust','XVS':'venus','AUDIO':'audius',
-            'CTK':'certik','STRAX':'stratis','ROSE':'oasis-network','AVA':'concierge-io',
-            'SKL':'skale','PSG':'paris-saint-germain-fan-token','JUV':'juventus-fan-token',
-            'CELO':'celo','RIF':'rif-token','CELR':'celer-network','DASH':'dash',
-            'RVN':'ravencoin','BAND':'band-protocol','ZIL':'zilliqa',
-            'ONT':'ontology','ONG':'ong','MDX':'mdex','VAI':'vai',
-            'MOB':'mobilecoin','TORN':'tornado-cash','WAX':'wax',
-            'MULTI':'multichain','IRIS':'iris-network','CVP':'powerpool',
-            // Monitoring coins whose CoinGecko id differs from the ticker — without
-            // these the markets API returns nothing, so mcap + logo were both blank.
-            'TLM':'alien-worlds','ACT':'act-i-the-ai-prophecy','HEI':'heima',
-            'SYN':'synapse-2','VIC':'tomochain','VELODROME':'velodrome-finance',
-            'HFT':'hashflow','NOM':'nomina','EPIC':'epic-chain',
-            // Delisted coins missing an id — adds their real logo on the delisted tab.
-            'BTS':'bitshares','SYS':'syscoin','PERL':'perlin','XMR':'monero','FARM':'harvest-finance',
-        };
-
+        
         // Resolve each ticker to the highest-market-cap CoinGecko coin with that symbol so
         // tickers missing from `overrides` don't fall back to a bare-ticker id owned by a
         // tiny namesake (e.g. TIA -> "Tiamonds" $420K instead of Celestia). Top ~1000 by mcap.
@@ -949,7 +1033,7 @@ async function fetchMarketCaps() {
             if (!arr) break;
             arr.forEach(c => { const s = (c.symbol || '').toUpperCase(); if (s && !cgBySymbol[s]) cgBySymbol[s] = c; });
         }
-        const getGeckoId = sym => overrides[sym] || (cgBySymbol[sym.toUpperCase()] || {}).id || sym.toLowerCase();
+        const getGeckoId = sym => COIN_IDS[sym] || (cgBySymbol[sym.toUpperCase()] || {}).id || sym.toLowerCase();
 
         // Apply the page data we ALREADY fetched above directly: every top-~1000 coin
         // gets its mcap/icon/cgId here with no further CoinGecko calls, so it can't be
@@ -958,7 +1042,7 @@ async function fetchMarketCaps() {
         // or coins outside the top-~1000 still need an id-fetch.
         const leftover = [];
         for (const sym of allSymsForIcons) {
-            const cg = overrides[sym] ? null : cgBySymbol[sym.toUpperCase()];
+            const cg = COIN_IDS[sym] ? null : cgBySymbol[sym.toUpperCase()];
             if (!cg) { leftover.push(sym); continue; }
             if (!liveData[sym]) liveData[sym] = {};
             if (liveData[sym].price !== undefined) {
@@ -1220,51 +1304,7 @@ function getExchangeIcons(sym) {
 
 function getCMCSlug(sym) {
     // 1. Check explicit known slugs (highest confidence)
-    const slugs = {
-        'BTC':'bitcoin','ETH':'ethereum','BNB':'bnb','SOL':'solana','XRP':'xrp',
-        'DOGE':'dogecoin','ADA':'cardano','AVAX':'avalanche','DOT':'polkadot',
-        'LINK':'chainlink','SHIB':'shiba-inu','UNI':'uniswap','ATOM':'cosmos',
-        'FIL':'filecoin','APT':'aptos','ARB':'arbitrum','OP':'optimism',
-        'SUI':'sui','NEAR':'near-protocol','INJ':'injective','ONDO':'ondo-finance',
-        'RENDER':'render','FET':'fetch-ai','PEPE':'pepe','BONK':'bonk',
-        'FLOKI':'floki','WLD':'worldcoin-wld','WIF':'dogwifhat',
-        'MLN':'enzyme','ZEN':'horizen','ZEC':'zcash','CVX':'convex-finance',
-        'BAL':'balancer','GRT':'the-graph','IMX':'immutable','SAND':'the-sandbox',
-        'MANA':'decentraland','AAVE':'aave','CRV':'curve-dao-token','LDO':'lido-dao',
-        'ENS':'ethereum-name-service','SNX':'synthetix-network-token','SUSHI':'sushiswap',
-        'HBAR':'hedera','ALGO':'algorand','TAO':'bittensor','FLOW':'flow',
-        'JASMY':'jasmycoin','FTT':'ftx-token','ARK':'ark','ARDR':'ardor',
-        'PERP':'perpetual-protocol','MBL':'moviebloc','AWE':'stp-network',
-        'MOVE':'movement','BIFI':'beefy-finance','MDT':'measurable-data-token',
-        'PORTAL':'portal-gaming','WAN':'wanchain','DENT':'dent',
-        'COS':'contentos','DEGO':'dego-finance','FUN':'funfair','MBOX':'mobox',
-        'OXT':'orchid','ATA':'automata','FIO':'fio-protocol','GTC':'gitcoin',
-        'PHB':'phoenix-global','QI':'benqi','A2Z':'arena-z',
-        'FORTH':'ampleforth-governance-token','HOOK':'hooked-protocol','IDEX':'idex',
-        'LRC':'loopring','NTRN':'neutron-3','RDNT':'radiant-capital','SXP':'swipe',
-        'GPS':'goplus-security','SUN':'sun-token',
-        'BSW':'biswap','KMD':'komodo','LEVER':'leverfi','LTO':'lto-network',
-        'FLM':'flamingo-finance','HIFI':'hifi-finance','FIS':'stafi','REI':'rei-network',
-        'NKN':'nkn','ACA':'acala','CHESS':'tranchess','DATA':'streamr',
-        'DF':'dforce-token','GHST':'aavegotchi','BETA':'beta-finance',
-        'AERGO':'aergo','AST':'airswap','BADGER':'badger-dao','D':'mines-of-dalarnia',
-        'NULS':'nuls','VOXEL':'voxies','WING':'wing-finance',
-        'XMR':'monero','ALPACA':'alpaca-finance','STMX':'stormx',
-        'AKRO':'akropolis','BLZ':'bluzelle','REEF':'reef-finance',
-        'TIA':'celestia','SEI':'sei','STX':'stacks','STRK':'starknet',
-        'TRUMP':'official-trump','KSM':'kusama','EGLD':'multiversx',
-        'DASH':'dash','MINA':'mina-protocol','RSR':'reserve-rights-token',
-        'SKL':'skale','ANKR':'ankr','STORJ':'storj','CHZ':'chiliz',
-        'BAT':'basic-attention-token','QNT':'quant-network','TON':'toncoin',
-        'HNT':'helium','PENDLE':'pendle','ROSE':'oasis-network',
-        'KAVA':'kava','GRT':'the-graph','COMP':'compound',
-        'MKR':'maker','ENA':'ethena','W':'wormhole','PYTH':'pyth-network',
-        'JTO':'jito','EIGEN':'eigenlayer','MORPHO':'morpho','KAITO':'kaito',
-        'HYPE':'hyperliquid','BERA':'berachain','S':'sonic','IP':'story',
-        'PENGU':'pengu','FARTCOIN':'fartcoin','SPX':'spx6900','MOG':'mog-coin',
-        'GIGA':'gigachad','POPCAT':'popcat',
-    };
-    if (slugs[sym]) return slugs[sym];
+        if (CMC_SLUGS[sym]) return CMC_SLUGS[sym];
     // 2. Use CoinGecko ID (fetched from API) with known CG→CMC corrections
     const cgId = liveData[sym]?.cgId;
     if (cgId) return CG_TO_CMC[cgId] || cgId;
@@ -1613,6 +1653,10 @@ window.bnDoRefresh = bnDoRefresh;
 // ===== COINBASE MODULE =====
 let cbInitialized = false;
 (function() {
+// Never a delisting candidate here: the shared base plus Coinbase's own additions
+// (EURC/PYUSD/GUSD and friends, which Binance does not list). See CG_TO_CMC above.
+const EXCLUDE = new Set([...EXCLUDE_COMMON, ...EXCLUDE_COINBASE_ONLY]);
+
 // ===== STATE =====
 const PAGE_SIZE = 50;
 let allCoins = [];
@@ -1621,90 +1665,15 @@ let exchangeData = { binance: new Set(), okx: new Set(), kraken: new Set() };
 let filter = 'all', sortCol = 'risk', sortAsc = false, page = 0, query = '';
 let lastRefresh = 0;
 
-const EXCLUDE = new Set([
-    // Stablecoins
-    'USDC','USDT','DAI','USDS','USD1','EURC','AUDD','XSGD','PAX','PYUSD','GUSD','GYEN','MUSD','BUSD',
-    // Blue chip coins — never at delisting risk on Coinbase
-    'BTC','ETH','SOL','XRP','ADA','DOGE','DOT','SHIB','LTC','AVAX',
-    'LINK','ATOM','TON','UNI','XLM','BCH','NEAR','APT','ICP','OP',
-    'ARB','ETC','HBAR','FIL','VET','STX','SUI','SEI','TIA','INJ',
-    'RNDR','FET','AAVE','MKR','COMP','SNX','CRV','1INCH','LDO','GRT',
-    'ENS','THETA','ALGO','EOS','XTZ','SAND','MANA','AXS','GALA']);
-
 // CoinGecko ID overrides
-const CG_OVERRIDES = {
-    'CGLD':'celo','COSMOSDYDX':'dydx-chain','LSETH':'liquid-staked-ethereum','CBETH':'coinbase-wrapped-staked-eth',
-    'MSOL':'msol','JITOSOL':'jito-staked-sol','POL':'polygon-ecosystem-token','RENDER':'render-token',
-    'FET':'artificial-superintelligence-alliance','BERA':'berachain','HYPE':'hyperliquid','PEPE':'pepe',
-    'BONK':'bonk','WIF':'dogwifcoin','FLOKI':'floki','SHIB':'shiba-inu','DOGE':'dogecoin','SOL':'solana',
-    'ETH':'ethereum','BTC':'bitcoin','ADA':'cardano','DOT':'polkadot','LINK':'chainlink','AVAX':'avalanche-2',
-    'ATOM':'cosmos','NEAR':'near','ICP':'internet-computer','FIL':'filecoin','ARB':'arbitrum','OP':'optimism',
-    'SUI':'sui','SEI':'sei-network','TIA':'celestia','INJ':'injective-protocol','STX':'blockstack',
-    'TAO':'bittensor','XLM':'stellar','ALGO':'algorand','HBAR':'hedera-hashgraph','VET':'vechain',
-    'ETC':'ethereum-classic','BCH':'bitcoin-cash','LTC':'litecoin','CRO':'crypto-com-chain','GRT':'the-graph',
-    'IMX':'immutable-x','SAND':'the-sandbox','MANA':'decentraland','APE':'apecoin','AXS':'axie-infinity',
-    'AAVE':'aave','SNX':'havven','CRV':'curve-dao-token','COMP':'compound-governance-token','UNI':'uniswap',
-    'LDO':'lido-dao','ENS':'ethereum-name-service','BNB':'binancecoin','ONDO':'ondo-finance',
-    'TRUMP':'official-trump','JASMY':'jasmycoin','KSM':'kusama','FLOW':'flow','EGLD':'elrond-erd-2',
-    'DASH':'dash','MINA':'mina-protocol','RSR':'reserve-rights-token','SKL':'skale','ANKR':'ankr',
-    'STORJ':'storj','COTI':'coti','CHZ':'chiliz','BAT':'basic-attention-token','PAXG':'pax-gold',
-    'QNT':'quant-network','SPELL':'spell-token','S':'sonic-3','IP':'story-protocol','PENGU':'pudgy-penguins',
-    'FARTCOIN':'fartcoin','SPX':'spx6900','MOG':'mog-coin','GIGA':'gigachad-2','POPCAT':'popcat',
-    'WLD':'worldcoin-wld','ENA':'ethena','STRK':'starknet','W':'wormhole','PYTH':'pyth-network',
-    'JTO':'jito-governance-token','JUPITER':'jupiter-exchange-solana','FUN1':'funfair','EIGEN':'eigenlayer',
-    'MORPHO':'morpho','KAITO':'kaito','TON':'the-open-network','HNT':'helium','PENDLE':'pendle',
-    'ACH':'alchemy-pay','GLM':'golem','NKN':'nkn','OXT':'orchid-protocol','AMP':'amp-token',
-    'ROSE':'oasis-network','FLR':'flare-networks','KAVA':'kava','XCN':'onyxcoin','BLZ':'bluzelle',
-    'DNT':'district0x','CTSI':'cartesi','RLC':'iexec-rlc','OGN':'origin-protocol','REQ':'request-network',
-    'NMR':'numeraire','PERP':'perpetual-protocol','SUSHI':'sushi','BNT':'bancor','KNC':'kyber-network-crystal',
-    'LPT':'livepeer','BAL':'balancer','FARM':'harvest-finance','MLN':'melon','RPL':'rocket-pool',
-    'CVX':'convex-finance','T':'threshold-network-token','LQTY':'liquity','FORTH':'ampleforth-governance-token',
-    'LRC':'loopring','GTC':'gitcoin','OCEAN':'ocean-protocol','IDEX':'idex',
-    // Additional Coinbase coins
-    'XRP':'ripple','ZRX':'0x','BAT':'basic-attention-token','MKR':'maker','ZEC':'zcash',
-    'XTZ':'tezos','BAND':'band-protocol','OMG':'omisego','OGN':'origin-protocol',
-    'SUSHI':'sushi','UMA':'uma','YFI':'yearn-finance','YFII':'yfii','COMP':'compound-governance-token',
-    'REN':'republic-protocol','CVC':'civic','WBTC':'wrapped-bitcoin','RUNE':'thorchain',
-    'AUDIO':'audius','ANC':'anchor-protocol','ALICE':'my-neighbor-alice','CELR':'celer-network',
-    'CLV':'clover-finance','CTX':'cryptex-finance','DYDX':'dydx-chain','ERN':'ethernity-chain',
-    'POND':'marlin','QUICK':'quickswap','SHPING':'shping','WCFG':'wrapped-centrifuge',
-    'BTRST':'braintrust','AGLD':'adventure-gold','RBN':'ribbon-finance','UNFI':'unifi-protocol-dao',
-    'GODS':'gods-unchained','ARPA':'arpa-chain','DREP':'drep-new','TVK':'terra-virtua-kolect',
-    'DEXT':'dextools','POLS':'polkastarter','XYO':'xyo-network','SUPER':'superfarm',
-    'FLY':'franklin','BOBA':'boba-network','RARE':'superrare','POWR':'power-ledger',
-    'GNS':'gains-network','SYN':'synapse-2','COVAL':'circuits-of-value',
-    'MAGIC':'magic','DYP':'defi-yield-protocol','FORT':'forta',
-    'STPT':'stp-network','VELO':'velo','LCNX':'lightcoin','BLUR':'blur',
-    'PRIME':'echelon-prime','ZETA':'zetachain','PYUSD':'paypal-usd',
-    // Online coins whose CoinGecko id differs from the lowercased ticker — without
-    // these the markets API returned nothing, leaving mcap + logo blank. (validated)
-    'BADGER':'badger-dao','KRL':'kryll','META':'metadium','ACS':'access-protocol',
-    'AVT':'aventus','MNDE':'marinade','FOX':'shapeshift-fox-token','A8':'ancient8','VOXEL':'voxies',
-    // Delisted Coinbase coins — gecko IDs validated against CoinGecko so the
-    // delisted tab resolves real names + market caps instead of "N pairs".
-    'ANT':'aragon','ATA':'automata','BIT':'bitdao','BSV':'bitcoin-cash-sv','CRPT':'crypterium',
-    'DAR':'mines-of-dalarnia','DDX':'derivadao','ENJ':'enjincoin','GNT':'golem',
-    'KEEP':'keep-network','LIT':'litentry','LOKA':'league-of-kingdoms','LOOM':'loom-network-new',
-    'MATIC':'matic-network','MCO2':'moss-carbon-credit','MEDIA':'media-network','MIR':'mirror-protocol',
-    'MOBILE':'helium-mobile','MONA':'monavale','MOVE':'movement','MTL':'metal',
-    'MULTI':'multichain','MUSE':'muse-2','MXC':'mxc','NU':'nucypher',
-    'OOKI':'ooki','ORN':'orion-protocol','PLA':'playdapp','POLY':'polymath',
-    'PRQ':'parsiq','RGT':'rari-governance-token','RLY':'rally-2','RNDR':'render-token',
-    'SEAM':'seamless-protocol','SNT':'status','TIME':'chronobank','TONE':'te-food',
-    'TRIBE':'tribe-2','TRU':'truefi','WAMPL':'wrapped-ampleforth','WLUNA':'wrapped-terra',
-    'BOND':'barnbridge','REP':'augur','GAL':'project-galaxy','UST':'terrausd',
-    // Too small for the top-1000 mcap sweep to resolve by symbol, and the bare
-    // ticker is not their CoinGecko id — without these both render mcap "—".
-    'PYR':'vulcan-forged','VANRY':'vanar-chain',
-};
 
-function getCgId(sym) { return CG_OVERRIDES[sym] || sym.toLowerCase(); }
+function getCgId(sym) { return COIN_IDS[sym] || sym.toLowerCase(); }
 function getCmcSlug(sym) {
     // 1. Use CoinGecko ID from API (correct after data loads) with CG→CMC corrections
     const cgId = liveData[sym]?.cgId;
     if (cgId) return CG_TO_CMC[cgId] || cgId;
     // 2. Use static CG override with corrections
-    const staticCgId = CG_OVERRIDES[sym];
+    const staticCgId = COIN_IDS[sym];
     if (staticCgId) return CG_TO_CMC[staticCgId] || staticCgId;
     // 3. Unknown — return null so caller skips CMC link
     return null;
@@ -2102,7 +2071,7 @@ async function fetchDepth(sym) {
 async function fetchCoinGeckoData() {
     try {
         let cgBySymbol = {};
-        const getGeckoId = sym => CG_OVERRIDES[sym] || (cgBySymbol[sym.toUpperCase()] || {}).id || sym.toLowerCase();
+        const getGeckoId = sym => COIN_IDS[sym] || (cgBySymbol[sym.toUpperCase()] || {}).id || sym.toLowerCase();
 
         // Batch fetch from CoinGecko markets API. Active coins first so they get
         // enriched before any rate-limit window, then delisted coins so the delisted
@@ -2134,7 +2103,7 @@ async function fetchCoinGeckoData() {
         // top-~1000 still need an id-fetch.
         const leftover = [];
         for (const sym of fetchSyms) {
-            const cg = CG_OVERRIDES[sym] ? null : cgBySymbol[sym.toUpperCase()];
+            const cg = COIN_IDS[sym] ? null : cgBySymbol[sym.toUpperCase()];
             if (!cg) { leftover.push(sym); continue; }
             if (!liveData[sym]) liveData[sym] = {};
             liveData[sym].mcap = cg.market_cap || cg.fully_diluted_valuation || 0;

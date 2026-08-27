@@ -11,6 +11,24 @@ const html = injectTrackedTokens(
 );
 const template = fs.readFileSync(path.join(__dirname, 'worker.js'), 'utf8');
 
+// Syntax-check every inline <script> before it can be inlined into the Worker.
+// index.html has no build step of its own, so a malformed edit produced a page
+// that served with HTTP 200 and simply did nothing — the whole module failed to
+// parse and the table stayed empty. Cheap to catch here; expensive to notice live.
+{
+  const re = /<script(?![^>]*application\/ld\+json)[^>]*>([\s\S]*?)<\/script>/g;
+  let m, n = 0;
+  while ((m = re.exec(html)) !== null) {
+    n++;
+    try {
+      new Function(m[1]);
+    } catch (e) {
+      throw new Error(`build: inline <script> #${n} in index.html has a syntax error — ${e.message}`);
+    }
+  }
+  if (n === 0) throw new Error('build: no inline <script> found in index.html');
+}
+
 // worker.js keeps its own copy of the endpoint allowlists so the production
 // bundle stays self-contained; server.js reads lib/api-routes.cjs. Assert here
 // that they still agree — a route allowlisted in one and not the other means a
