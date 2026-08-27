@@ -67,6 +67,13 @@ function getTTL(path) {
   return 120;
 }
 
+// How long a BROWSER may reuse a proxy response without revalidating. Short on
+// purpose: the client refreshes on a 3-5 minute cadence and has a Refresh
+// button, and both are meaningless if the request never leaves the machine.
+// The long retention lives in s-maxage, which is what the edge and the Worker's
+// Cache API read.
+const BROWSER_MAX_AGE = 30;
+
 // ---- Outbound HTTP proxy (CONNECT tunnel) for upstreams that block Cloudflare's
 // datacenter IPs (Binance, CoinGecko). Workers' fetch() can't use an HTTP proxy,
 // so we open a raw TCP socket to the proxy, issue CONNECT, upgrade to TLS, and
@@ -171,11 +178,19 @@ async function proxyFetch(targetUrl, proxy, headers = {}) {
   return new Response(body, { status, headers: { 'Content-Type': h['content-type'] || 'application/json' } });
 }
 
-async function cachedProxy(request, upstream, ttl, apiKey, proxy, relay) {
+async function cachedProxy(request, upstream, ttl, apiKey, proxy, relay, ctx) {
   const cache = caches.default;
   // CoinGecko: store cached entries for 24h so stale-while-revalidate survives rate-limit windows
   const isCoinGecko = upstream.includes('coingecko.com');
   const storageTtl = isCoinGecko ? 86400 : ttl * 10;
+  // storageTtl is how long the EDGE (and the Worker's own Cache API, a shared
+  // cache) may retain the entry. It must not also be the browser's max-age:
+  // emitting it as a plain max-age pinned /cb/products in every visitor's HTTP
+  // cache for 50 minutes and /cg/ for 24 hours, so the 3-minute auto-refresh and
+  // the Refresh button never left the machine. s-maxage governs shared caches
+  // and wins there, so the storage window is preserved while clients revalidate
+  // on their own cadence.
+  const cacheControl = `public, max-age=${BROWSER_MAX_AGE}, s-maxage=${storageTtl}`;
   // Authenticate CoinGecko with a Demo API key when one is configured. A keyed
   // request gets its own quota (30 req/min) instead of sharing the anonymous
   // pool that throttles Cloudflare's datacenter egress IPs down to []. With no
@@ -217,23 +232,23 @@ async function cachedProxy(request, upstream, ttl, apiKey, proxy, relay) {
     // Stale-while-revalidate: return cached, refresh in background
     const age = Date.now()/1000 - new Date(cached.headers.get('X-Cached-At') || 0).getTime()/1000;
     if (age > ttl) {
-      // Background refresh — don't await
-      doFetch()
+      // Background refresh. Registered with waitUntil: an un-awaited promise is
+      // free to be cancelled once the response is returned, so without this the
+      // refresh that warms the cache often never landed and entries just served
+      // stale until eviction.
+      const revalidate = doFetch()
         .then(r => r.ok ? r.blob().then(b => {
           const fresh = new Response(b, { headers: {
             'Content-Type': r.headers.get('Content-Type') || 'application/json',
-            'Access-Control-Allow-Origin': '*',
             'X-Cached-At': new Date().toUTCString(),
-            'Cache-Control': `public, max-age=${storageTtl}`,
+            'Cache-Control': cacheControl,
           }});
-          cache.put(cacheKey, fresh.clone());
+          return cache.put(cacheKey, fresh.clone());
         }) : null)
         .catch(() => null);
+      ctx?.waitUntil?.(revalidate);
     }
-    // Return cached with CORS header
-    const headers = new Headers(cached.headers);
-    headers.set('Access-Control-Allow-Origin', '*');
-    return new Response(cached.body, { status: 200, headers });
+    return new Response(cached.body, { status: 200, headers: new Headers(cached.headers) });
   }
 
   // Cache miss — fetch upstream
@@ -244,12 +259,12 @@ async function cachedProxy(request, upstream, ttl, apiKey, proxy, relay) {
       if (isCoinGecko) {
         return new Response('[]', {
           status: 200,
-          headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
+          headers: { 'Content-Type': 'application/json' },
         });
       }
       return new Response('{"error":"upstream error"}', {
         status: 502,
-        headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
+        headers: { 'Content-Type': 'application/json' },
       });
     }
     const body = await upstream_resp.arrayBuffer();
@@ -257,30 +272,31 @@ async function cachedProxy(request, upstream, ttl, apiKey, proxy, relay) {
     const response = new Response(body, {
       headers: {
         'Content-Type': ct,
-        'Access-Control-Allow-Origin': '*',
         'X-Cached-At': new Date().toUTCString(),
-        'Cache-Control': `public, max-age=${storageTtl}`,
+        'Cache-Control': cacheControl,
       },
     });
-    await cache.put(cacheKey, response.clone());
+    // Don't block the first visitor's response on the cache write.
+    const stored = cache.put(cacheKey, response.clone());
+    if (ctx?.waitUntil) ctx.waitUntil(stored); else await stored;
     return response;
   } catch (e) {
     // CoinGecko fetch error: return empty array rather than 502
     if (isCoinGecko) {
       return new Response('[]', {
         status: 200,
-        headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
+        headers: { 'Content-Type': 'application/json' },
       });
     }
     return new Response(JSON.stringify({ error: 'fetch failed', detail: String((e && e.message) || e).slice(0, 200) }), {
       status: 502,
-      headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
+      headers: { 'Content-Type': 'application/json' },
     });
   }
 }
 
 export default {
-  async fetch(request, env) {
+  async fetch(request, env, ctx) {
     const url = new URL(request.url);
     const path = url.pathname + url.search; // NOTE: includes the query string — proxy routes use path.slice(N) directly; do NOT also append url.search (that doubled the query and corrupted CoinGecko's per_page)
     const ttl = getTTL(path);
@@ -295,13 +311,21 @@ export default {
       return Response.redirect(httpsUrl, 301);
     }
 
-    // CORS preflight
-    if (request.method === 'OPTIONS') {
-      return new Response(null, { headers: {
-        'Access-Control-Allow-Origin': '*',
-        'Access-Control-Allow-Methods': 'GET',
-        'Access-Control-Max-Age': '86400',
-      }});
+    // No CORS preflight handler, and no Access-Control-Allow-Origin on the proxy
+    // responses. index.html reaches every proxy route as a same-origin relative
+    // path, and smartFetch's direct fallback goes to upstreams that send their
+    // own CORS headers — so the wildcard did nothing for this site and only let
+    // any other origin spend the CG_DEMO_KEY quota through our warm cache.
+    // Re-adding it needs a concrete cross-origin consumer; there is none today.
+    //
+    // With the preflight short-circuit gone, an OPTIONS would otherwise fall
+    // through to the route handlers and be proxied upstream as if it were a GET.
+    // This site only ever reads.
+    if (request.method !== 'GET' && request.method !== 'HEAD') {
+      return new Response('{"error":"method not allowed"}', {
+        status: 405,
+        headers: { 'Content-Type': 'application/json', 'Allow': 'GET, HEAD' },
+      });
     }
 
     // /api/* → Binance (allowlisted endpoints only)
@@ -310,7 +334,7 @@ export default {
       if (!isAllowed(BINANCE_ALLOWED, path.slice(4).split('?')[0])) {
         return new Response('{"error":"not allowed"}', { status: 403, headers: { 'Content-Type': 'application/json' } });
       }
-      return cachedProxy(request, BINANCE_BASE + sub, ttl, undefined, proxy, relay);
+      return cachedProxy(request, BINANCE_BASE + sub, ttl, undefined, proxy, relay, ctx);
     }
 
     // /cb/* → Coinbase (allowlisted endpoints only)
@@ -319,7 +343,7 @@ export default {
       if (!isAllowed(COINBASE_ALLOWED, sub)) {
         return new Response('{"error":"not allowed"}', { status: 403, headers: { 'Content-Type': 'application/json' } });
       }
-      return cachedProxy(request, COINBASE_BASE + path.slice(3), ttl, undefined, proxy, relay);
+      return cachedProxy(request, COINBASE_BASE + path.slice(3), ttl, undefined, proxy, relay, ctx);
     }
 
     // /cg/* → CoinGecko (allowlisted endpoints only)
@@ -328,7 +352,7 @@ export default {
       if (!isAllowed(COINGECKO_ALLOWED, sub)) {
         return new Response('{"error":"not allowed"}', { status: 403, headers: { 'Content-Type': 'application/json' } });
       }
-      return cachedProxy(request, COINGECKO_BASE + path.slice(3), ttl, env.CG_DEMO_KEY, proxy, relay);
+      return cachedProxy(request, COINGECKO_BASE + path.slice(3), ttl, env.CG_DEMO_KEY, proxy, relay, ctx);
     }
 
     // /llama/* → DefiLlama stablecoins (allowlisted endpoints only)
@@ -340,7 +364,7 @@ export default {
       if (!isAllowed(LLAMA_ALLOWED, sub)) {
         return new Response('{"error":"not allowed"}', { status: 403, headers: { 'Content-Type': 'application/json' } });
       }
-      return cachedProxy(request, LLAMA_BASE + path.slice(6), ttl, undefined, proxy, relay);
+      return cachedProxy(request, LLAMA_BASE + path.slice(6), ttl, undefined, proxy, relay, ctx);
     }
 
     // /ex/<exchange> → exchange info
@@ -348,7 +372,7 @@ export default {
       const ex = path.slice(4).split('?')[0];
       const upstream = EXCHANGE_URLS[ex];
       if (!upstream) return new Response('{"error":"unknown exchange"}', { status: 404 });
-      return cachedProxy(request, upstream, 1800, undefined, proxy, relay);
+      return cachedProxy(request, upstream, 1800, undefined, proxy, relay, ctx);
     }
 
     // Favicon
@@ -386,16 +410,19 @@ export default {
     }
 
     // Everything else → serve index.html
-    return new Response(HTML, {
-      headers: {
-        'Content-Type': 'text/html; charset=utf-8',
-        'Cache-Control': 'no-cache',
-        'X-Content-Type-Options': 'nosniff',
-        'X-Frame-Options': 'SAMEORIGIN',
-        'Referrer-Policy': 'strict-origin-when-cross-origin',
-        'Permissions-Policy': 'camera=(), microphone=(), geolocation=()',
-      },
-    });
+    const htmlHeaders = {
+      'Content-Type': 'text/html; charset=utf-8',
+      'Cache-Control': 'no-cache',
+      'ETag': HTML_ETAG,
+      'X-Content-Type-Options': 'nosniff',
+      'X-Frame-Options': 'SAMEORIGIN',
+      'Referrer-Policy': 'strict-origin-when-cross-origin',
+      'Permissions-Policy': 'camera=(), microphone=(), geolocation=()',
+    };
+    if (request.headers.get('If-None-Match') === HTML_ETAG) {
+      return new Response(null, { status: 304, headers: htmlHeaders });
+    }
+    return new Response(HTML, { headers: htmlHeaders });
   },
 };
 
@@ -410,3 +437,17 @@ const PRIVACY_HTML = `<!DOCTYPE html><html lang="en"><head><title>Privacy Policy
 const OG_IMAGE_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630"><rect width="1200" height="630" fill="#020408"/><rect x="0" y="0" width="1200" height="630" fill="url(#grad)"/><defs><linearGradient id="grad" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#0d1320"/><stop offset="100%" stop-color="#020408"/></linearGradient></defs><rect x="60" y="60" width="1080" height="510" rx="16" fill="#080c14" stroke="#1a2540" stroke-width="1.5"/><polygon points="110,120 90,150 103,150 98,180 118,150 105,150" fill="#f59e0b"/><text x="130" y="152" font-family="monospace" font-weight="800" font-size="28" fill="#f59e0b">shitcoin.io</text><text x="90" y="230" font-family="monospace" font-weight="700" font-size="52" fill="#e4e6ef">Crypto Delisting</text><text x="90" y="295" font-family="monospace" font-weight="700" font-size="52" fill="#e4e6ef">Monitor</text><text x="90" y="370" font-family="sans-serif" font-size="26" fill="#5d6178">Real-time risk scores for Binance &amp; Coinbase coins</text><rect x="90" y="420" width="180" height="44" rx="8" fill="rgba(239,68,68,0.15)" stroke="rgba(239,68,68,0.3)" stroke-width="1"/><text x="180" y="448" font-family="monospace" font-size="16" fill="#f87171" text-anchor="middle">HIGH RISK</text><rect x="290" y="420" width="180" height="44" rx="8" fill="rgba(234,179,8,0.12)" stroke="rgba(234,179,8,0.3)" stroke-width="1"/><text x="380" y="448" font-family="monospace" font-size="16" fill="#eab308" text-anchor="middle">WATCH LIST</text><rect x="490" y="420" width="180" height="44" rx="8" fill="rgba(59,130,246,0.12)" stroke="rgba(59,130,246,0.3)" stroke-width="1"/><text x="580" y="448" font-family="monospace" font-size="16" fill="#3b82f6" text-anchor="middle">ORDER BOOK</text></svg>`;
 
 const HTML = `__HTML_PLACEHOLDER__`;
+
+// Validator for the HTML response. `Cache-Control: no-cache` means "revalidate
+// before reuse" — but with no ETag and no Last-Modified there was nothing to
+// revalidate against, so every navigation re-downloaded the whole ~157 KB
+// document where a 304 would do. FNV-1a over the built HTML: this is a cache
+// validator, not a security digest, and it is computed once per isolate.
+const HTML_ETAG = (() => {
+  let h = 0x811c9dc5;
+  for (let i = 0; i < HTML.length; i++) {
+    h ^= HTML.charCodeAt(i);
+    h = Math.imul(h, 0x01000193) >>> 0;
+  }
+  return `"${h.toString(16)}-${HTML.length.toString(16)}"`;
+})();
