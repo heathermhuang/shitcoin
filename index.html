@@ -417,7 +417,7 @@ td:has(.mcap),td:has(.vol),td:has(.pct),td:has(.depth),td:has(.risk-score),td:ha
     </div>
 </div>
 <div class="stats" id="bn-stats"></div>
-<div class="filters" id="bn-filters"></div>
+<div class="filters" id="bn-filters"><input class="search" type="text" placeholder="Search token... ( / )" id="bn-searchInput" oninput="bnSetQuery(this.value)"></div>
 <div class="tbl-wrap">
     <table>
         <thead><tr>
@@ -455,7 +455,7 @@ td:has(.mcap),td:has(.vol),td:has(.pct),td:has(.depth),td:has(.risk-score),td:ha
 
 <!-- COINBASE SECTION -->
 <div class="ex-section" id="cb-section">
-<div class="loading-overlay" id="cb-loader" style="display:none"><div class="loader"><div class="lname">CB <span>Coinbase</span> Monitor</div><div class="spinner"></div><div class="ltxt" id="cb-ltxt">Connecting to Coinbase...</div><div class="lprog"><div class="lprog-fill" id="cb-lprog"></div></div></div></div>
+<div class="loading-overlay hidden" id="cb-loader"><div class="loader"><div class="lname">CB <span>Coinbase</span> Monitor</div><div class="spinner"></div><div class="ltxt" id="cb-ltxt">Connecting to Coinbase...</div><div class="lprog"><div class="lprog-fill" id="cb-lprog"></div></div></div></div>
 <div class="wrap">
 <div class="hdr">
     <div class="hdr-left">
@@ -1492,9 +1492,18 @@ function renderFilters() {
         ['delisted', '⬛ Delisted', deled],
         ['all', '📋 All', all],
     ];
-    document.getElementById('bn-filters').innerHTML = tabs.map(([k,l,c]) =>
+    // Replace only the buttons, never the search input. This runs on every
+    // bnRenderAll() — about seven times while the CoinGecko batches land, then
+    // every 5 minutes — and rebuilding the input from a template string tore the
+    // focused node out from under anyone mid-search. The old `value="${query}"`
+    // was also unescaped, so a typed double quote injected an attribute and
+    // truncated the term. Leaving the input alone fixes both.
+    const container = document.getElementById('bn-filters');
+    const search = document.getElementById('bn-searchInput');
+    container.querySelectorAll('.ftab').forEach(b => b.remove());
+    search.insertAdjacentHTML('beforebegin', tabs.map(([k,l,c]) =>
         `<button class="ftab ${filter===k?'active':''}" onclick="bnSetFilter('${k}')">${l}<span class="cnt">${c}</span></button>`
-    ).join('') + `<input class="search" type="text" placeholder="Search token... ( / )" value="${query}" oninput="bnSetQuery(this.value)">`;
+    ).join(''));
 }
 
 function renderTable() {
@@ -1509,7 +1518,11 @@ function renderTable() {
         // Days on monitoring
         let domHtml = '<span class="na">—</span>';
         if (t.monDate) {
-            const endDate = t.status === 'restored' ? (t.removedDate || today) : t.status === 'delisted' ? (t.delistDate || today) : today;
+            // 'restoreDate', not 'removedDate' — the latter is not a field on any
+            // TRACKED_TOKENS row, so this silently fell through to `today` and every
+            // restored token counted up forever in the red "over 90d" state. Restored
+            // is the safe outcome; the window ends when the tag was removed.
+            const endDate = t.status === 'restored' ? (t.restoreDate || today) : t.status === 'delisted' ? (t.delistDate || today) : today;
             const dom = daysBetween(t.monDate, endDate);
             let domClass = 'ok';
             if (dom > 90) domClass = 'over';
@@ -2354,7 +2367,7 @@ async function init() {
         console.error('[CB] no products to render');
     }
 
-    document.getElementById('cb-loader').style.display = 'none';
+    document.getElementById('cb-loader').classList.add('hidden');
 
     // Background enrichment
     fetchCoinGeckoData();
@@ -2418,7 +2431,7 @@ function switchExchange(ex) {
             document.getElementById('cb-loader').classList.remove('hidden');
             try {
                 window.cbInit().then(() => {
-                    document.getElementById('cb-loader').style.display = 'none';
+                    document.getElementById('cb-loader').classList.add('hidden');
                 }).catch(e => {
                     console.error('[CB] init failed:', e);
                     const cbErrDiv = document.createElement('div');
@@ -2440,7 +2453,7 @@ function switchExchange(ex) {
             setTimeout(() => {
                 const loader = document.getElementById('cb-loader');
                 if (loader && !loader.classList.contains('hidden')) {
-                    loader.style.display = 'none';
+                    loader.classList.add('hidden');
                     console.error('[CB] loader timeout - hiding');
                 }
             }, 30000);
@@ -2480,8 +2493,11 @@ document.addEventListener('keydown', e => {
         }
     }
 
-    // 'b' / 'c' to switch exchange tabs (when not in input)
-    if (!inInput) {
+    // 'b' / 'c' to switch exchange tabs (when not in input).
+    // Bare keys only: without the modifier guard, Cmd/Ctrl+C — copying a symbol
+    // out of the table, with focus on <body> — fired switchExchange('coinbase')
+    // and navigated the reader away mid-copy. Same for Cmd+S and Ctrl+B.
+    if (!inInput && !e.metaKey && !e.ctrlKey && !e.altKey) {
         if (e.key === 'b' || e.key === 'B') switchExchange('binance');
         if (e.key === 'c' || e.key === 'C') switchExchange('coinbase');
     }
