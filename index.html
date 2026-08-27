@@ -124,7 +124,7 @@ tbody tr.highrisk-row{background:rgba(239,68,68,0.03)}
 tbody tr.limit-row{background:rgba(245,158,11,0.04)}
 /* Right-align numeric columns (headers by sort key, cells by content class) */
 th[data-sort="price"],th[data-sort="peg"],th[data-sort="mcap"],th[data-sort="vol"],th[data-sort="vol24h"],th[data-sort="change"],th[data-sort="change24h"],th[data-sort="risk"],th[data-sort="_risk"],th[data-sort="bidDepth"],th[data-sort="askDepth"],th[data-sort="spread"],th[data-sort="daysOnMon"]{text-align:right}
-td:has(.price-cell),td:has(.peg-delta),td:has(.mcap),td:has(.vol),td:has(.pct),td:has(.depth),td:has(.risk-score),td:has(.days-ref){text-align:right}
+td:has(.mcap),td:has(.vol),td:has(.pct),td:has(.depth),td:has(.risk-score),td:has(.days-ref){text-align:right}
 
 /* CELLS */
 .tk{display:flex;align-items:center;gap:10px}
@@ -300,33 +300,6 @@ td:has(.price-cell),td:has(.peg-delta),td:has(.mcap),td:has(.vol),td:has(.pct),t
 /* EXCHANGE SECTIONS */
 .ex-section{display:none}
 .ex-section.active{display:block}
-
-/* STABLECOIN MODULE */
-.tk-chains{font-size:9px;color:var(--text-3);font-family:'IBM Plex Mono',monospace;margin-top:2px}
-.chain-icons{display:flex;gap:3px;align-items:center;flex-wrap:nowrap}
-.chain-ico{width:18px;height:18px;border-radius:50%;overflow:hidden;flex-shrink:0;background:var(--bg-3);border:1px solid var(--border-1);display:flex;align-items:center;justify-content:center;font-size:7px;font-weight:700;color:var(--text-3);text-decoration:none;transition:transform 0.15s,border-color 0.15s}
-.chain-ico:hover{transform:scale(1.15);border-color:var(--border-2)}
-.chain-ico img{width:18px;height:18px;border-radius:50%;display:block}
-.chain-more{font-size:9px;color:var(--text-3);font-family:'IBM Plex Mono',monospace;white-space:nowrap;margin-left:1px}
-.ex-badges{display:flex;gap:4px;align-items:center;flex-wrap:wrap}
-.ex-icon-link{display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;border-radius:5px;border:1px solid var(--border-1);background:var(--bg-3);transition:all 0.15s;text-decoration:none;overflow:hidden;flex-shrink:0}
-.ex-icon-link:hover{border-color:var(--border-2);transform:scale(1.1)}
-.ex-icon-link img{width:16px;height:16px;border-radius:2px;display:block}
-.mech{display:inline-flex;align-items:center;padding:3px 9px;border-radius:20px;font-size:10px;font-weight:600;font-family:'IBM Plex Mono',monospace;text-transform:uppercase;letter-spacing:0.04em}
-.mech.fiat{background:var(--blue-soft);color:var(--blue);border:1px solid rgba(59,130,246,0.15)}
-.mech.cdp{background:var(--purple-soft);color:var(--purple);border:1px solid rgba(167,139,250,0.15)}
-.mech.algo{background:var(--amber-soft);color:var(--amber);border:1px solid rgba(245,158,11,0.15)}
-.mech.rwa{background:var(--cyan-soft);color:var(--cyan);border:1px solid rgba(6,182,212,0.15)}
-.mech.unknown{background:rgba(93,97,120,0.12);color:var(--text-3);border:1px solid rgba(93,97,120,0.15)}
-.price-cell{font-family:'IBM Plex Mono',monospace;font-size:13px;font-weight:600}
-.price-cell.g{color:var(--green)}.price-cell.a{color:var(--amber)}.price-cell.r{color:var(--red)}
-.peg-delta{font-family:'IBM Plex Mono',monospace;font-size:13px;font-weight:700;letter-spacing:-0.2px}
-.peg-delta.g{color:var(--green)}.peg-delta.a{color:var(--amber)}.peg-delta.r{color:var(--red)}
-.chain-count{font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--text-2)}
-.rank-num{font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--text-3);font-weight:500}
-.empty-state{padding:48px;text-align:center;color:var(--text-3);font-family:'IBM Plex Mono',monospace;font-size:13px}
-.tnav-tab.active.stablecoins{background:rgba(34,197,94,0.08);color:#22c55e;border-color:rgba(34,197,94,0.15)}
-.tnav-tab.active.stablecoins::after{content:'';position:absolute;bottom:-1px;left:16px;right:16px;height:2px;background:#22c55e;border-radius:2px 2px 0 0}
 </style>
 <script type="application/ld+json">
 {
@@ -346,8 +319,7 @@ td:has(.price-cell),td:has(.peg-delta),td:has(.mcap),td:has(.vol),td:has(.pct),t
         "Coinbase delisting risk scores",
         "Order book depth analysis",
         "Market cap tracking",
-        "Cross-exchange presence (OKX, Kraken)",
-        "Stablecoin peg health monitoring"
+        "Cross-exchange presence (OKX, Kraken)"
       ]
     },
     {
@@ -542,81 +514,6 @@ td:has(.price-cell),td:has(.peg-delta),td:has(.mcap),td:has(.vol),td:has(.pct),t
   <a href="/terms">Terms of Use</a> &nbsp;·&nbsp; <a href="/privacy">Privacy Policy</a> &nbsp;·&nbsp; <a href="https://stablecoin.io">Stablecoin Monitor</a><br><br>
   Maintained by <a href="https://mdt.io" target="_blank" rel="noopener">Measurable Data Token</a>
 </div>
-</div>
-</div>
-
-<!-- STABLECOIN SECTION -->
-<div class="ex-section" id="sc-section">
-<div class="loading-overlay hidden" id="sc-loader">
-  <div class="loader">
-    <div class="lname">💲 <span>Stablecoin</span> Monitor</div>
-    <div class="spinner" style="border-top-color:var(--green)"></div>
-    <div class="ltxt" id="sc-ltxt">Fetching peg data...</div>
-    <div class="lprog"><div class="lprog-fill" id="sc-lprog" style="background:var(--green)"></div></div>
-  </div>
-</div>
-<div class="wrap">
-  <div class="hdr">
-    <div class="hdr-left">
-      <div>
-        <h1>Stablecoin Monitor</h1>
-        <div class="sub mono">peg health · risk scores · market caps · mechanism analysis</div>
-      </div>
-    </div>
-    <div class="hdr-right">
-      <span class="meta-text" id="sc-updTime"></span>
-      <span class="meta-text" id="sc-refreshTimer"></span>
-      <button class="btn" id="sc-refreshBtn" onclick="scDoRefresh()">
-        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
-        refresh
-      </button>
-    </div>
-  </div>
-  <div class="stats" id="sc-stats">
-    <div class="stat b"><div class="stat-label">Total Market Cap</div><div class="stat-val b">—</div><div class="stat-sub">all tracked stablecoins</div></div>
-    <div class="stat g"><div class="stat-label">At Peg</div><div class="stat-val g">—</div><div class="stat-sub">within 0.5% of $1.00</div></div>
-    <div class="stat a"><div class="stat-label">At Risk</div><div class="stat-val a">—</div><div class="stat-sub">0.5% – 2% deviation</div></div>
-    <div class="stat r"><div class="stat-label">Depegged</div><div class="stat-val r">—</div><div class="stat-sub">over 2% deviation</div></div>
-    <div class="stat p"><div class="stat-label">Largest</div><div class="stat-val p">—</div><div class="stat-sub">by market cap</div></div>
-    <div class="stat"><div class="stat-label">Tracked</div><div class="stat-val">—</div><div class="stat-sub">stablecoins monitored</div></div>
-  </div>
-  <div class="filters" id="sc-filters">
-    <button class="ftab active" data-f="all" onclick="scSetFilter('all')">📋 All</button>
-    <button class="ftab" data-f="pegged" onclick="scSetFilter('pegged')">✅ Pegged</button>
-    <button class="ftab" data-f="atrisk" onclick="scSetFilter('atrisk')">⚠ At Risk</button>
-    <button class="ftab" data-f="depegged" onclick="scSetFilter('depegged')">🚨 Depegged</button>
-    <button class="ftab" data-f="fiat" onclick="scSetFilter('fiat')">🏦 Fiat</button>
-    <button class="ftab" data-f="cdp" onclick="scSetFilter('cdp')">⛓ CDP</button>
-    <button class="ftab" data-f="algo" onclick="scSetFilter('algo')">🤖 Algo</button>
-    <input class="search" type="text" placeholder="Search stablecoins..." id="sc-search" oninput="scOnSearch(this.value)">
-  </div>
-  <div class="tbl-wrap">
-    <table>
-      <thead>
-        <tr>
-          <th style="width:38px;cursor:default">#</th>
-          <th data-sort="symbol" onclick="scSortBy('symbol')">Stablecoin</th>
-          <th data-sort="mech" onclick="scSortBy('mech')">Mechanism</th>
-          <th data-sort="price" onclick="scSortBy('price')">Price</th>
-          <th data-sort="peg" onclick="scSortBy('peg')">Peg Δ</th>
-          <th class="col-mcap" data-sort="mcap" onclick="scSortBy('mcap')">Mkt Cap</th>
-          <th class="col-vol" data-sort="vol24h" onclick="scSortBy('vol24h')">24h Vol</th>
-          <th class="col-chg" data-sort="change24h" onclick="scSortBy('change24h')">24h %</th>
-          <th class="col-chains" data-sort="chainCount" onclick="scSortBy('chainCount')">Chains</th>
-          <th class="col-exchanges">Exchanges</th>
-          <th data-sort="_risk" onclick="scSortBy('_risk')">Risk</th>
-        </tr>
-      </thead>
-      <tbody id="sc-tbody"></tbody>
-    </table>
-  </div>
-  <div class="pagination" id="sc-pagination"></div>
-  <div class="footer">
-    Data from <a href="https://defillama.com" target="_blank">DeFi Llama</a> + <a href="https://coingecko.com" target="_blank">CoinGecko</a> · Risk scores based on peg deviation, mechanism, and market cap<br>
-    <strong style="color:var(--amber)">⚠ Not financial advice.</strong> Stablecoin data is for informational purposes only.<br><br>
-    <a href="/terms">Terms of Use</a> &nbsp;·&nbsp; <a href="/privacy">Privacy Policy</a> &nbsp;·&nbsp; <a href="https://stablecoin.io">stablecoin.io</a><br><br>
-    Maintained by <a href="https://mdt.io" target="_blank" rel="noopener">Measurable Data Token</a>
-  </div>
 </div>
 </div>
 
@@ -2483,109 +2380,18 @@ window.cbSetPage = cbSetPage;
 window.cbDoRefresh = cbDoRefresh;
 })();
 
-// ===== STABLECOIN MODULE =====
-let scInitialized = false;
-(function() {
-// llamaId = DeFi Llama /stablecoins asset id — verify against the live API when
-// editing (https://stablecoins.llama.fi/stablecoins). 18 of these 20 were once
-// cross-wired (DAI carried BUSD's id, FRAX carried DAI's); the merge below now
-// discards a llama match whose symbol differs from `sym`, so a wrong id degrades
-// to the CoinGecko fallback instead of rendering another coin's data.
-// `pegType` only needs stating for non-USD pegs.
-const SC_HARDCODED = [
-  { llamaId:'1',  sym:'USDT',  name:'Tether',           cgId:'tether',               mech:'fiat', chains_hint:20, icon:'https://coin-images.coingecko.com/coins/images/325/small/Tether.png',    exchanges:['binance','coinbase','kraken','okx','bybit','bitfinex','kucoin','gate'] },
-  { llamaId:'2',  sym:'USDC',  name:'USD Coin',          cgId:'usd-coin',             mech:'fiat', chains_hint:15, icon:'https://coin-images.coingecko.com/coins/images/6319/small/usdc.png',      exchanges:['binance','coinbase','kraken','okx','bybit','kucoin','bitget'] },
-  { llamaId:'5',  sym:'DAI',   name:'Dai',               cgId:'dai',                  mech:'cdp',  chains_hint:12, icon:'https://coin-images.coingecko.com/coins/images/9956/small/Badge_Dai.png', exchanges:['coinbase','kraken','binance','okx','kucoin','gate'] },
-  { llamaId:'146',sym:'USDE',  name:'USDe',              cgId:'ethena-usde',          mech:'cdp',  chains_hint:5,  icon:'https://coin-images.coingecko.com/coins/images/33613/small/USDE.png',     exchanges:['binance','okx','bybit','kucoin','bitget'] },
-  { llamaId:'119',sym:'FDUSD', name:'First Digital USD', cgId:'first-digital-usd',   mech:'fiat', chains_hint:3,  icon:'https://coin-images.coingecko.com/coins/images/31079/small/firstfigital.png', exchanges:['binance'] },
-  { llamaId:'6',  sym:'FRAX',  name:'Frax',              cgId:'frax',                 mech:'algo', chains_hint:12, icon:'https://coin-images.coingecko.com/coins/images/13422/small/FRAX_icon.png', exchanges:['okx','gate','kucoin'] },
-  { llamaId:'7',  sym:'TUSD',  name:'TrueUSD',           cgId:'true-usd',             mech:'fiat', chains_hint:5,  icon:'https://coin-images.coingecko.com/coins/images/3449/small/tusd.png',       exchanges:['binance','okx','kucoin','gate'] },
-  { llamaId:'120',sym:'PYUSD', name:'PayPal USD',        cgId:'paypal-usd',           mech:'fiat', chains_hint:2,  icon:'https://coin-images.coingecko.com/coins/images/31212/small/PYUSD.png',     exchanges:['coinbase','kraken'] },
-  { llamaId:'14',  sym:'USDD',  name:'USDD',              cgId:'usdd',                 mech:'algo', chains_hint:4,  icon:'https://coin-images.coingecko.com/coins/images/25380/small/USDD.png',      exchanges:['bybit','okx','kucoin','gate','bitget'] },
-  { llamaId:'11',  sym:'USDP',  name:'Pax Dollar',        cgId:'paxos-standard',       mech:'fiat', chains_hint:2,  icon:'https://coin-images.coingecko.com/coins/images/6013/small/Pax_Dollar.png', exchanges:['kraken','bitfinex'] },
-  { llamaId:'19',  sym:'GUSD',  name:'Gemini Dollar',     cgId:'gemini-dollar',        mech:'fiat', chains_hint:2,  icon:'https://coin-images.coingecko.com/coins/images/5992/small/gemini-dollar-gusd.png', exchanges:['kraken','bitfinex'] },
-  { llamaId:'8', sym:'LUSD',  name:'Liquity USD',       cgId:'liquity-usd',          mech:'cdp',  chains_hint:3,  icon:'https://coin-images.coingecko.com/coins/images/14666/small/Group_3.png',   exchanges:['kraken','kucoin','gate'] },
-  { llamaId:'118',sym:'GHO',   name:'GHO',               cgId:'gho',                  mech:'cdp',  chains_hint:2,  icon:'https://coin-images.coingecko.com/coins/images/30663/small/gho-token-logo.png', exchanges:['kraken','okx'] },
-  { llamaId:'110',sym:'crvUSD',name:'Curve USD',         cgId:'crvusd',               mech:'cdp',  chains_hint:1,  icon:'https://coin-images.coingecko.com/coins/images/30118/small/crvusd.png',    exchanges:['okx','gate'] },
-  { llamaId:'22', sym:'sUSD',  name:'Synthetix USD',     cgId:'nusd',                 mech:'cdp',  chains_hint:2,  icon:'https://coin-images.coingecko.com/coins/images/5013/small/sUSD.png',       exchanges:['kraken','kucoin'] },
-  { llamaId:'10', sym:'MIM',   name:'Magic Internet $',  cgId:'magic-internet-money', mech:'cdp',  chains_hint:7,  icon:'https://coin-images.coingecko.com/coins/images/16786/small/mimlogopng.png', exchanges:['gate','kucoin'] },
-  { llamaId:'4',  sym:'BUSD',  name:'Binance USD',       cgId:'binance-usd',          mech:'fiat', chains_hint:3,  icon:'https://coin-images.coingecko.com/coins/images/9576/small/BUSD.png',       exchanges:['binance'] },
-  { llamaId:'3', sym:'USTC', name:'TerraUSD (Classic)',cgId:'terrausd',             mech:'algo', chains_hint:2, depegged:true, icon:'https://coin-images.coingecko.com/coins/images/21150/small/UST.png', exchanges:[] },
-  { llamaId:'51', sym:'EURS',  name:'STASIS EURO',       cgId:'stasis-eurs',          mech:'fiat', pegType:'peggedEUR', chains_hint:2,  icon:'https://coin-images.coingecko.com/coins/images/5164/small/EURS_300x300.png', exchanges:['kraken','bitfinex','gate'] },
-  { llamaId:'49', sym:'EURT',  name:'Euro Tether',       cgId:'tether-eurt',          mech:'fiat', pegType:'peggedEUR', chains_hint:2,  icon:'https://coin-images.coingecko.com/coins/images/17385/small/Tether_logo.png', exchanges:['kraken','bitfinex'] },
-];
-const SC_CHAIN_SLUG={Ethereum:'ethereum',BSC:'bsc',Tron:'tron',Solana:'solana',Arbitrum:'arbitrum',Polygon:'polygon',Optimism:'optimism',Avalanche:'avalanche',Base:'base',Fantom:'fantom',Algorand:'algorand',Near:'near',Stellar:'stellar',Cosmos:'cosmos',Aptos:'aptos',Sui:'sui',Celo:'celo',Gnosis:'gnosis',Moonbeam:'moonbeam','zkSync Era':'zksync-era',Linea:'linea',Scroll:'scroll',Manta:'manta',Mantle:'mantle',Blast:'blast',TON:'ton',Cardano:'cardano',Hedera:'hedera'};
-const SC_CONTRACTS={USDT:{Ethereum:'https://etherscan.io/token/0xdAC17F958D2ee523a2206206994597C13D831ec7',BSC:'https://bscscan.com/token/0x55d398326f99059fF775485246999027B3197955',Tron:'https://tronscan.org/#/token20/TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t',Solana:'https://solscan.io/token/Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB',Arbitrum:'https://arbiscan.io/token/0xFd086bC7CD5C481DCC9C85ebE478A1C0b69FCbb9',Polygon:'https://polygonscan.com/token/0xc2132D05D31c914a87C6611C10748AEb04B58e8F',Avalanche:'https://snowtrace.io/token/0x9702230A8Ea53601f5cD2dc00fDBc13d4dF4A8c7',Optimism:'https://optimistic.etherscan.io/token/0x94b008aA00579c1307B0EF2c499aD98a8ce58e58',Base:'https://basescan.org/token/0xfde4C96c8593536E31F229EA8f37b2ADa2699bb2',TON:'https://tonscan.org/jetton/EQCxE6mUtQJKFnGfaROTKOt1lZbDiiX1kCixRv7Nw2Id_sDs'},USDC:{Ethereum:'https://etherscan.io/token/0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48',BSC:'https://bscscan.com/token/0x8AC76a51cc950d9822D68b83fE1Ad97B32Cd580d',Solana:'https://solscan.io/token/EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v',Arbitrum:'https://arbiscan.io/token/0xaf88d065e77c8cC2239327C5EDb3A432268e5831',Polygon:'https://polygonscan.com/token/0x3c499c542cEF5E3811e1192ce70d8cC03d5c3359',Optimism:'https://optimistic.etherscan.io/token/0x0b2C639c533813f4Aa9D7837CAf62653d097Ff85',Base:'https://basescan.org/token/0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913'},DAI:{Ethereum:'https://etherscan.io/token/0x6B175474E89094C44Da98b954EedeAC495271d0F',BSC:'https://bscscan.com/token/0x1AF3F329e8BE154074D8769D1FFa4eE058B1DBc3',Polygon:'https://polygonscan.com/token/0x8f3Cf7ad23Cd3CaDbD9735AFf958023239c6A063',Arbitrum:'https://arbiscan.io/token/0xDA10009cBd5D07dd0CeCc66161FC93D7c9000da1',Base:'https://basescan.org/token/0x50c5725949A6F0c72E6C4a641F24049A917DB0Cb'}};
-const SC_EX_META={binance:{name:'Binance',domain:'binance.com',url:s=>`https://www.binance.com/en/price/${s}`},coinbase:{name:'Coinbase',domain:'coinbase.com',url:s=>`https://www.coinbase.com/price/${s}`},kraken:{name:'Kraken',domain:'kraken.com',url:s=>`https://www.kraken.com/en-us/prices/${s}`},okx:{name:'OKX',domain:'okx.com',url:s=>`https://www.okx.com/web3/detail/usdt/${s}`},bybit:{name:'Bybit',domain:'bybit.com',url:s=>`https://www.bybit.com/en/coin-price/${s}/`},bitfinex:{name:'Bitfinex',domain:'bitfinex.com',url:s=>`https://trading.bitfinex.com/t/${s.toUpperCase()}:USD`},kucoin:{name:'KuCoin',domain:'kucoin.com',url:s=>`https://www.kucoin.com/price/${s}`},bitget:{name:'Bitget',domain:'bitget.com',url:s=>`https://www.bitget.com/price/${s}`},gate:{name:'Gate.io',domain:'gate.io',url:s=>`https://www.gate.io/price/${s}`}};
-
-let scCoins=[], scFilter='all', scSearch='', scSortKey='mcap', scSortAsc=false, scPage=1, scRefreshTimer=null, scTimerSec=180;
-const SC_PAGE_SIZE=50;
-
-function scFmtUSD(n){if(!n||n===0)return'—';if(n>=1e12)return'$'+(n/1e12).toFixed(2)+'T';if(n>=1e9)return'$'+(n/1e9).toFixed(2)+'B';if(n>=1e6)return'$'+(n/1e6).toFixed(1)+'M';if(n>=1e3)return'$'+(n/1e3).toFixed(0)+'K';return'$'+n.toFixed(0)}
-function scFmtPrice(p){if(!p)return'—';return'$'+p.toFixed(p>0.999&&p<1.001?4:6)}
-function scPegDelta(p){const d=(p-1)*100,s=d>=0?'+':'';return s+d.toFixed(4)+'%'}
-function scPegCls(p){const d=Math.abs(p-1);return d<=0.001?'g':d<=0.01?'a':'r'}
-function scNormMech(r){if(!r)return'unknown';const s=r.toLowerCase();if(s.includes('fiat'))return'fiat';if(s.includes('algo'))return'algo';if(s.includes('crypto')||s.includes('cdp')||s.includes('collateral'))return'cdp';if(s.includes('rwa'))return'rwa';return'unknown'}
-function scCalcRisk(c){if(c.depegged)return 95;let s=0;const d=Math.abs((c.price||1)-1);if(d>0.10)s+=50;else if(d>0.05)s+=40;else if(d>0.02)s+=30;else if(d>0.01)s+=20;else if(d>0.005)s+=10;else if(d>0.001)s+=3;const m=c.mech||'unknown';if(m==='algo')s+=30;else if(m==='cdp')s+=12;else if(m==='rwa')s+=8;else if(m==='fiat')s+=2;else s+=18;const mc=c.mcap||0;if(mc<5e6)s+=18;else if(mc<5e7)s+=12;else if(mc<5e8)s+=6;else if(mc<5e9)s+=2;return Math.min(s,100)}
-function scStatus(c){if(c.depegged)return'depegged';const d=Math.abs((c.price||1)-1);return d>0.02?'depegged':d>0.005?'atrisk':'pegged'}
-function scRiskBadge(s){let c=s<=10?'safe':s<=25?'low':s<=50?'medium':s<=75?'high':'critical';return`<span class="risk-score ${c}">${s}</span>`}
-function scMechBadge(m){const l={fiat:'Fiat',cdp:'CDP',algo:'Algo',rwa:'RWA',unknown:'?'};return`<span class="mech ${m}">${l[m]||m}</span>`}
-function scChainUrl(sym,ch){return(SC_CONTRACTS[sym]&&SC_CONTRACTS[sym][ch])||`https://defillama.com/stablecoin/${sym.toLowerCase()}`}
-function scChainIcons(chains,sym,max=6){if(!chains||!chains.length)return'<span class="chain-more">—</span>';const show=chains.slice(0,max),extra=chains.length-show.length;const icons=show.map(ch=>{const slug=SC_CHAIN_SLUG[ch]||ch.toLowerCase().replace(/\s+/g,'-');const img=`https://icons.llamao.fi/icons/chains/rsz_${slug}.jpg`;const link=scChainUrl(sym,ch);const init=ch.slice(0,2).toUpperCase();return`<a class="chain-ico" href="${link}" target="_blank" rel="noopener" title="${sym} on ${ch}"><img src="${img}" alt="${ch}" loading="lazy" onerror="this.textContent='${init}'"></a>`}).join('');const more=extra>0?`<span class="chain-more">+${extra}</span>`:'';return`<div class="chain-icons">${icons}${more}</div>`}
-function scExBadges(exchanges,sym,cgId){if(!exchanges||!exchanges.length)return'<span style="color:var(--text-3);font-size:11px">—</span>';const slug=cgId||sym.toLowerCase();return`<div class="ex-badges">${exchanges.map(ex=>{const m=SC_EX_META[ex];if(!m)return'';const href=m.url(slug);const fav=`https://www.google.com/s2/favicons?domain=${m.domain}&sz=32`;return`<a class="ex-icon-link" href="${href}" target="_blank" rel="noopener" title="${m.name}"><img src="${fav}" alt="${m.name}" width="14" height="14" loading="lazy"></a>`}).join('')}</div>`}
-
-function scSetFilter(f){scFilter=f;scPage=1;document.querySelectorAll('#sc-section .ftab').forEach(t=>t.classList.toggle('active',t.dataset.f===f));scRenderTable()}
-window.scSetFilter=scSetFilter;
-function scOnSearch(q){scSearch=q;scPage=1;scRenderTable()}
-window.scOnSearch=scOnSearch;
-function scSortBy(key){if(scSortKey===key)scSortAsc=!scSortAsc;else{scSortKey=key;scSortAsc=false;}document.querySelectorAll('#sc-section th[data-sort]').forEach(th=>{th.classList.toggle('sorted',th.dataset.sort===key);th.classList.toggle('asc-dir',th.dataset.sort===key&&scSortAsc)});scRenderTable()}
-window.scSortBy=scSortBy;
-function scGoPage(p){scPage=p;scRenderTable();document.getElementById('sc-section').scrollIntoView({behavior:'smooth'})}
-window.scGoPage=scGoPage;
-
-function scGetFiltered(){return scCoins.filter(c=>{if(scFilter==='pegged')return c._status==='pegged';if(scFilter==='atrisk')return c._status==='atrisk';if(scFilter==='depegged')return c._status==='depegged';if(scFilter==='fiat')return c.mech==='fiat';if(scFilter==='cdp')return c.mech==='cdp';if(scFilter==='algo')return c.mech==='algo';return true}).filter(c=>{if(!scSearch)return true;const q=scSearch.toLowerCase();return c.sym.toLowerCase().includes(q)||c.name.toLowerCase().includes(q)})}
-function scGetSorted(list){return[...list].sort((a,b)=>{let av=a[scSortKey],bv=b[scSortKey];if(scSortKey==='peg'){av=Math.abs((a.price||1)-1);bv=Math.abs((b.price||1)-1)}if(scSortKey==='symbol'){av=a.sym;bv=b.sym}if(typeof av==='string')return scSortAsc?av.localeCompare(bv):bv.localeCompare(av);return scSortAsc?(av||0)-(bv||0):(bv||0)-(av||0)})}
-
-function scRenderStats(){const all=scCoins;const totalMcap=all.reduce((s,c)=>s+(c.mcap||0),0);const atPeg=all.filter(c=>c._status==='pegged').length;const atRisk=all.filter(c=>c._status==='atrisk').length;const dep=all.filter(c=>c._status==='depegged').length;const lg=all.reduce((b,c)=>(c.mcap||0)>(b?.mcap||0)?c:b,null);document.getElementById('sc-stats').innerHTML=`<div class="stat"><div class="stat-label">Total Market Cap</div><div class="stat-val b">${scFmtUSD(totalMcap)}</div><div class="stat-sub">all tracked stablecoins</div></div><div class="stat"><div class="stat-label">✅ At Peg</div><div class="stat-val g">${atPeg}</div><div class="stat-sub">within 0.5% of $1.00</div></div><div class="stat"><div class="stat-label">⚠ At Risk</div><div class="stat-val a">${atRisk}</div><div class="stat-sub">0.5% – 2% deviation</div></div><div class="stat"><div class="stat-label">🚨 Depegged</div><div class="stat-val r">${dep}</div><div class="stat-sub">over 2% deviation</div></div><div class="stat"><div class="stat-label">Largest</div><div class="stat-val p">${lg?.sym||'—'}</div><div class="stat-sub">${scFmtUSD(lg?.mcap||0)}</div></div><div class="stat"><div class="stat-label">Tracked</div><div class="stat-val">${all.length}</div><div class="stat-sub">stablecoins monitored</div></div>`}
-
-function scRenderTable(){const filtered=scGetFiltered();const sorted=scGetSorted(filtered);const total=sorted.length;const maxPage=Math.max(1,Math.ceil(total/SC_PAGE_SIZE));if(scPage>maxPage)scPage=maxPage;const start=(scPage-1)*SC_PAGE_SIZE;const pg=sorted.slice(start,start+SC_PAGE_SIZE);const tbody=document.getElementById('sc-tbody');if(!tbody)return;if(!pg.length){tbody.innerHTML=`<tr><td colspan="11"><div class="empty-state">No stablecoins match your filter.</div></td></tr>`;document.getElementById('sc-pagination').innerHTML='';return}const rankMap={};[...scCoins].sort((a,b)=>(b.mcap||0)-(a.mcap||0)).forEach((c,i)=>{rankMap[c.sym+c.llamaId]=i+1});tbody.innerHTML=pg.map(c=>{const rank=rankMap[c.sym+c.llamaId]||'—';const price=c.price||1;const pdCls=scPegCls(price);const ghFb=`https://cdn.jsdelivr.net/gh/ErikThiart/cryptocurrency-icons@master/32/${c.sym.toLowerCase()}.png`;const iconHtml=c.icon?`<img src="${c.icon}" alt="${c.sym}" data-fb="${ghFb}" loading="lazy" onerror="if(this.dataset.fb){var f=this.dataset.fb;this.dataset.fb='';this.src=f;return;}this.style.display='none';this.nextElementSibling.style.display='flex'"><span class="coin-letter-icon" style="display:none">${c.sym.charAt(0)}</span>`:`<span class="coin-letter-icon">${c.sym.charAt(0)}</span>`;const scCgUrl=c.cgId?`https://www.coingecko.com/en/coins/${c.cgId}`:null;const scCmcSlug=c.cgId?(CG_TO_CMC[c.cgId]||c.cgId):null;const scLinks=`<div class="tk-links">${scCgUrl?`<a href="${scCgUrl}" target="_blank" title="CoinGecko"><img src="https://www.google.com/s2/favicons?domain=coingecko.com&sz=32" alt="CG"></a>`:''}${scCmcSlug?`<a href="https://coinmarketcap.com/currencies/${scCmcSlug}/" target="_blank" title="CoinMarketCap"><img src="https://www.google.com/s2/favicons?domain=coinmarketcap.com&sz=32" alt="CMC"></a>`:''}</div>`;const chgCls=(c.change24h||0)>=0?'up':'dn';const chgSign=(c.change24h||0)>=0?'+':'';return`<tr><td><span class="rank-num">${rank}</span></td><td><div class="tk"><div class="tk-ico">${iconHtml}</div><div><div class="tk-sym">${c.sym}</div><div class="tk-name">${c.name}</div><div class="tk-chains">${c.chainCount>0?c.chainCount+' chain'+(c.chainCount!==1?'s':''):''}</div>${scLinks}</div></div></td><td>${scMechBadge(c.mech)}</td><td><span class="price-cell ${scPegCls(price)}">${scFmtPrice(price)}</span></td><td><span class="peg-delta ${pdCls}">${scPegDelta(price)}</span></td><td class="col-mcap"><span class="mcap">${scFmtUSD(c.mcap)}</span></td><td class="col-vol"><span class="vol">${scFmtUSD(c.vol24h)}</span></td><td class="col-chg"><span class="pct ${chgCls}">${c.vol24h>0?chgSign+(c.change24h||0).toFixed(2)+'%':'—'}</span></td><td class="col-chains">${scChainIcons(c.chains,c.sym,6)}</td><td class="col-exchanges">${scExBadges(c.exchanges,c.sym,c.cgId)}</td><td>${scRiskBadge(c._risk)}</td></tr>`}).join('');const pg2=document.getElementById('sc-pagination');if(!pg2)return;if(maxPage<=1){pg2.innerHTML='';return}pg2.innerHTML=`<button onclick="scGoPage(${scPage-1})" ${scPage<=1?'disabled':''}>← Prev</button><span class="pg-info">Page ${scPage} of ${maxPage} · ${total} coins</span><button onclick="scGoPage(${scPage+1})" ${scPage>=maxPage?'disabled':''}>Next →</button>`}
-
-function scRenderAll(){scRenderStats();scRenderTable()}
-
-function scSetProgress(pct,txt){const f=document.getElementById('sc-lprog');const l=document.getElementById('sc-ltxt');if(f)f.style.width=pct+'%';if(l)l.textContent=txt}
-
-async function scFetchData(){scSetProgress(10,'Fetching peg data...');let llamaCoins=[];try{const r=await smartFetch('/llama/stablecoins?includePrices=true');const d=await r.json();llamaCoins=d.peggedAssets||[];scSetProgress(50,'Fetching market data...')}catch(e){scSetProgress(50,'Using fallback data...')}const llamaById={};llamaCoins.forEach(c=>{llamaById[String(c.id)]=c});let cgData=[];try{const ids=SC_HARDCODED.map(h=>h.cgId).join(',');const r=await smartFetch(`/cg/coins/markets?vs_currency=usd&ids=${ids}&per_page=50`);cgData=await r.json().catch(()=>[]);scSetProgress(80,'Processing...')}catch(e){scSetProgress(80,'CoinGecko unavailable...')}const cgById={};(Array.isArray(cgData)?cgData:[]).forEach(c=>{cgById[c.id]=c});// Identity guard: if a source's symbol doesn't match ours, that id/mapping is
-// wrong — drop the source rather than render another asset's numbers under this
-// row. Without it a cross-wired llamaId silently shows a different stablecoin.
-scCoins=SC_HARDCODED.map(hc=>{let llama=llamaById[hc.llamaId]||{};if(llama.symbol&&llama.symbol.toUpperCase()!==hc.sym.toUpperCase())llama={};let cg=cgById[hc.cgId]||{};if(cg.symbol&&cg.symbol.toUpperCase()!==hc.sym.toUpperCase())cg={};const pegType=llama.pegType||hc.pegType||'peggedUSD';const circ=llama.circulating||{};const count=Object.values(circ).reduce((a,v)=>a+(typeof v==='number'?v:0),0);const price=llama.price||cg.current_price||1.0;const llamaMcap=pegType.indexOf('USD')!==-1?count:count*price;return{...hc,price,mcap:llamaMcap||cg.market_cap||0,vol24h:cg.total_volume||0,change24h:cg.price_change_percentage_24h||0,chains:llama.chains||[],chainCount:(llama.chains||[]).length||hc.chains_hint||0,icon:hc.icon||cg.image||null,pegType}});
-// Skip only ids a hardcoded row actually consumed (symbol matched too), so a
-// stale hardcoded id can't suppress the real coin from discovery.
-llamaCoins.forEach(lc=>{const lcSym=String(lc.symbol||'').toUpperCase();if(SC_HARDCODED.find(h=>h.llamaId===String(lc.id)&&h.sym.toUpperCase()===lcSym))return;const pegType=lc.pegType||'';const isUSD=pegType.indexOf('USD')!==-1;if(!isUSD&&pegType!=='peggedEUR')return;const count=(lc.circulating||{})[pegType]||0;const mcap=isUSD?count:count*(lc.price||0);if(mcap<10e6)return;if(isUSD&&(lc.price||0)>1.05)return;scCoins.push({llamaId:String(lc.id),sym:lc.symbol||'?',name:lc.name||lc.symbol||'?',cgId:lc.gecko_id||null,mech:scNormMech(lc.pegMechanism),price:lc.price||1.0,mcap,vol24h:0,change24h:0,chains:lc.chains||[],chainCount:(lc.chains||[]).length,icon:null,pegType:lc.pegType})});const _discIds=[...new Set(scCoins.filter(c=>c.cgId&&(!c.icon||!c.vol24h||!c.change24h)).map(c=>c.cgId))];if(_discIds.length){try{const _r=await smartFetch(`/cg/coins/markets?vs_currency=usd&ids=${_discIds.join(',')}&per_page=250`);const _d=await _r.json().catch(()=>[]);if(Array.isArray(_d))_d.forEach(coin=>{scCoins.forEach(c=>{if(c.cgId===coin.id){if(!c.icon&&coin.image)c.icon=coin.image;if(!c.vol24h)c.vol24h=coin.total_volume||0;if(!c.change24h)c.change24h=coin.price_change_percentage_24h||0;if(!c.mcap&&coin.market_cap)c.mcap=coin.market_cap}})});}catch(e){}}scCoins.sort((a,b)=>(b.mcap||0)-(a.mcap||0));scCoins.forEach(c=>{c._risk=scCalcRisk(c);c._status=scStatus(c)});scSetProgress(100,'Done!');setTimeout(()=>{const l=document.getElementById('sc-loader');if(l)l.classList.add('hidden');const nl=document.getElementById('tnav-live');if(nl)nl.style.display='flex'},400);const now=new Date();const el=document.getElementById('sc-updTime');if(el)el.textContent='updated '+now.toLocaleTimeString();scStartTimer();scRenderAll()}
-
-function scStartTimer(){if(scRefreshTimer)clearInterval(scRefreshTimer);scTimerSec=180;scUpdateTimer();scRefreshTimer=setInterval(()=>{scTimerSec--;if(scTimerSec<=0){clearInterval(scRefreshTimer);scFetchData()}else scUpdateTimer()},1000)}
-function scUpdateTimer(){const m=Math.floor(scTimerSec/60),s=scTimerSec%60;const el=document.getElementById('sc-refreshTimer');if(el)el.textContent=`next: ${m}:${String(s).padStart(2,'0')}`}
-function scDoRefresh(){const btn=document.getElementById('sc-refreshBtn');if(btn)btn.classList.add('spinning');if(scRefreshTimer)clearInterval(scRefreshTimer);scFetchData().finally(()=>{if(btn)btn.classList.remove('spinning')})}
-window.scDoRefresh=scDoRefresh;
-
-window.scInit=async function(){if(!scInitialized){scInitialized=true;await scFetchData()}};
-})();
-
 // ===== EXCHANGE TAB SWITCHER =====
 function switchExchange(ex) {
     const bnSection = document.getElementById('bn-section');
     const cbSection = document.getElementById('cb-section');
-    const scSection = document.getElementById('sc-section');
     const bnTab = document.getElementById('ex-tab-binance');
     const cbTab = document.getElementById('ex-tab-coinbase');
-    const scTab = document.getElementById('ex-tab-stablecoins');
 
     // Hide all sections, deactivate all tabs
     bnSection.classList.remove('active');
     cbSection.classList.remove('active');
-    scSection.classList.remove('active');
     bnTab.classList.remove('active');
     cbTab.classList.remove('active');
-    scTab.classList.remove('active');
 
     if (ex === 'binance') {
         bnSection.classList.add('active');
@@ -2639,23 +2445,6 @@ function switchExchange(ex) {
                 }
             }, 30000);
         }
-    } else if (ex === 'stablecoins') {
-        scSection.classList.add('active');
-        scTab.classList.add('active');
-        if (typeof window.scInit === 'function') {
-            window.scInit().catch(e => {
-                console.error('[SC] init failed:', e);
-                const loader = document.getElementById('sc-loader');
-                if (loader) {
-                    const scErrDiv = document.createElement('div');
-                    scErrDiv.style.cssText = 'color:#f87171;text-align:center;padding:40px';
-                    scErrDiv.innerHTML = '<h3>Failed to load stablecoin data</h3><p id="sc-err-msg"></p><button onclick="scDoRefresh()" style="margin-top:16px;padding:8px 16px;background:#22c55e;color:#000;border:none;border-radius:4px;cursor:pointer">Retry</button>';
-                    scErrDiv.querySelector('#sc-err-msg').textContent = e.message;
-                    loader.innerHTML = '';
-                    loader.appendChild(scErrDiv);
-                }
-            });
-        }
     }
     history.replaceState(null, '', '#' + ex);
 }
@@ -2663,7 +2452,6 @@ function switchExchange(ex) {
 document.addEventListener('DOMContentLoaded', () => {
     const hash = location.hash.replace('#', '') || 'binance';
     if (hash === 'coinbase') switchExchange('coinbase');
-    else if (hash === 'stablecoins') switchExchange('stablecoins');
     else switchExchange('binance');
 });
 
@@ -2689,15 +2477,13 @@ document.addEventListener('keydown', e => {
             input.blur();
             if (input.closest('#bn-section')) bnSetQuery('');
             else if (input.closest('#cb-section')) cbSetQuery('');
-            else if (input.closest('#sc-section')) scOnSearch('');
         }
     }
 
-    // 'b' / 'c' / 's' to switch exchange tabs (when not in input)
+    // 'b' / 'c' to switch exchange tabs (when not in input)
     if (!inInput) {
         if (e.key === 'b' || e.key === 'B') switchExchange('binance');
         if (e.key === 'c' || e.key === 'C') switchExchange('coinbase');
-        if (e.key === 's' || e.key === 'S') switchExchange('stablecoins');
     }
 });
 
