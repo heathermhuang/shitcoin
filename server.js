@@ -10,6 +10,7 @@ const https = require('https');
 const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
+const { BINANCE_ALLOWED, COINBASE_ALLOWED, COINGECKO_ALLOWED, LLAMA_ALLOWED, isAllowed } = require('./lib/api-routes.cjs');
 
 const PORT = process.env.PORT || 8080;
 const ROOT = __dirname;
@@ -169,19 +170,27 @@ const EXCHANGE_URLS = {
   kraken:   'https://api.kraken.com/0/public/AssetPairs',
 };
 
+const DENIED = [Buffer.from('{"error":"not allowed"}'), 'application/json', 403];
+
 async function routeRequest(reqPath) {
+  // The Worker allowlists every proxy prefix and 403s anything outside it. The
+  // dev server used to forward any subpath, so a call could work locally and be
+  // rejected in production. Same lists, same answer.
   if (reqPath.startsWith('/api/')) {
     const p = reqPath.slice(4);
+    if (!isAllowed(BINANCE_ALLOWED, p.split('?')[0])) return DENIED;
     const xf = p.startsWith('/exchangeInfo') ? projectExchangeInfo : null;
     return cachedFetch('binance:' + p + (xf ? ':v2' : ''), BINANCE_BASE + p, ttlFor(p), xf);
   }
   if (reqPath.startsWith('/cb/')) {
     const p = reqPath.slice(3);
+    if (!isAllowed(COINBASE_ALLOWED, p.split('?')[0])) return DENIED;
     const ttl = p.replace(/\/$/, '') === '/products' ? 300 : p.includes('/stats') ? 120 : p.includes('/book') ? 300 : 120;
     return cachedFetch('cb:' + p, 'https://api.exchange.coinbase.com' + p, ttl || 120);
   }
   if (reqPath.startsWith('/cg/')) {
     const p = reqPath.slice(3);
+    if (!isAllowed(COINGECKO_ALLOWED, p.split('?')[0])) return DENIED;
     return cachedFetch('cg:' + p, 'https://api.coingecko.com/api/v3' + p, 300);
   }
   if (reqPath.startsWith('/ex/')) {
@@ -194,6 +203,7 @@ async function routeRequest(reqPath) {
   }
   if (reqPath.startsWith('/llama/')) {
     const p = reqPath.slice(6);
+    if (!isAllowed(LLAMA_ALLOWED, p.split('?')[0])) return DENIED;
     return cachedFetch('llama:' + p, 'https://stablecoins.llama.fi' + p, 900);
   }
   return null; // serve static
@@ -202,11 +212,32 @@ async function routeRequest(reqPath) {
 // ---- STATIC FILE SERVER ----
 function serveStatic(reqPath, res) {
   let filePath = path.join(ROOT, reqPath === '/' ? 'index.html' : reqPath);
-  // Safety: prevent directory traversal
-  if (!filePath.startsWith(ROOT)) { res.writeHead(403); res.end(); return; }
+
+  // Directory boundary, not a string prefix. `startsWith(ROOT)` also accepted a
+  // sibling directory whose name merely begins with ROOT's ("shitcoin-notes/").
+  // Node normalises `..` out of the URL before it reaches here so that was not
+  // actually reachable — but the check should say what it means.
+  if (filePath !== ROOT && !filePath.startsWith(ROOT + path.sep)) {
+    res.writeHead(403); res.end('Forbidden'); return;
+  }
+
+  // Never serve dotfiles. `.dev.vars` sits in ROOT and holds PROXY_URL; with no
+  // denylist and a 0.0.0.0 bind, `GET /.dev.vars` returned it with HTTP 200 to
+  // anything on the network while `npm start` was running. Verified before the fix.
+  if (path.relative(ROOT, filePath).split(path.sep).some(seg => seg.startsWith('.'))) {
+    res.writeHead(404); res.end('Not Found'); return;
+  }
 
   fs.readFile(filePath, (err, data) => {
-    if (err) { res.writeHead(404); res.end('Not Found'); return; }
+    if (err) {
+      // Fall through to index.html, the way the Worker's catch-all does. This is
+      // the invariant smartFetch is built around: an unmatched path answers 200
+      // text/html, NOT 404. Dev used to 404 here, so the one failure mode the
+      // content-type guard exists to catch could not be reproduced locally —
+      // which is how the missing /llama/ route stayed hidden for months.
+      if (reqPath !== '/index.html') { serveStatic('/index.html', res); return; }
+      res.writeHead(404); res.end('Not Found'); return;
+    }
     const ext = path.extname(filePath);
     const ct = MIME[ext] || 'application/octet-stream';
     const noCache = ['.html', '.js', '.css'].includes(ext);
@@ -271,6 +302,10 @@ for (const f of fs.readdirSync(CACHE_DIR).filter(f => f.endsWith('.json'))) {
 }
 console.log(`[INIT] Loaded ${loaded} cache entries`);
 
-server.listen(PORT, '0.0.0.0', () => {
-  console.log(`[INIT] Crypto Monitor proxy on http://localhost:${PORT}`);
+// Loopback by default. This is a dev server with no auth that reads files from
+// the repo root; binding 0.0.0.0 put it on every interface. Set HOST=0.0.0.0
+// deliberately if you need to reach it from another device.
+const HOST = process.env.HOST || '127.0.0.1';
+server.listen(PORT, HOST, () => {
+  console.log(`[INIT] Crypto Monitor proxy on http://localhost:${PORT} (bound ${HOST})`);
 });
