@@ -842,6 +842,84 @@ async function smartFetch(path, opts) {
     return lastResp || new Response('{"error":"all sources failed"}', { status: 502, headers: { 'Content-Type': 'application/json' } });
 }
 
+// ===== CROSS-EXCHANGE LISTINGS =====
+// One fetch, one set of results, shared by both exchange modules.
+//
+// Each module used to fetch these itself, into its own exchangeData, and parse
+// them DIFFERENTLY — so the same "Also On" badge meant different things depending
+// on which tab you were looking at:
+//
+//   Kraken   Binance module filtered to ZUSD/USD/USDT quotes; the Coinbase module
+//            applied no quote filter at all, so its badge meant "appears in any
+//            Kraken pair", including EUR- and BTC-quoted ones.
+//   OKX      The Coinbase module required state === 'live'; the Binance module did
+//            not, so its badge could point at a suspended instrument.
+//
+// Unified on the stricter reading of each: quote-filtered AND live. Both badges
+// now mean "trades against USD/USDT there, right now", on both tabs.
+//
+// It also stops the duplicate network: /ex/okx (1.5 MB) and /ex/kraken (1.1 MB)
+// were each pulled twice when a visitor opened both tabs, into two Sets that were
+// never reconciled.
+const EXCHANGE_LISTINGS = { coinbase: new Set(), binance: new Set(), okx: new Set(), kraken: new Set() };
+const EXCHANGE_LISTINGS_TTL = 30 * 60 * 1000;   // matches the /ex/ proxy TTL
+let _exchangeListingsAt = 0;
+let _exchangeListingsPromise = null;
+
+function loadExchangeListings() {
+    if (_exchangeListingsPromise && Date.now() - _exchangeListingsAt < EXCHANGE_LISTINGS_TTL) {
+        return _exchangeListingsPromise;
+    }
+    _exchangeListingsAt = Date.now();
+    _exchangeListingsPromise = (async () => {
+        const grab = async (name, apply) => {
+            try {
+                const r = await smartFetch('/ex/' + name);
+                if (!r.ok) return;
+                apply(await r.json());
+            } catch (e) { console.warn(name + ' listings failed:', e.message); }
+        };
+        await Promise.all([
+            grab('coinbase', d => {
+                if (!Array.isArray(d)) return;
+                d.forEach(p => {
+                    if (p.quote_currency === 'USD' || p.quote_currency === 'USDT') {
+                        EXCHANGE_LISTINGS.coinbase.add(p.base_currency);
+                    }
+                });
+            }),
+            grab('binance', d => {
+                (d.symbols || []).forEach(sym => {
+                    if (sym.status === 'TRADING' && sym.quoteAsset === 'USDT') {
+                        EXCHANGE_LISTINGS.binance.add(sym.baseAsset);
+                    }
+                });
+            }),
+            grab('okx', d => {
+                (d.data || []).forEach(inst => {
+                    if (inst.quoteCcy === 'USDT' && inst.state === 'live') {
+                        EXCHANGE_LISTINGS.okx.add(inst.baseCcy);
+                    }
+                });
+            }),
+            grab('kraken', d => {
+                Object.values(d.result || {}).forEach(info => {
+                    if (!['ZUSD', 'USD', 'USDT'].includes(info.quote)) return;
+                    let base = info.base || '';
+                    if (base.startsWith('X') && base.length > 3) base = base.slice(1);
+                    if (base) EXCHANGE_LISTINGS.kraken.add(base);
+                });
+            }),
+        ]);
+        console.log('Exchange listings: CB=' + EXCHANGE_LISTINGS.coinbase.size
+            + ' BN=' + EXCHANGE_LISTINGS.binance.size
+            + ' OKX=' + EXCHANGE_LISTINGS.okx.size
+            + ' KR=' + EXCHANGE_LISTINGS.kraken.size);
+        return EXCHANGE_LISTINGS;
+    })();
+    return _exchangeListingsPromise;
+}
+
 // ===== BINANCE MODULE =====
 let bnInitialized = false;
 let bnRefreshInterval = null;
@@ -879,7 +957,7 @@ const EXCLUDE = new Set([...EXCLUDE_COMMON, ...EXCLUDE_BINANCE_ONLY]);
 // ============ LIVE DATA ============
 let allCoins = []; // Combined: tracked + discovered active coins
 let liveData = {};
-let exchangeData = { coinbase: new Set(), okx: new Set(), kraken: new Set() };
+const exchangeData = EXCHANGE_LISTINGS;   // shared; see loadExchangeListings()
 let filter = 'monitoring'; // default: show officially flagged coins
 let query = '';
 let sort = { key: 'risk', dir: 'desc' };
@@ -1148,48 +1226,7 @@ async function fetchDepthData() {
 }
 
 async function fetchExchangeData() {
-    // Coinbase
-    try {
-        const resp = await smartFetch('/ex/coinbase');
-        if (resp.ok) {
-            const products = await resp.json();
-            if (Array.isArray(products)) {
-                products.forEach(p => {
-                    if (p.quote_currency === 'USD' || p.quote_currency === 'USDT') {
-                        exchangeData.coinbase.add(p.base_currency);
-                    }
-                });
-            }
-        }
-    } catch(e) { console.warn('Coinbase fetch failed:', e.message); }
-
-    // OKX
-    try {
-        const resp = await smartFetch('/ex/okx');
-        if (resp.ok) {
-            const data = await resp.json();
-            (data.data || []).forEach(inst => {
-                if (inst.quoteCcy === 'USDT') exchangeData.okx.add(inst.baseCcy);
-            });
-        }
-    } catch(e) { console.warn('OKX fetch failed:', e.message); }
-
-    // Kraken
-    try {
-        const resp = await smartFetch('/ex/kraken');
-        if (resp.ok) {
-            const data = await resp.json();
-            Object.values(data.result || {}).forEach(info => {
-                if (['ZUSD','USD','USDT'].includes(info.quote)) {
-                    let base = info.base || '';
-                    if (base.startsWith('X') && base.length > 3) base = base.slice(1);
-                    exchangeData.kraken.add(base);
-                }
-            });
-        }
-    } catch(e) { console.warn('Kraken fetch failed:', e.message); }
-
-    console.log('Exchanges loaded: CB=' + exchangeData.coinbase.size + ' OKX=' + exchangeData.okx.size + ' KR=' + exchangeData.kraken.size);
+    await loadExchangeListings();
     bnRenderAll();
 }
 
@@ -1661,7 +1698,7 @@ const EXCLUDE = new Set([...EXCLUDE_COMMON, ...EXCLUDE_COINBASE_ONLY]);
 const PAGE_SIZE = 50;
 let allCoins = [];
 let liveData = {}; // sym -> {price, change, vol, mcap, icon, cgId, bidDepth, askDepth}
-let exchangeData = { binance: new Set(), okx: new Set(), kraken: new Set() };
+const exchangeData = EXCHANGE_LISTINGS;   // shared; see loadExchangeListings()
 let filter = 'all', sortCol = 'risk', sortAsc = false, page = 0, query = '';
 let lastRefresh = 0;
 
@@ -2029,19 +2066,7 @@ function cbSetPage(p) { page = Math.max(0, p); cbRenderAll(); window.scrollTo({t
 
 // ===== FETCHERS =====
 async function fetchExchanges() {
-    for (const ex of ['binance', 'okx', 'kraken']) {
-        try {
-            const r = await smartFetch('/ex/' + ex);
-            const d = await r.json();
-            if (ex === 'binance') {
-                (d.symbols || []).forEach(s => { if (s.status === 'TRADING' && s.quoteAsset === 'USDT') exchangeData.binance.add(s.baseAsset); });
-            } else if (ex === 'okx') {
-                ((d.data || d) || []).forEach(s => { if (s.instId?.endsWith('-USDT') && s.state === 'live') exchangeData.okx.add(s.instId.split('-')[0]); });
-            } else if (ex === 'kraken') {
-                Object.values(d.result || {}).forEach(p => { if (p.wsname) exchangeData.kraken.add(p.wsname.split('/')[0]); });
-            }
-        } catch(e) {}
-    }
+    await loadExchangeListings();
 }
 
 async function fetchDepth(sym) {
