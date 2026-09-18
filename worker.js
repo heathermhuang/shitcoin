@@ -290,7 +290,14 @@ async function cachedProxy(request, upstream, ttl, apiKey, proxy, relay, ctx) {
         .catch(() => null);
       ctx?.waitUntil?.(revalidate);
     }
-    return new Response(cached.body, { status: 200, headers: new Headers(cached.headers) });
+    // Re-assert the browser policy on every hit. cache.match() hands back headers
+    // rewritten by the zone's Browser Cache TTL: on shitcoin.io a cache miss
+    // left here with max-age=30 and the very next hit with max-age=14400,
+    // pinning proxy data in visitors' browsers for four hours. workers.dev
+    // never showed it because the Cache API is a no-op there.
+    const headers = new Headers(cached.headers);
+    headers.set('Cache-Control', cacheControl);
+    return new Response(cached.body, { status: 200, headers });
   }
 
   // Cache miss — fetch upstream
