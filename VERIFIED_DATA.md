@@ -204,3 +204,33 @@ title against `TRACKED_TOKENS`, then cross-checked every status against live `ex
 - #26 VOXEL listed in two batches → **2025-12-17** (the 2025-09-30 entry was the wrong one).
 - #11 BETA delistDate → still unverified; BETA is not named in the 2026-02-13 notice. Left as-is
   and flagged here rather than invented.
+
+---
+
+## 2026-09-18 SESSION — detector PRs #21–#23 verified and applied
+
+Each finding checked against the official notice (binance.com/.../detail/<code>) and against
+Binance's own asset list (`bapi/asset/v2/public/asset/asset/get-all-asset`), which carries the
+live `Monitoring` tag.
+
+| Change | Tokens | Source |
+|--------|--------|--------|
+| Monitoring tag 2026-09-04 | AVA, GNS, SCR, TOWNS | 59c847eea19149369c3bf4b01edfa6df |
+| Delist 2026-09-24 03:00 UTC (announced 2026-09-10) | USDP | 8e6fd91b79a34bddbd7643ef002db47e |
+
+- **Names are the notices' own**: Pax Dollar, Gains Network, Scroll, Towns Protocol. The notice
+  and Binance both call AVA plain "AVA"; it is Travala's token (CoinGecko `concierge-io` and
+  Binance AVAUSDT agree on price), so the row says `AVA (Travala)`, which is how CoinGecko and CMC
+  name it.
+- **USDP monDate is null.** No monitoring tag was ever announced. The detector writes the delist
+  date there as a placeholder; the 2026-08-14 rule applies: an unverified monDate is null.
+- USDP stays in `EXCLUDE_BINANCE_ONLY`, so its row carries no live price, as AEUR's did.
+- CoinGecko ids added for SCR (`scroll`), TOWNS (`towns`) and USDP (`paxos-standard`). Scroll and
+  Towns rank outside the top-1000 sweep, so without the entry SCR resolved to the bare id `scr`.
+  CMC slug `ava` added: AVA's CoinGecko id is not a CMC slug (`/currencies/concierge-io/` 404s).
+
+### Coinbase
+BADGER-USD and STORJ-USD have been limit-only since 2026-08-28. Coinbase announced it will
+suspend trading in both on **2026-09-28** (~2pm ET), with withdrawals still allowed (crypto.news,
+Crypto Briefing). Nothing to curate yet. The Coinbase tab already scores limit-only markets at 85,
+and the detector will report the suspension when it happens.

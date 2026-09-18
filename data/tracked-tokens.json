@@ -1304,15 +1304,15 @@
   },
   {
     "sym": "USDP",
-    "name": "USDP",
+    "name": "Pax Dollar",
     "status": "delisting",
-    "monDate": "2026-09-24",
+    "monDate": null,
     "delistDate": "2026-09-24",
     "restoreDate": null
   },
   {
     "sym": "AVA",
-    "name": "AVA",
+    "name": "AVA (Travala)",
     "status": "monitoring",
     "monDate": "2026-09-04",
     "delistDate": null,
@@ -1320,7 +1320,7 @@
   },
   {
     "sym": "GNS",
-    "name": "GNS",
+    "name": "Gains Network",
     "status": "monitoring",
     "monDate": "2026-09-04",
     "delistDate": null,
@@ -1328,7 +1328,7 @@
   },
   {
     "sym": "SCR",
-    "name": "SCR",
+    "name": "Scroll",
     "status": "monitoring",
     "monDate": "2026-09-04",
     "delistDate": null,
@@ -1336,7 +1336,7 @@
   },
   {
     "sym": "TOWNS",
-    "name": "TOWNS",
+    "name": "Towns Protocol",
     "status": "monitoring",
     "monDate": "2026-09-04",
     "delistDate": null,
