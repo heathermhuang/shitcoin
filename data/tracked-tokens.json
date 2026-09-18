@@ -1301,5 +1301,45 @@
     "monDate": "2026-01-02",
     "delistDate": null,
     "restoreDate": "2026-03-06"
+  },
+  {
+    "sym": "USDP",
+    "name": "USDP",
+    "status": "delisting",
+    "monDate": "2026-09-24",
+    "delistDate": "2026-09-24",
+    "restoreDate": null
+  },
+  {
+    "sym": "AVA",
+    "name": "AVA",
+    "status": "monitoring",
+    "monDate": "2026-09-04",
+    "delistDate": null,
+    "restoreDate": null
+  },
+  {
+    "sym": "GNS",
+    "name": "GNS",
+    "status": "monitoring",
+    "monDate": "2026-09-04",
+    "delistDate": null,
+    "restoreDate": null
+  },
+  {
+    "sym": "SCR",
+    "name": "SCR",
+    "status": "monitoring",
+    "monDate": "2026-09-04",
+    "delistDate": null,
+    "restoreDate": null
+  },
+  {
+    "sym": "TOWNS",
+    "name": "TOWNS",
+    "status": "monitoring",
+    "monDate": "2026-09-04",
+    "delistDate": null,
+    "restoreDate": null
   }
 ]
