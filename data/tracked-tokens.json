@@ -1341,5 +1341,21 @@
     "monDate": "2026-09-04",
     "delistDate": null,
     "restoreDate": null
+  },
+  {
+    "sym": "BICO",
+    "name": "BICO",
+    "status": "monitoring",
+    "monDate": "2026-10-09",
+    "delistDate": null,
+    "restoreDate": null
+  },
+  {
+    "sym": "CVC",
+    "name": "CVC",
+    "status": "monitoring",
+    "monDate": "2026-10-09",
+    "delistDate": null,
+    "restoreDate": null
   }
 ]
