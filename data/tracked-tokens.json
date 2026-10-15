@@ -265,9 +265,9 @@
   {
     "sym": "QUICK",
     "name": "QuickSwap",
-    "status": "monitoring",
+    "status": "delisting",
     "monDate": "2026-04-30",
-    "delistDate": null,
+    "delistDate": "2026-10-28",
     "restoreDate": null
   },
   {
@@ -289,9 +289,9 @@
   {
     "sym": "EPIC",
     "name": "Epic Chain",
-    "status": "monitoring",
+    "status": "delisting",
     "monDate": "2026-05-22",
-    "delistDate": null,
+    "delistDate": "2026-10-28",
     "restoreDate": null
   },
   {
@@ -1339,6 +1339,22 @@
     "name": "Towns Protocol",
     "status": "monitoring",
     "monDate": "2026-09-04",
+    "delistDate": null,
+    "restoreDate": null
+  },
+  {
+    "sym": "BICO",
+    "name": "BICO",
+    "status": "monitoring",
+    "monDate": "2026-10-09",
+    "delistDate": null,
+    "restoreDate": null
+  },
+  {
+    "sym": "CVC",
+    "name": "CVC",
+    "status": "monitoring",
+    "monDate": "2026-10-09",
     "delistDate": null,
     "restoreDate": null
   }
