@@ -55,11 +55,13 @@ const BINANCE_BASE = 'https://www.binance.com';
 function withProxyHost(url, host) {
   const h = (host || '').trim();
   if (!url || !h) return url;
-  if (!/^(?:\d{1,3}(?:\.\d{1,3}){3}|(?:[A-Za-z0-9-]+\.)+[A-Za-z]{2,})$/.test(h)) {
+  if (!/^(?:(?:25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(?:\.(?:25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}|(?:[A-Za-z0-9-]+\.)+[A-Za-z]{2,})$/.test(h)) {
     throw new Error('PROXY_HOST must be a bare IPv4 address or hostname');
   }
   const u = new URL(url);
   u.hostname = h;
+  // URL ignores or rewrites a host it won't take; never keep the old proxy silently.
+  if (u.hostname !== h.toLowerCase()) throw new Error('PROXY_HOST was not accepted as a host');
   return u.toString().replace(/\/$/, '');
 }
 const PROXY_URL = withProxyHost(process.env.PROXY_URL || '', process.env.PROXY_HOST);
