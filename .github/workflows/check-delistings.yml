@@ -43,6 +43,7 @@ jobs:
         id: detect
         env:
           PROXY_URL: ${{ secrets.PROXY_URL }}
+          PROXY_HOST: ${{ vars.PROXY_HOST }}
         run: |
           # `bash -e` alone does not set pipefail, so `node ... | tee` reported
           # tee's exit status: a detector that threw exited non-zero, tee exited

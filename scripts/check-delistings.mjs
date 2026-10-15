@@ -31,6 +31,7 @@
 //   PROXY_URL  residential HTTP proxy URL for the Binance fetch
 //              (http://user:pass@host:port). Empty = direct, which only works
 //              from a non-datacenter IP (a dev Mac). REQUIRED in CI.
+//   PROXY_HOST optional: replaces only PROXY_URL's host (after a proxy IP rotation)
 //   TODAY      override "today" (YYYY-MM-DD) for deterministic tests.
 //
 // Why the proxy (verified 2026-06-27): binance.com blocks datacenter IPs — the
@@ -49,7 +50,19 @@ const SNAPSHOT = ROOT + 'data/coinbase-snapshot.json';
 const BINANCE_BASE = 'https://www.binance.com';
 // binance.com blocks datacenter IPs; in CI route the Binance fetch through a
 // residential HTTP proxy via $PROXY_URL. Empty = direct (works from a dev Mac).
-const PROXY_URL = process.env.PROXY_URL || '';
+// PROXY_HOST (a repo variable, not a secret) replaces only the proxy's host, so a
+// provider rotating the IP is followed without touching the credential in PROXY_URL.
+function withProxyHost(url, host) {
+  const h = (host || '').trim();
+  if (!url || !h) return url;
+  if (!/^(?:\d{1,3}(?:\.\d{1,3}){3}|(?:[A-Za-z0-9-]+\.)+[A-Za-z]{2,})$/.test(h)) {
+    throw new Error('PROXY_HOST must be a bare IPv4 address or hostname');
+  }
+  const u = new URL(url);
+  u.hostname = h;
+  return u.toString().replace(/\/$/, '');
+}
+const PROXY_URL = withProxyHost(process.env.PROXY_URL || '', process.env.PROXY_HOST);
 // Imported only when a proxy is actually configured. undici is needed for exactly
 // one thing — routing the Binance call through PROXY_URL in CI — so a top-level
 // import made the whole script unrunnable whenever undici itself could not load,
