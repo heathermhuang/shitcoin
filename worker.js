@@ -304,10 +304,15 @@ async function cachedProxy(request, upstream, ttl, apiKey, proxy, relay, ctx) {
   try {
     const upstream_resp = await doFetch();
     if (!upstream_resp.ok) {
-      // CoinGecko rate-limited: return empty array so the client shows '—' gracefully
+      // CoinGecko refused (rate limit, quota). The body stays an empty array so the
+      // client still shows '—', but the status says it failed: 200 [] is also
+      // CoinGecko's real answer for ids it does not list (Binance's tokenized
+      // stocks), and index.html could not tell the two apart. It read that answer
+      // as an outage and sent every CoinGecko call direct-first for two minutes,
+      // where the anonymous rate limit fails them all.
       if (isCoinGecko) {
         return new Response('[]', {
-          status: 200,
+          status: 503,
           headers: { 'Content-Type': 'application/json' },
         });
       }
@@ -333,10 +338,11 @@ async function cachedProxy(request, upstream, ttl, apiKey, proxy, relay, ctx) {
     if (ctx?.waitUntil) ctx.waitUntil(stored); else await stored;
     return response;
   } catch (e) {
-    // CoinGecko fetch error: return empty array rather than 502
+    // CoinGecko fetch threw (network, the broken CONNECT proxy): same 503 + [] as a
+    // refusal above. A 200 here would read as CoinGecko's real empty answer.
     if (isCoinGecko) {
       return new Response('[]', {
-        status: 200,
+        status: 503,
         headers: { 'Content-Type': 'application/json' },
       });
     }

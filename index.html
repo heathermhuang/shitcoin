@@ -836,8 +836,9 @@ async function smartFetch(path, opts) {
         try {
             const r = await fetch(url, opts);
             if (r.ok) {
-                // The proxy can answer 200 with an empty body when Cloudflare is
-                // rate-limited by CoinGecko — treat that as a miss and try direct.
+                // An empty 200 from a proxy is a miss — try direct. Except a bare []
+                // from /cg/: that is CoinGecko's answer for ids it does not list, and
+                // the Worker reports a refused CoinGecko as 503 instead.
                 if (isProxy) {
                     // A proxy path with no matching Worker route falls through to the
                     // SPA catch-all and answers 200 text/html. That is a miss, not data
@@ -850,7 +851,7 @@ async function smartFetch(path, opts) {
                     if (ct.includes('text/html') || t.trimStart().startsWith('<')) {
                         _markProxyBlocked(pref); lastResp = r; continue;
                     }
-                    if (_isEmptyBody(t)) { _markProxyBlocked(pref); lastResp = r; continue; }
+                    if (_isEmptyBody(t) && !(pref === 'cg' && t === '[]')) { _markProxyBlocked(pref); lastResp = r; continue; }
                 }
                 return r;
             }
