@@ -338,10 +338,11 @@ async function cachedProxy(request, upstream, ttl, apiKey, proxy, relay, ctx) {
     if (ctx?.waitUntil) ctx.waitUntil(stored); else await stored;
     return response;
   } catch (e) {
-    // CoinGecko fetch error: return empty array rather than 502
+    // CoinGecko fetch threw (network, the broken CONNECT proxy): same 503 + [] as a
+    // refusal above. A 200 here would read as CoinGecko's real empty answer.
     if (isCoinGecko) {
       return new Response('[]', {
-        status: 200,
+        status: 503,
         headers: { 'Content-Type': 'application/json' },
       });
     }
