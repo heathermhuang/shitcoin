@@ -650,7 +650,17 @@ const COIN_IDS = {
     'AEUR':'anchored-coins-eur','TROY':'troy-2','WAVES':'waves','XEM':'nem',
     'KDA':'kadena','BAKE':'bakerytoken','WRX':'wazirx','SLF':'self-chain',
     'PNT':'pnetwork','IDRT':'rupiah-token','FOR':'force-protocol','WNXM':'wrapped-nxm',
-    'SRM':'serum'
+    'SRM':'serum','AI':'sleepless-ai'
+};
+
+// Coinbase-only exceptions to COIN_IDS, for a ticker the two exchanges use for
+// DIFFERENT coins. COIN_IDS keeps the Binance coin and the Coinbase module checks
+// here first. Each was confirmed on 2026-10-16 by matching both exchanges' prices
+// to CoinGecko. Add one only for a verified collision, never to fix a plain id.
+const CB_COIN_IDS = {
+    'DATA':'story-2',        // Data Network (Story's rebrand from IP); Binance's DATA is Streamr, delisted
+    'PROS':'pharos-network', // Pharos; Binance's PROS is Prosper, delisted 2025-04-16
+    'AI':'gensyn',           // Gensyn; Binance's AI is Sleepless AI
 };
 
 // Symbol -> CoinMarketCap slug, for tickers whose CMC slug is not the CoinGecko id.
@@ -745,7 +755,7 @@ const CG_TO_CMC = {
     'injective-protocol':'injective','render-token':'render',
     'sei-network':'sei','threshold-network-token':'threshold',
     'dogwifcoin':'dogwifhat','dydx-chain':'dydx','ripple':'xrp',
-    'immutable-x':'immutable','sonic-3':'sonic','story-2':'story',
+    'immutable-x':'immutable','sonic-3':'sonic','story-2':'data-network',
     'flare-networks':'flare-networks','holotoken':'holotoken',
     'cosmos':'cosmos','uniswap':'uniswap','solana':'solana',
     'dai':'multi-collateral-dai','nusd':'susd',
@@ -753,7 +763,7 @@ const CG_TO_CMC = {
     'berachain-bera':'berachain','chain-2':'onyxcoin','aurora-dao':'idex',
     'zencash':'horizen','chromaway':'chromia','concentrated-voting-power':'powerpool',
     'yfii-finance':'yearn-finance-ii','alpha-finance':'alpha-finance-lab',
-    'the-virtua-kolect':'terra-virtua-kolect',
+    'the-virtua-kolect':'terra-virtua-kolect','pharos-network':'pharos',
 };
 
 // ===== RESILIENT FETCH =====
@@ -1761,14 +1771,15 @@ let filter = 'all', sortCol = 'risk', sortAsc = false, page = 0, query = '';
 let lastRefresh = 0;
 
 // CoinGecko ID overrides
+const cbCoinId = sym => CB_COIN_IDS[sym] || COIN_IDS[sym];
 
-function getCgId(sym) { return COIN_IDS[sym] || sym.toLowerCase(); }
+function getCgId(sym) { return cbCoinId(sym) || sym.toLowerCase(); }
 function getCmcSlug(sym) {
     // 1. Use CoinGecko ID from API (correct after data loads) with CG→CMC corrections
     const cgId = liveData[sym]?.cgId;
     if (cgId) return CG_TO_CMC[cgId] || cgId;
     // 2. Use static CG override with corrections
-    const staticCgId = COIN_IDS[sym];
+    const staticCgId = cbCoinId(sym);
     if (staticCgId) return CG_TO_CMC[staticCgId] || staticCgId;
     // 3. Unknown — return null so caller skips CMC link
     return null;
@@ -2174,7 +2185,7 @@ async function fetchDepth(sym) {
 async function fetchCoinGeckoData() {
     try {
         let cgBySymbol = {};
-        const getGeckoId = sym => COIN_IDS[sym] || (cgBySymbol[sym.toUpperCase()] || {}).id || sym.toLowerCase();
+        const getGeckoId = sym => cbCoinId(sym) || (cgBySymbol[sym.toUpperCase()] || {}).id || sym.toLowerCase();
 
         // Batch fetch from CoinGecko markets API. Active coins first so they get
         // enriched before any rate-limit window, then delisted coins so the delisted
@@ -2206,7 +2217,7 @@ async function fetchCoinGeckoData() {
         // top-~1000 still need an id-fetch.
         const leftover = [];
         for (const sym of fetchSyms) {
-            const cg = COIN_IDS[sym] ? null : cgBySymbol[sym.toUpperCase()];
+            const cg = cbCoinId(sym) ? null : cgBySymbol[sym.toUpperCase()];
             if (!cg) { leftover.push(sym); continue; }
             if (!liveData[sym]) liveData[sym] = {};
             liveData[sym].mcap = cg.market_cap || cg.fully_diluted_valuation || 0;

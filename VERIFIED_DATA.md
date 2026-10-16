@@ -306,6 +306,17 @@ excluded on Coinbase only.
 Wind-down (limit-only, no freely trading pair) on 2026-10-16: BAL, BLAST, NEON, PYR, STG, TNSR,
 VELO. WMTX, limit-only on 2026-09-23, is trading freely again.
 
-**Open:** `COIN_IDS` maps `DATA` to `streamr` for Binance's delisted Streamr row, so Coinbase's
-live DATA (Data Network) row gets no name or market cap. A per-exchange id is the fix, and that is a
-design decision about the shared map (#18), so it is not made here.
+**Ticker collisions (follow-up PR):** three tickers name different coins on the two exchanges.
+Each was confirmed by matching both exchanges' prices to CoinGecko:
+| Ticker | Coinbase | Binance |
+|--------|----------|---------|
+| DATA | Data Network `story-2` | Streamr `streamr` (delisted) |
+| PROS | Pharos `pharos-network` | Prosper `prosper` (delisted) |
+| AI | Gensyn `gensyn` | Sleepless AI `sleepless-ai` |
+
+`COIN_IDS` keeps the Binance coin; a Coinbase-only `CB_COIN_IDS` overrides it. Before this, Coinbase's
+DATA row had no name or market cap, its PROS row showed Prosper, and Binance's AI row showed Gensyn.
+Matching names caught the rest as rebrands of one coin (RAD, GAL, FET, MAGIC, AUCTION, GMT), and
+matching prices did the same for AVNT, ROBO and HOME.
+A 200 is not enough for a CMC slug: `/currencies/story/` now belongs to a different coin (STORY), so
+`story-2` maps to `data-network`, checked by page title.
