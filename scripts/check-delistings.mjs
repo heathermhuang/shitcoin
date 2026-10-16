@@ -5,6 +5,9 @@
 // changes not yet reflected in the committed data. With --apply it edits the
 // tracked-token data in data/tracked-tokens.json, refreshes the Coinbase snapshot, and writes
 // a findings report — the GitHub Action turns those into a review PR.
+// It also reconciles the data against Binance's own asset list (live Monitoring
+// tag, delisting deadlines). Those findings are reported, never applied; the keys
+// already reported live in data/binance-asset-findings.json.
 //
 // Usage:
 //   node scripts/check-delistings.mjs               # dry run: print a report
@@ -12,6 +15,7 @@
 //   node scripts/check-delistings.mjs --apply       # edit tracked-tokens.json + snapshot + report
 //   node scripts/check-delistings.mjs --selftest-edit  # in-memory test of the array editor
 //   node scripts/check-delistings.mjs --selftest-cb    # in-memory test of the Coinbase differ
+//   node scripts/check-delistings.mjs --selftest-assets  # in-memory test of the asset-list check
 //
 // Asymmetry worth knowing: Binance is monitored from its announcement feed, so
 // findings are FORWARD-looking. Coinbase publishes no feed we read — it is
@@ -23,7 +27,7 @@
 //                                      Names the PR branch, so repeat findings
 //                                      update one PR and new findings open a new
 //                                      one — a new PR is the only real notification.
-//   <!-- BINANCE_FETCH_FAILED -->      emitted when the announcement fetch threw.
+//   <!-- BINANCE_FETCH_FAILED -->      emitted when the announcement or asset-list fetch threw.
 //                                      Fails the job; a blind run must never be
 //                                      indistinguishable from a quiet one.
 //
@@ -106,6 +110,11 @@ const sleep = (ms) => new Promise(r => setTimeout(r, ms));
 
 async function fetchCatalogTitles(catalogId) {
   const url = `${BINANCE_BASE}${CMS_PATH}?type=1&catalogId=${catalogId}&pageNo=1&pageSize=50`;
+  const j = await fetchBinanceJson(url, `Binance CMS catalog ${catalogId}`);
+  return (j?.data?.catalogs || []).flatMap(c => (c.articles || []).map(a => a.title));
+}
+
+async function fetchBinanceJson(url, label) {
   const opts = { headers: { 'User-Agent': UA } };
   if (binanceDispatcher) opts.dispatcher = binanceDispatcher;
 
@@ -115,13 +124,12 @@ async function fetchCatalogTitles(catalogId) {
       const r = await fetch(url, opts);
       if (r.status === 403) {
         throw Object.assign(
-          new Error(`Binance CMS catalog ${catalogId} HTTP 403 (egress IP blocked)`),
+          new Error(`${label} HTTP 403 (egress IP blocked)`),
           { fatal: true },
         );
       }
-      if (!r.ok) throw new Error(`Binance CMS catalog ${catalogId} HTTP ${r.status}`);
-      const j = await r.json();
-      return (j?.data?.catalogs || []).flatMap(c => (c.articles || []).map(a => a.title));
+      if (!r.ok) throw new Error(`${label} HTTP ${r.status}`);
+      return await r.json();
     } catch (e) {
       lastErr = e;
       if (e.fatal || attempt === FETCH_ATTEMPTS) break;
@@ -159,8 +167,11 @@ function parseAnnouncements(titles) {
   for (const t of titles) {
     // Anchor to "Binance Will Delist ..." so "Binance Margin/Futures Will Delist ..."
     // (margin/perp removals, which precede or differ from spot delistings) don't match.
+    // "... and Will Delist" too: the 2025-04-16 batch was titled "Binance Announced the
+    // First Batch of Vote to Delist Results and Will Delist BADGER, BAL, ...", and the
+    // bare anchor missed it — ten rows carried guessed dates for 18 months.
     let m;
-    if ((m = t.match(/^Binance Will Delist (.+?) on (\d{4}-\d{2}-\d{2})/i))) {
+    if ((m = t.match(/(?:^Binance|\band) Will Delist (.+?) on (\d{4}-\d{2}-\d{2})/i))) {
       for (const sym of splitSymbols(m[1])) out.push({ sym, kind: 'delisting', date: m[2], title: t });
     } else if ((m = t.match(/^Binance Will Extend the Monitoring Tag to Include (.+?) on (\d{4}-\d{2}-\d{2})/i))) {
       for (const sym of splitSymbols(m[1])) out.push({ sym, kind: 'monitoring', date: m[2], title: t });
@@ -168,6 +179,80 @@ function parseAnnouncements(titles) {
   }
   return out;
 }
+
+// ---------- Binance asset list ----------
+// Titles are the forward-looking signal but not the whole truth. Tag REMOVALS are
+// announced in notice bodies, so MBL's 2025-10-09 restore left its row on
+// 'monitoring' for a year; and the 2025-04-16 batch was titled "... and Will
+// Delist ...", so ten rows carried guessed dates for 18 months. Binance's own asset
+// list holds the state those notices produce: the live Monitoring tag, whether the
+// asset trades, and for a pending or past delisting `preDelist` with the trade
+// deadline and the notice URL. Reconciling against it catches drift whatever the
+// wording. Report only: a disagreement says the row is wrong, not what is right
+// (a restore date, for one, has to come from the notice).
+const ASSETS_PATH = '/bapi/asset/v2/public/asset/asset/get-all-asset';
+// Keys already reported in a PR. A PR opens only for a key not in this list, so a
+// standing disagreement is reported once. A fixed one must leave the list, or the
+// same disagreement recurring later would be suppressed as already reported; that
+// removal needs a commit, so it opens a PR too, reported apart like pair churn.
+const ASSET_FINDINGS = ROOT + 'data/binance-asset-findings.json';
+
+async function fetchBinanceAssets() {
+  const j = await fetchBinanceJson(`${BINANCE_BASE}${ASSETS_PATH}`, 'Binance asset list');
+  const assets = j?.data;
+  // Either of these would make every check below pass by finding nothing.
+  if (!Array.isArray(assets) || !assets.length) throw new Error('Binance asset list came back empty');
+  if (!assets.some(a => (a.tags || []).includes('Monitoring'))) {
+    throw new Error('no asset carries a Monitoring tag; Binance may have renamed it');
+  }
+  return assets;
+}
+
+// -> [{key, sym, text}], sorted. Keys carry no run date, so they stay stable.
+function reconcileAssets(assets, tokens, today = TODAY) {
+  const bySym = new Map(tokens.map(t => [t.sym, t]));
+  const out = [];
+  for (const a of assets) {
+    if (a.isLegalMoney) continue; // fiat: UAH's pair removal sets preDelist too
+    const sym = a.assetCode;
+    const t = bySym.get(sym);
+    // Same promotion index.html applies on load: a past delist date means delisted.
+    const status = !t ? null
+      : (t.status === 'delisting' && t.delistDate && t.delistDate < today) ? 'delisted' : t.status;
+    const tagged = (a.tags || []).includes('Monitoring');
+    // `trading` agreed with exchangeInfo's TRADING status for every crypto asset
+    // on 2026-10-16. Binance leaves the tag on assets after delisting them, so the
+    // tag only means something while the asset still trades.
+    const trading = !!a.trading && !a.delisted;
+
+    if (status === 'monitoring' && trading && !tagged) {
+      out.push({ key: `untagged:${sym}`, sym,
+        text: 'tracked as monitoring, but Binance no longer tags it and it still trades: likely restored; the restore date has to come from the notice' });
+    }
+    if (tagged && trading && status !== 'monitoring' && status !== 'delisting') {
+      out.push({ key: `tagged:${sym}`, sym,
+        text: `Binance tags it Monitoring; ${t ? `tracked as ${status}` : 'not in dataset'}` });
+    }
+    if (a.preDelist && a.pdTradeDeadline) {
+      const date = new Date(Number(a.pdTradeDeadline)).toISOString().slice(0, 10);
+      if (!t || t.delistDate !== date) {
+        const notice = String(a.pdAnnounceUrl || '').match(/[0-9a-f]{32}/)?.[0] || 'no notice URL';
+        out.push({ key: `deadline:${sym}:${date}`, sym,
+          text: `Binance trade deadline ${date} (notice ${notice}); ${t ? `tracked delistDate ${t.delistDate}` : 'not in dataset'}` });
+      }
+    }
+  }
+  return out.sort((x, y) => x.key.localeCompare(y.key));
+}
+
+const newAssetFindings = (findings, reported) => {
+  const seen = new Set(reported);
+  return findings.filter(f => !seen.has(f.key));
+};
+const resolvedAssetKeys = (findings, reported) => {
+  const now = new Set(findings.map(f => f.key));
+  return reported.filter(k => !now.has(k));
+};
 
 // ---------- current data ----------
 // data/tracked-tokens.json is the source of truth. It used to be an array
@@ -349,6 +434,63 @@ function selftestCb() {
   process.exitCode = ok ? 0 : 1;
 }
 
+// In-memory self-test of the asset-list reconciliation (no network, no writes).
+// Run: --selftest-assets. Each case is a real 2026 shape, named after its coin.
+function selftestAssets() {
+  const A = (assetCode, { tags = [], trading = true, delisted = false, pd = null, fiat = false } = {}) => ({
+    assetCode, tags, trading, delisted, isLegalMoney: fiat,
+    preDelist: !!pd, pdTradeDeadline: pd ? Date.parse(pd + 'T03:00:00Z') : null,
+    pdAnnounceUrl: pd ? 'https://www.binance.com/support/announcement/detail/fac9c3e401da4cc8b604566fd261d70c' : null,
+  });
+  const T = (sym, status, delistDate = null) => ({ sym, name: sym, status, monDate: null, delistDate, restoreDate: null });
+  const keys = (assets, tokens) => reconcileAssets(assets, tokens, '2026-10-16').map(f => f.key);
+  const only = (got, want) => JSON.stringify(got) === JSON.stringify(want);
+  const checks = [];
+
+  checks.push(['tag gone while trading -> likely restored (MBL)',
+    only(keys([A('MBL')], [T('MBL', 'monitoring')]), ['untagged:MBL'])]);
+  checks.push(['tagged and trading, not in dataset (BICO)',
+    only(keys([A('BICO', { tags: ['Monitoring'] })], []), ['tagged:BICO'])]);
+  checks.push(['tagged again after restore (MLN)',
+    only(keys([A('MLN', { tags: ['Monitoring'] })], [T('MLN', 'restored')]), ['tagged:MLN'])]);
+  checks.push(['deadline disagrees with delistDate (HARD)',
+    only(keys([A('HARD', { trading: false, delisted: true, pd: '2025-04-16' })], [T('HARD', 'delisted', '2025-02-20')]),
+      ['deadline:HARD:2025-04-16'])]);
+  checks.push(['deadline for an untracked coin (SNM)',
+    only(keys([A('SNM', { trading: false, delisted: true, pd: '2023-08-22' })], []), ['deadline:SNM:2023-08-22'])]);
+
+  // Silence is the other half: these are the states that must NOT be reported.
+  checks.push(['stale tag on a delisted asset is ignored (FLM)',
+    !keys([A('FLM', { tags: ['Monitoring'], trading: false, delisted: true })], [T('FLM', 'delisted', '2025-11-12')]).length]);
+  checks.push(['agreeing monitoring row is quiet (STX)',
+    !keys([A('STX', { tags: ['Monitoring'] })], [T('STX', 'monitoring')]).length]);
+  checks.push(['announced delisting, tagged, matching deadline is quiet (EPIC)',
+    !keys([A('EPIC', { tags: ['Monitoring'], pd: '2026-10-28' })], [T('EPIC', 'delisting', '2026-10-28')]).length]);
+  checks.push(['past-dated delisting counts as delisted, not as a live tag (USDP)',
+    !keys([A('USDP', { tags: ['Monitoring'], trading: false, pd: '2026-09-24' })], [T('USDP', 'delisting', '2026-09-24')]).length]);
+  checks.push(['fiat pair removals are ignored (UAH)',
+    !keys([A('UAH', { trading: true, pd: '2026-09-28', fiat: true })], []).length]);
+
+  // Reporting: only unreported keys are new, and the keys carry no run date.
+  const mbl = reconcileAssets([A('MBL')], [T('MBL', 'monitoring')], '2026-10-16');
+  const later = reconcileAssets([A('MBL')], [T('MBL', 'monitoring')], '2027-01-01');
+  checks.push(['keys are stable across run dates', only(mbl.map(f => f.key), later.map(f => f.key))]);
+  checks.push(['an already-reported finding is not new', !newAssetFindings(mbl, ['untagged:MBL']).length]);
+  checks.push(['an unreported finding is new', newAssetFindings(mbl, ['tagged:OTHER']).length === 1]);
+  // A fixed finding must leave the reported list, or the same disagreement
+  // recurring later would be suppressed as "already reported".
+  checks.push(['a fixed finding is resolved', only(resolvedAssetKeys([], ['untagged:MBL']), ['untagged:MBL'])]);
+  checks.push(['a standing finding is not resolved', !resolvedAssetKeys(mbl, ['untagged:MBL']).length]);
+  checks.push(['asset findings change the signature', findingsSignature([], [], [], mbl) !== findingsSignature([], [], [])]);
+  checks.push(['no asset findings leaves existing signatures unchanged',
+    findingsSignature([], [], [], []) === findingsSignature([], [], [])]);
+
+  let ok = true;
+  for (const [name, pass] of checks) { console.log(`${pass ? 'PASS' : 'FAIL'}  ${name}`); if (!pass) ok = false; }
+  console.log(ok ? '\n✅ selftest-assets PASSED' : '\n❌ selftest-assets FAILED');
+  process.exitCode = ok ? 0 : 1;
+}
+
 // ---------- Coinbase ----------
 async function fetchCoinbase() {
   const r = await fetch('https://api.exchange.coinbase.com/products', { headers: { 'User-Agent': UA } });
@@ -380,7 +522,7 @@ async function fetchCoinbase() {
 // any tracked-count noise. The Action names the PR branch after it, so the same
 // unresolved finding keeps updating one PR (no daily spam) while a genuinely new
 // finding lands on a new branch — which is what actually produces a notification.
-function findingsSignature(binanceNew, cbChanges, cbWindDown = []) {
+function findingsSignature(binanceNew, cbChanges, cbWindDown = [], assetFindings = []) {
   const payload = {
     b: binanceNew.map(n => `${n.sym}:${n.kind}:${n.date}`).sort(),
     c: cbChanges.map(c => `${c.id}:${c.to.status}:${c.to.trading_disabled}`).sort(),
@@ -391,6 +533,8 @@ function findingsSignature(binanceNew, cbChanges, cbWindDown = []) {
   // Includes WHICH restriction, so an escalation (limit-only -> cancel-only)
   // re-hashes and opens a new PR rather than silently updating the old one.
   if (cbWindDown.length) payload.w = cbWindDown.map(c => `${c.id}:${restrictionLabel(c.to)}`).sort();
+  // Same rule for the asset-list check: absent when empty.
+  if (assetFindings.length) payload.a = assetFindings.map(f => f.key).sort();
   return createHash('sha256').update(JSON.stringify(payload)).digest('hex').slice(0, 12);
 }
 
@@ -445,6 +589,7 @@ function diffCoinbase(current, previous) {
 async function main() {
   if (FLAGS.has('--selftest-edit')) return selftestEdit();
   if (FLAGS.has('--selftest-cb')) return selftestCb();
+  if (FLAGS.has('--selftest-assets')) return selftestAssets();
 
   const trackedTokens = JSON.parse(await readFile(TRACKED, 'utf8'));
   const tracked = parseTracked(trackedTokens);
@@ -456,7 +601,19 @@ async function main() {
     binanceNew = diffBinance(parseAnnouncements(titles), tracked);
   } catch (e) { binanceErr = e.message; }
 
-  let cb = { baseline: false, changes: [], pairChurn: [], windDown: [] }, cbErr = null, cbSnap = null;
+  // Checked against the data as it will be once the title findings are applied, so
+  // the asset list reports only what the announcement path could not fix.
+  const projectedTokens = applyBinanceEdits(trackedTokens, binanceNew).tokens;
+  let assetFindings = [], assetErr = null, reportedKeys = [];
+  try {
+    assetFindings = reconcileAssets(await fetchBinanceAssets(), projectedTokens);
+  } catch (e) { assetErr = e.message; }
+  try { reportedKeys = JSON.parse(await readFile(ASSET_FINDINGS, 'utf8')); } catch {}
+  const assetNew = newAssetFindings(assetFindings, reportedKeys);
+  // A failed fetch found nothing, which must not read as "everything resolved".
+  const assetResolved = assetErr ? [] : resolvedAssetKeys(assetFindings, reportedKeys);
+
+  let cb ={ baseline: false, changes: [], pairChurn: [], windDown: [] }, cbErr = null, cbSnap = null;
   try {
     cbSnap = await fetchCoinbase();
     let prev = null;
@@ -468,8 +625,8 @@ async function main() {
   // to land or the same churn is re-detected every day forever — but it is reported
   // apart from real findings so the PR never overstates what happened.
   const cbAny = !cb.baseline && (cb.changes.length || cb.pairChurn.length || cb.windDown.length);
-  const hasChanges = !!(binanceNew.length || cbAny);
-  const signature = findingsSignature(binanceNew, cb.baseline ? [] : cb.changes, cb.baseline ? [] : cb.windDown);
+  const hasChanges = !!(binanceNew.length || cbAny || assetNew.length || assetResolved.length);
+  const signature = findingsSignature(binanceNew, cb.baseline ? [] : cb.changes, cb.baseline ? [] : cb.windDown, assetFindings);
 
   // Human-readable markdown report — used for console output AND the PR body.
   const lines = [`# Auto-update check — ${TODAY}`, `Tracked Binance coins: ${tracked.size}`];
@@ -479,6 +636,17 @@ async function main() {
   if (emptyCatalogs.length) lines.push(`\n⚠ Binance catalog(s) returned no articles — Binance may have moved them again: ${emptyCatalogs.join(', ')}`);
   lines.push(`\n## Binance — ${binanceNew.length} change(s) not yet in data`);
   for (const n of binanceNew) lines.push(`- **${n.sym}** → ${n.expected} (${n.kind} ${n.date}) — ${n.reason}`);
+  if (assetErr) lines.push(`\n⚠ Binance asset-list fetch FAILED: ${assetErr}`);
+  else {
+    lines.push(`\n## Binance asset list — ${assetFindings.length} disagreement(s) with data (${assetNew.length} new)`);
+    if (assetFindings.length) lines.push(`_Not applied. Binance's own asset list (live Monitoring tag, delisting deadlines) disagrees with data/tracked-tokens.json. Confirm each against the official notice, then edit the row by hand._`);
+    for (const f of assetFindings) lines.push(`- **${f.sym}** — ${f.text}${reportedKeys.includes(f.key) ? '' : ' _(new)_'}`);
+    if (assetResolved.length) {
+      lines.push(`\n<details><summary>${assetResolved.length} earlier disagreement(s) no longer found — dropped from data/binance-asset-findings.json, no action needed</summary>\n`);
+      for (const k of assetResolved) lines.push(`- ${k}`);
+      lines.push('\n</details>');
+    }
+  }
   if (cbErr) lines.push(`\n⚠ Coinbase fetch FAILED: ${cbErr}`);
   else if (cb.baseline) lines.push(`\n## Coinbase — baseline snapshot (${Object.keys(cbSnap).length} products)`);
   else {
@@ -502,11 +670,11 @@ async function main() {
   // BINANCE_FETCH_FAILED trips the explicit failure step. Both ride in the report
   // (and therefore the PR body) as HTML comments so they stay invisible to readers.
   lines.push(`\n<!-- findings-signature: ${signature} -->`);
-  if (binanceErr) lines.push('<!-- BINANCE_FETCH_FAILED -->');
+  if (binanceErr || assetErr) lines.push('<!-- BINANCE_FETCH_FAILED -->');
   const md = lines.join('\n');
 
   if (FLAGS.has('--json')) {
-    console.log(JSON.stringify({ today: TODAY, trackedCount: tracked.size, signature, binanceNew, binanceErr, coinbase: cb, cbErr, hasChanges }, null, 2));
+    console.log(JSON.stringify({ today: TODAY, trackedCount: tracked.size, signature, binanceNew, binanceErr, assetFindings, assetNew, assetResolved, assetErr, coinbase: cb, cbErr, hasChanges }, null, 2));
   } else {
     console.log(md);
   }
@@ -515,8 +683,10 @@ async function main() {
   // (no delisting/monitoring changes) touch no files → no daily PR noise.
   if (FLAGS.has('--apply')) {
     if (binanceNew.length) {
-      const { tokens: edited } = applyBinanceEdits(trackedTokens, binanceNew);
-      await writeFile(TRACKED, serializeTracked(edited));
+      await writeFile(TRACKED, serializeTracked(projectedTokens));
+    }
+    if (assetNew.length || assetResolved.length) {
+      await writeFile(ASSET_FINDINGS, JSON.stringify(assetFindings.map(f => f.key), null, 2) + '\n');
     }
     if (cbSnap && (cb.baseline || cbAny)) {
       await writeFile(SNAPSHOT, JSON.stringify(cbSnap, null, 0) + '\n');

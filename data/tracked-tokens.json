@@ -42,10 +42,10 @@
   {
     "sym": "MBL",
     "name": "MovieBloc",
-    "status": "monitoring",
+    "status": "restored",
     "monDate": "2024-07-01",
     "delistDate": null,
-    "restoreDate": null
+    "restoreDate": "2025-10-09"
   },
   {
     "sym": "AWE",
@@ -265,9 +265,9 @@
   {
     "sym": "QUICK",
     "name": "QuickSwap",
-    "status": "monitoring",
+    "status": "delisting",
     "monDate": "2026-04-30",
-    "delistDate": null,
+    "delistDate": "2026-10-28",
     "restoreDate": null
   },
   {
@@ -289,9 +289,9 @@
   {
     "sym": "EPIC",
     "name": "Epic Chain",
-    "status": "monitoring",
+    "status": "delisting",
     "monDate": "2026-05-22",
-    "delistDate": null,
+    "delistDate": "2026-10-28",
     "restoreDate": null
   },
   {
@@ -488,7 +488,7 @@
   },
   {
     "sym": "AEUR",
-    "name": "Binance EUR",
+    "name": "Anchored EUR",
     "status": "delisted",
     "monDate": "2026-07-03",
     "delistDate": "2026-07-31",
@@ -570,8 +570,8 @@
     "sym": "NBS",
     "name": "New BitShares",
     "status": "delisted",
-    "monDate": "2023-07-26",
-    "delistDate": "2023-12-07",
+    "monDate": null,
+    "delistDate": "2022-10-24",
     "restoreDate": null
   },
   {
@@ -624,7 +624,7 @@
   },
   {
     "sym": "PERL",
-    "name": "PERL",
+    "name": "Perlin",
     "status": "delisted",
     "monDate": "2023-07-26",
     "delistDate": "2023-12-07",
@@ -683,7 +683,7 @@
     "name": "Gifto",
     "status": "delisted",
     "monDate": "2023-07-26",
-    "delistDate": "2024-12-10",
+    "delistDate": "2024-12-03",
     "restoreDate": null
   },
   {
@@ -723,7 +723,7 @@
     "name": "Balancer",
     "status": "delisted",
     "monDate": "2024-07-01",
-    "delistDate": "2025-02-20",
+    "delistDate": "2025-04-16",
     "restoreDate": null
   },
   {
@@ -731,7 +731,7 @@
     "name": "Cortex",
     "status": "delisted",
     "monDate": "2024-07-01",
-    "delistDate": "2025-02-20",
+    "delistDate": "2025-04-16",
     "restoreDate": null
   },
   {
@@ -747,7 +747,7 @@
     "name": "Kava Lend",
     "status": "delisted",
     "monDate": "2024-07-01",
-    "delistDate": "2025-02-20",
+    "delistDate": "2025-04-16",
     "restoreDate": null
   },
   {
@@ -859,7 +859,7 @@
     "name": "TROY",
     "status": "delisted",
     "monDate": "2023-07-26",
-    "delistDate": "2025-06-02",
+    "delistDate": "2025-04-16",
     "restoreDate": null
   },
   {
@@ -923,7 +923,7 @@
     "name": "Firo",
     "status": "delisted",
     "monDate": "2024-01-04",
-    "delistDate": "2025-07-25",
+    "delistDate": "2025-04-16",
     "restoreDate": null
   },
   {
@@ -947,7 +947,7 @@
     "name": "Badger",
     "status": "delisted",
     "monDate": "2025-03-04",
-    "delistDate": "2025-09-30",
+    "delistDate": "2025-04-16",
     "restoreDate": null
   },
   {
@@ -963,7 +963,7 @@
     "name": "NULS",
     "status": "delisted",
     "monDate": "2025-03-04",
-    "delistDate": "2025-09-30",
+    "delistDate": "2025-04-16",
     "restoreDate": null
   },
   {
@@ -979,7 +979,7 @@
     "name": "UniLend",
     "status": "delisted",
     "monDate": "2025-04-03",
-    "delistDate": "2025-09-30",
+    "delistDate": "2025-04-16",
     "restoreDate": null
   },
   {
@@ -995,7 +995,7 @@
     "name": "VIDT DAO",
     "status": "delisted",
     "monDate": "2025-04-03",
-    "delistDate": "2025-09-30",
+    "delistDate": "2025-04-16",
     "restoreDate": null
   },
   {
@@ -1099,7 +1099,7 @@
     "name": "Beta Finance",
     "status": "delisted",
     "monDate": "2023-10-04",
-    "delistDate": "2026-02-13",
+    "delistDate": "2025-04-16",
     "restoreDate": null
   },
   {
@@ -1340,6 +1340,46 @@
     "status": "monitoring",
     "monDate": "2026-09-04",
     "delistDate": null,
+    "restoreDate": null
+  },
+  {
+    "sym": "BICO",
+    "name": "Biconomy",
+    "status": "monitoring",
+    "monDate": "2026-10-09",
+    "delistDate": null,
+    "restoreDate": null
+  },
+  {
+    "sym": "CVC",
+    "name": "Civic",
+    "status": "monitoring",
+    "monDate": "2026-10-09",
+    "delistDate": null,
+    "restoreDate": null
+  },
+  {
+    "sym": "SNM",
+    "name": "SONM",
+    "status": "delisted",
+    "monDate": null,
+    "delistDate": "2023-08-22",
+    "restoreDate": null
+  },
+  {
+    "sym": "SRM",
+    "name": "Serum",
+    "status": "delisted",
+    "monDate": null,
+    "delistDate": "2023-08-22",
+    "restoreDate": null
+  },
+  {
+    "sym": "YFII",
+    "name": "DFI.Money",
+    "status": "delisted",
+    "monDate": null,
+    "delistDate": "2023-08-22",
     "restoreDate": null
   }
 ]

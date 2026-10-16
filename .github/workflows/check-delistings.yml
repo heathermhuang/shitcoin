@@ -103,6 +103,7 @@ jobs:
           add-paths: |
             data/tracked-tokens.json
             data/coinbase-snapshot.json
+            data/binance-asset-findings.json
           commit-message: 'data: auto-detected delisting/monitoring changes'
           title: 'data: auto-detected Binance/Coinbase changes — needs review'
           body-path: data/pending-update.md
@@ -113,5 +114,5 @@ jobs:
       - name: Fail if the Binance fetch broke
         if: steps.detect.outputs.binance_failed == 'true'
         run: |
-          echo "::error::Binance fetch failed — the detector was blind to announcements this run. Check the PROXY_URL secret."
+          echo "::error::Binance fetch failed — the detector was blind to announcements or the asset list this run (see the report). Check the PROXY_URL secret."
           exit 1

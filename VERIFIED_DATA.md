@@ -234,3 +234,78 @@ BADGER-USD and STORJ-USD have been limit-only since 2026-08-28. Coinbase announc
 suspend trading in both on **2026-09-28** (~2pm ET), with withdrawals still allowed (crypto.news,
 Crypto Briefing). Nothing to curate yet. The Coinbase tab already scores limit-only markets at 85,
 and the detector will report the suspension when it happens.
+
+---
+
+## 2026-10-16 SESSION — detector PRs #25–#35 applied, full re-reconciliation
+
+Three independent sources, all read 2026-10-16: the announcement archive (catalog 161 pages
+1–10 and catalog 49 pages 1–6, 738 titles, 2022-02-17 → 2026-10-15), Binance's asset list
+(`get-all-asset`: the live `Monitoring` tag plus each asset's `preDelist`/`pdTradeDeadline`/
+`pdAnnounceUrl`), and `exchangeInfo`. After this session:
+
+| Check | Result |
+|-------|--------|
+| Delist notices since 2023-07-26 matching `delistDate` | **127 / 128**; the one miss is GFT's original notice, superseded (below) |
+| Binance `pdTradeDeadline` matching `delistDate` | **88 / 88** |
+| Tagged + still trading on Binance vs our `monitoring`/`delisting` rows | **34 = 34** |
+| `restored` rows with a live tag, `delisted` rows still trading | **0, 0** |
+
+### New
+| Change | Tokens | Source |
+|--------|--------|--------|
+| Monitoring tag 2026-10-09 | Biconomy (BICO), Civic (CVC) | 0dfee98051814fccb9f18ce49b8425bb |
+| Delist 2026-10-28 03:00 UTC (announced 2026-10-14) | Epic Chain (EPIC), QuickSwap (QUICK) | 290a660c0b2e4e888c582cd29ecf9ecc |
+
+### What was wrong
+- **Ten delistDates were guesses: the real date is 2025-04-16** for BADGER, BAL, BETA, CTXC,
+  FIRO, HARD, NULS, TROY, UFT, VIDT (fac9c3e401da4cc8b604566fd261d70c, published 2025-04-08;
+  CREAM/ELF/PROS/SNT from the same notice were already right). The title reads "Binance
+  Announced the First Batch of Vote to Delist Results **and Will Delist** …", which the
+  detector's `^Binance Will Delist` anchor and the 2026-08-14 sweep both skipped, so its 2025-04-16
+  date was wrongly listed above as matching no announcement. The regex now also accepts
+  "… and Will Delist …"; on the 738 archived titles it gains exactly this notice and loses none.
+  This also settles open item #11: BETA was delisted 2025-04-16.
+- **MBL restored 2025-10-09.** The tag is gone from Binance's asset list. The 2025-10-09 tag
+  update (WAN added; GPS and MBL removed) is outside the archive, but CoinGabbar, HokaNews and
+  CryptoNews.net all report it. GPS already carried that date; MBL had stayed `monitoring`, so
+  its day counter ran red for a year. Settles open item #25.
+- **GFT delistDate 2024-12-03**, not 2024-12-10: a 2024-11-29 notice (7ce833294cdf4eff97dd4d1cc01845f3)
+  brought it forward to 08:00 UTC after a contract security issue.
+- **NBS delisted 2022-10-24** (cd7aae08f6a84ad89ca6a2c4d52fa32e), before the Monitoring Tag existed.
+  The row claimed monDate 2023-07-26 and delistDate 2023-12-07; monDate is now null.
+- **SNM, SRM, YFII were missing**: delisted 2023-08-22 (f43511a4c1d347a8a2dd1efbdd2fe716, published
+  2023-08-15, one day before the 2026-08-14 sweep window). monDate null. SNM and SRM still carry
+  a stale Monitoring tag in the asset list, but no tag date is verifiable.
+- Names: AEUR is **Anchored EUR** (notice and Binance), not "Binance EUR"; PERL is **Perlin**.
+
+### CoinGecko ids and CMC slugs
+Every `COIN_IDS` entry was checked against CoinGecko `/coins/list`. Twelve ids no longer exist;
+each was repointed to the same coin's current id, confirmed by name, and by price against Binance
+where it still trades: FET `fetch-ai`, BERA `berachain-bera`, XCN `chain-2`, IDEX `aurora-dao`,
+YFII `yfii-finance`, ARPA `arpa`, ZEN `zencash`, CHR `chromaway`, CVP
+`concentrated-voting-power`, ALPHA `alpha-finance`, TVK `the-virtua-kolect`, IP `story-2`.
+Twenty-one tracked coins had no entry and got one (DODO, RESOLV, COOKIE, HIGH, ALCX, NFP, ACX,
+PIVX, AEUR, TROY, WAVES, XEM, KDA, BAKE, WRX, SLF, PNT, IDRT, FOR, WNXM, SRM). The dead ids left
+belong to coins CoinGecko dropped with no successor (ANC, WCFG, DREP, LCNX, CHESS, NULS, VIB,
+VIDT, VITE, LEVER, AMB, GFT, LINA), plus DOCK and MDX, which are too ambiguous to guess.
+CMC links for every touched symbol return 200. FET (`fetch-ai`) and ARPA (`arpa`) had been 404s.
+
+### STX
+STX was in `EXCLUDE_COMMON` ("never a delisting candidate") while Binance has tagged it since
+2026-07-24, so its monitoring row had a score and no price, volume or market cap. It is now
+excluded on Coinbase only.
+
+### Coinbase
+| Suspended | Tokens | Source |
+|-----------|--------|--------|
+| 2026-09-23 | IOTX (IoTeX (ERC-20)) | Coinbase announcement via CoinTurk, CryptoRank; detector first saw it 09-24 |
+| 2026-09-28 | BADGER, STORJ | crypto.news, Crypto Briefing (noted 2026-09-18) |
+| unknown | IP | **Rebrand, not a delisting**: Story is now Data Network (DATA-USD online). Detector first saw it 2026-10-06 |
+
+Wind-down (limit-only, no freely trading pair) on 2026-10-16: BAL, BLAST, NEON, PYR, STG, TNSR,
+VELO. WMTX, limit-only on 2026-09-23, is trading freely again.
+
+**Open:** `COIN_IDS` maps `DATA` to `streamr` for Binance's delisted Streamr row, so Coinbase's
+live DATA (Data Network) row gets no name or market cap. A per-exchange id is the fix, and that is a
+design decision about the shared map (#18), so it is not made here.
