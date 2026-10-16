@@ -192,8 +192,9 @@ function parseAnnouncements(titles) {
 // (a restore date, for one, has to come from the notice).
 const ASSETS_PATH = '/bapi/asset/v2/public/asset/asset/get-all-asset';
 // Keys already reported in a PR. A PR opens only for a key not in this list, so a
-// standing disagreement is reported once, and fixed ones drop out with the next PR
-// rather than opening one of their own.
+// standing disagreement is reported once. A fixed one must leave the list, or the
+// same disagreement recurring later would be suppressed as already reported; that
+// removal needs a commit, so it opens a PR too, reported apart like pair churn.
 const ASSET_FINDINGS = ROOT + 'data/binance-asset-findings.json';
 
 async function fetchBinanceAssets() {
@@ -247,6 +248,10 @@ function reconcileAssets(assets, tokens, today = TODAY) {
 const newAssetFindings = (findings, reported) => {
   const seen = new Set(reported);
   return findings.filter(f => !seen.has(f.key));
+};
+const resolvedAssetKeys = (findings, reported) => {
+  const now = new Set(findings.map(f => f.key));
+  return reported.filter(k => !now.has(k));
 };
 
 // ---------- current data ----------
@@ -472,6 +477,10 @@ function selftestAssets() {
   checks.push(['keys are stable across run dates', only(mbl.map(f => f.key), later.map(f => f.key))]);
   checks.push(['an already-reported finding is not new', !newAssetFindings(mbl, ['untagged:MBL']).length]);
   checks.push(['an unreported finding is new', newAssetFindings(mbl, ['tagged:OTHER']).length === 1]);
+  // A fixed finding must leave the reported list, or the same disagreement
+  // recurring later would be suppressed as "already reported".
+  checks.push(['a fixed finding is resolved', only(resolvedAssetKeys([], ['untagged:MBL']), ['untagged:MBL'])]);
+  checks.push(['a standing finding is not resolved', !resolvedAssetKeys(mbl, ['untagged:MBL']).length]);
   checks.push(['asset findings change the signature', findingsSignature([], [], [], mbl) !== findingsSignature([], [], [])]);
   checks.push(['no asset findings leaves existing signatures unchanged',
     findingsSignature([], [], [], []) === findingsSignature([], [], [])]);
@@ -601,6 +610,8 @@ async function main() {
   } catch (e) { assetErr = e.message; }
   try { reportedKeys = JSON.parse(await readFile(ASSET_FINDINGS, 'utf8')); } catch {}
   const assetNew = newAssetFindings(assetFindings, reportedKeys);
+  // A failed fetch found nothing, which must not read as "everything resolved".
+  const assetResolved = assetErr ? [] : resolvedAssetKeys(assetFindings, reportedKeys);
 
   let cb ={ baseline: false, changes: [], pairChurn: [], windDown: [] }, cbErr = null, cbSnap = null;
   try {
@@ -614,7 +625,7 @@ async function main() {
   // to land or the same churn is re-detected every day forever — but it is reported
   // apart from real findings so the PR never overstates what happened.
   const cbAny = !cb.baseline && (cb.changes.length || cb.pairChurn.length || cb.windDown.length);
-  const hasChanges = !!(binanceNew.length || cbAny || assetNew.length);
+  const hasChanges = !!(binanceNew.length || cbAny || assetNew.length || assetResolved.length);
   const signature = findingsSignature(binanceNew, cb.baseline ? [] : cb.changes, cb.baseline ? [] : cb.windDown, assetFindings);
 
   // Human-readable markdown report — used for console output AND the PR body.
@@ -630,6 +641,11 @@ async function main() {
     lines.push(`\n## Binance asset list — ${assetFindings.length} disagreement(s) with data (${assetNew.length} new)`);
     if (assetFindings.length) lines.push(`_Not applied. Binance's own asset list (live Monitoring tag, delisting deadlines) disagrees with data/tracked-tokens.json. Confirm each against the official notice, then edit the row by hand._`);
     for (const f of assetFindings) lines.push(`- **${f.sym}** — ${f.text}${reportedKeys.includes(f.key) ? '' : ' _(new)_'}`);
+    if (assetResolved.length) {
+      lines.push(`\n<details><summary>${assetResolved.length} earlier disagreement(s) no longer found — dropped from data/binance-asset-findings.json, no action needed</summary>\n`);
+      for (const k of assetResolved) lines.push(`- ${k}`);
+      lines.push('\n</details>');
+    }
   }
   if (cbErr) lines.push(`\n⚠ Coinbase fetch FAILED: ${cbErr}`);
   else if (cb.baseline) lines.push(`\n## Coinbase — baseline snapshot (${Object.keys(cbSnap).length} products)`);
@@ -658,7 +674,7 @@ async function main() {
   const md = lines.join('\n');
 
   if (FLAGS.has('--json')) {
-    console.log(JSON.stringify({ today: TODAY, trackedCount: tracked.size, signature, binanceNew, binanceErr, assetFindings, assetNew, assetErr, coinbase: cb, cbErr, hasChanges }, null, 2));
+    console.log(JSON.stringify({ today: TODAY, trackedCount: tracked.size, signature, binanceNew, binanceErr, assetFindings, assetNew, assetResolved, assetErr, coinbase: cb, cbErr, hasChanges }, null, 2));
   } else {
     console.log(md);
   }
@@ -669,10 +685,8 @@ async function main() {
     if (binanceNew.length) {
       await writeFile(TRACKED, serializeTracked(projectedTokens));
     }
-    // Rewritten only when a PR is opening anyway, so a fix never opens one alone.
-    const keys = assetFindings.map(f => f.key);
-    if (hasChanges && !assetErr && JSON.stringify(keys) !== JSON.stringify(reportedKeys)) {
-      await writeFile(ASSET_FINDINGS, JSON.stringify(keys, null, 2) + '\n');
+    if (assetNew.length || assetResolved.length) {
+      await writeFile(ASSET_FINDINGS, JSON.stringify(assetFindings.map(f => f.key), null, 2) + '\n');
     }
     if (cbSnap && (cb.baseline || cbAny)) {
       await writeFile(SNAPSHOT, JSON.stringify(cbSnap, null, 0) + '\n');
