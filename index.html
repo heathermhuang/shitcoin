@@ -1185,16 +1185,18 @@ async function fetchMarketCaps() {
 
         for (const batch of batches) {
             const ids = batch.map(getGeckoId).join(',');
-            // CoinGecko's free tier rate-limits bursts with an empty body. Skipping a
-            // throttled batch left those coins with no mcap/logo permanently, so retry
-            // an empty/failed batch a few times with backoff before giving up.
+            // Skipping a throttled batch left those coins with no mcap/logo permanently,
+            // so retry a failed batch a few times with backoff before giving up. An OK
+            // [] is not a failure: it means CoinGecko lists none of these ids (Binance's
+            // tokenized stocks), and the Worker reports a refused CoinGecko as 503.
+            // Retrying it cost three requests and 4.2s of backoff on every load.
             let data = null;
             for (let attempt = 0; attempt < 3; attempt++) {
                 try {
                     const resp = await smartFetch(`/cg/coins/markets?vs_currency=usd&ids=${ids}&per_page=250`);
                     if (resp.ok) {
                         const j = await resp.json();
-                        if (Array.isArray(j) && j.length) { data = j; break; }
+                        if (Array.isArray(j)) { data = j; break; }
                     }
                 } catch(e) { /* retry */ }
                 await new Promise(r => setTimeout(r, 700 * (attempt + 1)));
@@ -2234,15 +2236,15 @@ async function fetchCoinGeckoData() {
 
         for (const batch of batches) {
             const ids = batch.map(getGeckoId).join(',');
-            // Retry throttled/empty batches with backoff (see Binance note) so the
-            // delisted tab reliably resolves real names + market caps, not "N pairs".
+            // Retry failed batches with backoff (see Binance note) so the delisted
+            // tab reliably resolves real names + market caps, not "N pairs".
             let data = null;
             for (let attempt = 0; attempt < 3; attempt++) {
                 try {
                     const resp = await smartFetch(`/cg/coins/markets?vs_currency=usd&ids=${ids}&per_page=250`);
                     if (resp.ok) {
                         const j = await resp.json();
-                        if (Array.isArray(j) && j.length) { data = j; break; }
+                        if (Array.isArray(j)) { data = j; break; }
                     }
                 } catch(e) { /* retry */ }
                 await new Promise(r => setTimeout(r, 700 * (attempt + 1)));
