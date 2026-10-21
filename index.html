@@ -1862,6 +1862,10 @@ const CB_DELISTED = [
     {sym:'BADGER', name:'Badger DAO',          delistDate:'2026-09-28'},
     {sym:'STORJ',  name:'Storj',               delistDate:'2026-09-28'},
     {sym:'IP',     name:'Story (old ticker)',  delistDate:null},
+    // Detector PR #42. The Blast L2 network is shutting down; Coinbase suspended
+    // trading on 2026-10-20 after ~two weeks limit-only, with withdrawals until
+    // 2026-10-26 (Coinbase status page, Crypto Briefing).
+    {sym:'BLAST',  name:'Blast',               delistDate:'2026-10-20'},
     // ── Name backfill, added 2026-08-12 ───────────────────────────────────
     // Fully delisted on Coinbase, and the API still returns them, so these rows
     // ALREADY render — just with no curated name, so each falls back to
