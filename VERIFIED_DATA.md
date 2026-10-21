@@ -320,3 +320,18 @@ Matching names caught the rest as rebrands of one coin (RAD, GAL, FET, MAGIC, AU
 matching prices did the same for AVNT, ROBO and HOME.
 A 200 is not enough for a CMC slug: `/currencies/story/` now belongs to a different coin (STORY), so
 `story-2` maps to `data-network`, checked by page title.
+
+---
+
+## 2026-10-21 — detector PR #42 (Coinbase)
+
+| Suspended | Token | Source |
+|-----------|-------|--------|
+| 2026-10-20 | BLAST (Blast) | Coinbase status-page incident "BLAST — Blast network shutdown"; Crypto Briefing |
+
+Blast announced on 2026-10-02 that it would shut down its Ethereum L2, because running it cost more than it earned. Coinbase moved
+BLAST-USD to limit-only by 2026-10-08 (first flagged in the detector's wind-down section on PR #32), then
+suspended trading on 2026-10-20. Withdrawals stay open until 2026-10-26, when the network shuts down. The
+detector's run at 06:42 UTC on 10-20 did not see it yet and the 10-21 run did, which fits a suspension later
+that day. Name is Coinbase's own (`/currencies/BLAST`). Binance has nothing new; the asset-list check
+reports 0 disagreements.
