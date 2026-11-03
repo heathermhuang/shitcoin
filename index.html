@@ -81,6 +81,9 @@ body::after{content:'';position:fixed;top:0;left:0;width:100%;height:100%;opacit
 
 /* STATS */
 .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px;margin-bottom:24px}
+/* Binance has 7 stats; auto-fit wrapped them 6+1 or 5+2, leaving one orphan card */
+@media(min-width:901px){#bn-stats{grid-template-columns:repeat(4,1fr)}}
+@media(min-width:1280px){#bn-stats{grid-template-columns:repeat(7,1fr)}}
 .stat{background:var(--bg-1);border:1px solid var(--border-1);border-radius:10px;padding:17px 20px;transition:border-color 0.2s,box-shadow 0.2s;position:relative;overflow:hidden}
 .stat::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;border-radius:10px 10px 0 0;opacity:0.9}
 .stat.r::before{background:var(--red)}.stat.a::before{background:var(--amber)}.stat.g::before{background:var(--green)}.stat.b::before{background:var(--blue)}.stat.p::before{background:var(--purple)}
