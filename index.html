@@ -1866,6 +1866,11 @@ const CB_DELISTED = [
     // trading on 2026-10-20 after ~two weeks limit-only, with withdrawals until
     // 2026-10-26 (Coinbase status page, Crypto Briefing).
     {sym:'BLAST',  name:'Blast',               delistDate:'2026-10-20'},
+    // Detector PR #45. A migration, not a delisting: Coinbase converts VELO to the
+    // new AERO token (~0.044 AERO per VELO) over 2026-11-02 to 11-04 and disabled
+    // VELO trading on 11-02 after limit-only order books (Coinbase status page,
+    // Crypto Briefing).
+    {sym:'VELO',   name:'Velodrome Finance (migrated to AERO)', delistDate:'2026-11-02'},
     // ── Name backfill, added 2026-08-12 ───────────────────────────────────
     // Fully delisted on Coinbase, and the API still returns them, so these rows
     // ALREADY render — just with no curated name, so each falls back to
