@@ -272,7 +272,8 @@ td:has(.mcap),td:has(.vol),td:has(.pct),td:has(.depth),td:has(.risk-score),td:ha
   .tnav-tab svg{display:block;width:16px;height:16px}
   .topnav-inner{padding:0 8px}
 }
-@media(max-width:480px){.stats{grid-template-columns:1fr}}
+/* Two columns down to phone width: one per row stacked 7 full-width cards above the table */
+@media(max-width:900px){#bn-stats .stat:last-child{grid-column:span 2}}
 ::-webkit-scrollbar{width:5px;height:5px}::-webkit-scrollbar-track{background:var(--bg-1)}::-webkit-scrollbar-thumb{background:var(--border-2);border-radius:3px}::-webkit-scrollbar-thumb:hover{background:var(--text-3)}
 
 /* SHIMMER LOADING */
