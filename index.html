@@ -99,6 +99,8 @@ body::after{content:'';position:fixed;top:0;left:0;width:100%;height:100%;opacit
 .ftab{padding:7px 16px;border-radius:20px;font-size:12px;font-weight:500;cursor:pointer;transition:all 0.2s;border:1px solid var(--border-1);background:transparent;color:var(--text-2);font-family:'Inter',sans-serif;white-space:nowrap;min-height:36px}
 .ftab:hover{background:var(--bg-3);border-color:var(--border-2);color:var(--text-1)}
 .ftab.active{background:var(--text-1);color:var(--bg-0);border-color:var(--text-1);font-weight:600}
+.fdot{display:inline-block;width:7px;height:7px;border-radius:50%;margin-right:7px;vertical-align:1px;background:var(--text-3)}
+.fdot.r{background:var(--red)}.fdot.a{background:var(--amber)}.fdot.g{background:var(--green)}.fdot.b{background:var(--blue)}
 .ftab .cnt{font-family:'IBM Plex Mono',monospace;font-size:10px;margin-left:4px;opacity:0.6}
 .search{margin-left:auto;background:rgba(255,255,255,0.04);border:1px solid var(--border-2);border-radius:8px;padding:0 14px;color:var(--text-1);font-family:'IBM Plex Mono',monospace;font-size:12px;width:200px;outline:none;transition:all 0.2s;height:36px}
 .search::placeholder{color:var(--text-3)}
@@ -465,7 +467,7 @@ th[data-sort][aria-sort="ascending"],th[data-sort][aria-sort="descending"]{color
 </div>
 <div class="pagination" id="bn-pagination"></div>
 <div class="timeline-section" id="timelineSection">
-    <div class="sec-title">📅 Upcoming Events</div>
+    <div class="sec-title">Upcoming Events</div>
     <div class="timeline" id="bn-timeline"></div>
 </div>
 <div class="footer">
@@ -508,11 +510,11 @@ th[data-sort][aria-sort="ascending"],th[data-sort][aria-sort="descending"]{color
     <div class="stat"><div class="stat-label">Active Pairs</div><div class="stat-val p" id="cb-sPairs">-</div><div class="stat-sub">USD trading pairs</div></div>
 </div>
 <div class="filters">
-    <button class="ftab active" data-f="all" onclick="cbSetFilter('all')">📋 All <span class="cnt" id="cb-cAll"></span></button>
-    <button class="ftab" data-f="online" onclick="cbSetFilter('online')">🟢 Online <span class="cnt" id="cb-cOnline"></span></button>
-    <button class="ftab" data-f="limit" onclick="cbSetFilter('limit')">⚠ Limit Only <span class="cnt" id="cb-cLimit"></span></button>
-    <button class="ftab" data-f="delisted" onclick="cbSetFilter('delisted')">⬛ Delisted <span class="cnt" id="cb-cDelisted"></span></button>
-    <button class="ftab" data-f="highrisk" onclick="cbSetFilter('highrisk')">🔴 High Risk <span class="cnt" id="cb-cHighRisk"></span></button>
+    <button class="ftab active" data-f="all" onclick="cbSetFilter('all')">All <span class="cnt" id="cb-cAll"></span></button>
+    <button class="ftab" data-f="online" onclick="cbSetFilter('online')"><span class="fdot g"></span>Online <span class="cnt" id="cb-cOnline"></span></button>
+    <button class="ftab" data-f="limit" onclick="cbSetFilter('limit')"><span class="fdot a"></span>Limit Only <span class="cnt" id="cb-cLimit"></span></button>
+    <button class="ftab" data-f="delisted" onclick="cbSetFilter('delisted')"><span class="fdot"></span>Delisted <span class="cnt" id="cb-cDelisted"></span></button>
+    <button class="ftab" data-f="highrisk" onclick="cbSetFilter('highrisk')"><span class="fdot r"></span>High Risk <span class="cnt" id="cb-cHighRisk"></span></button>
     <input class="search" type="text" placeholder="Search coins... ( / )" id="cb-searchInput" oninput="cbSetQuery(this.value)">
 </div>
 <div class="tbl-wrap">
@@ -1463,7 +1465,7 @@ function renderStats() {
     const medDays = getMedianMonToDelist();
     document.getElementById('bn-stats').innerHTML = `
         <div class="stat"><div class="stat-label">Active Coins</div><div class="stat-val b">${active}</div><div class="stat-sub">trading on Binance</div></div>
-        <div class="stat"><div class="stat-label">⚠ High Risk</div><div class="stat-val r">${highRisk}</div><div class="stat-sub">risk score ≥ 50</div></div>
+        <div class="stat"><div class="stat-label">High Risk</div><div class="stat-val r">${highRisk}</div><div class="stat-sub">risk score ≥ 50</div></div>
         <div class="stat"><div class="stat-label">Monitoring</div><div class="stat-val a">${mon}</div><div class="stat-sub">tagged by Binance</div></div>
         <div class="stat"><div class="stat-label">Delisting</div><div class="stat-val r">${deling}</div><div class="stat-sub">scheduled removal</div></div>
         <div class="stat"><div class="stat-label">Restored</div><div class="stat-val g">${rest}</div><div class="stat-sub">tag removed</div></div>
@@ -1482,13 +1484,13 @@ function renderFilters() {
     const highrisk = allCoins.filter(t => (t.status === 'active' && t._risk >= 50) || t.status === 'monitoring' || t.status === 'delisting').length;
 
     const tabs = [
-        ['active', '🟢 Active', active],
-        ['highrisk', '🔴 At Risk', highrisk],
-        ['monitoring', '⚠ Monitoring', mon],
-        ['delisting', '🚨 Delisting', deling],
-        ['restored', '✅ Restored', rest],
-        ['delisted', '⬛ Delisted', deled],
-        ['all', '📋 All', all],
+        ['active', '<span class="fdot g"></span>Active', active],
+        ['highrisk', '<span class="fdot r"></span>At Risk', highrisk],
+        ['monitoring', '<span class="fdot a"></span>Monitoring', mon],
+        ['delisting', '<span class="fdot r"></span>Delisting', deling],
+        ['restored', '<span class="fdot b"></span>Restored', rest],
+        ['delisted', '<span class="fdot"></span>Delisted', deled],
+        ['all', 'All', all],
     ];
     // Replace only the buttons, never the search input. This runs on every
     // bnRenderAll() — about seven times while the CoinGecko batches land, then
