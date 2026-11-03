@@ -335,3 +335,22 @@ suspended trading on 2026-10-20. Withdrawals stay open until 2026-10-26, when th
 detector's run at 06:42 UTC on 10-20 did not see it yet and the 10-21 run did, which fits a suspension later
 that day. Name is Coinbase's own (`/currencies/BLAST`). Binance has nothing new; the asset-list check
 reports 0 disagreements.
+
+---
+
+## 2026-11-03 — detector PR #45 (Coinbase)
+
+| Suspended | Token | Source |
+|-----------|-------|--------|
+| 2026-11-02 | VELO (Velodrome Finance) | Coinbase status page (AERO/VELO migration); Crypto Briefing |
+
+**Migration, not a delisting.** Aerodrome and Velodrome are merging into one new AERO token. Coinbase
+converts holdings over 2026-11-02 to 11-04: AERO 1:1, VELO at about 0.044 AERO per VELO. It moved VELO-USD to
+limit-only first (on the detector's wind-down list since 2026-10-16) and disabled VELO trading on 11-02, while
+AERO kept trading. The detector's run at 06:37 UTC on 11-02 still saw VELO-USD limit-only, and the 11-03 run
+saw it delisted. The name is Coinbase's own (`/currencies/VELO`), and the row says it migrated to AERO.
+
+Also in this run: FORTH-USD went limit-only and is now Coinbase's only FORTH pair that isn't delisted, so it
+joins the wind-down list. AXIS-USD left cancel-only and trades normally. STABLE-USD and RITUAL-USD are new
+listings. Binance has nothing new, and the asset-list check reports 0 disagreements. Detector PR #44, which
+reported only the FORTH change, is superseded by #45.
