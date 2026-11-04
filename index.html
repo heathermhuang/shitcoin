@@ -118,6 +118,8 @@ td{padding:10px 14px;border-bottom:1px solid var(--border-1);font-size:13px;vert
 tr{transition:background 0.15s,border-left 0.15s}
 tbody tr:hover{background:rgba(255,255,255,0.03)}
 tbody tr:last-child td{border-bottom:none}
+/* Pin the header under the nav once the table fits without side-scrolling: a scroll container blocks sticky */
+@media(min-width:1280px){.tbl-wrap{overflow:visible}th{position:sticky;top:56px;z-index:2;background:linear-gradient(rgba(255,255,255,0.02),rgba(255,255,255,0.02)),var(--bg-1)}th:first-child{border-top-left-radius:12px}th:last-child{border-top-right-radius:12px}}
 tbody tr.delisting-row{background:rgba(239,68,68,0.04)}
 tbody tr.delisted-row{opacity:0.4}
 tbody tr.restored-row{background:rgba(34,197,94,0.04)}
@@ -135,6 +137,10 @@ td:has(.mcap),td:has(.vol),td:has(.pct),td:has(.depth),td:has(.risk-score),td:ha
 .tk-sym{font-weight:700;font-size:13px;letter-spacing:-0.2px;color:var(--text-1)}
 .tk-name{font-size:11.5px;color:var(--text-3);max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .tk-links{display:flex;gap:3px;margin-top:2px;align-items:center}
+/* Symbol and links share the first line, name under it: two lines per row instead of three */
+.tk-txt{display:grid;grid-template-columns:auto 1fr;column-gap:6px;align-items:center;min-width:0}
+.tk-txt .tk-links{grid-row:1;grid-column:2;margin-top:0}
+.tk-txt .tk-name{grid-column:1/-1}
 .tk-links a{display:flex;align-items:center;justify-content:center;width:20px;height:20px;opacity:0.45;transition:opacity 0.15s;border-radius:3px}
 .tk-links a:hover{opacity:1}
 .tk-links a img{width:14px;height:14px;border-radius:2px;display:block}
@@ -239,9 +245,10 @@ td:has(.mcap),td:has(.vol),td:has(.pct),td:has(.depth),td:has(.risk-score),td:ha
 @media(max-width:640px){
   .tnav-name{display:none}
   .tnav-divider{display:none}
-  .tnav-tab{padding:6px 10px;font-size:12px;flex-shrink:0;gap:5px}
-  .topnav-inner{padding:0 10px;height:50px}
-  .tnav-right{margin-left:4px}
+  /* .topnav prefix: the base nav rules sit later in the file and would otherwise win */
+  .topnav .tnav-tab{padding:6px 10px;font-size:12px;flex-shrink:0;gap:5px}
+  .topnav .topnav-inner{padding:0 10px;height:50px}
+  .topnav .tnav-right{margin-left:4px}
   .live{padding:4px 8px;font-size:10px;gap:4px}
   .live-dot{width:5px;height:5px}
   .stats{grid-template-columns:repeat(2,1fr)}
@@ -264,11 +271,12 @@ td:has(.mcap),td:has(.vol),td:has(.pct),td:has(.depth),td:has(.risk-score),td:ha
   .coin-letter-icon{width:24px;height:24px;font-size:10px}
   .tk-sym{font-size:12px}
   .tk-name{font-size:10.5px;max-width:80px}
+  .risk-bar{display:none}
 }
 @media(max-width:440px){
-  .tnav-tab{font-size:0;padding:7px 9px;gap:0}
+  .topnav .tnav-tab{font-size:0;padding:7px 9px;gap:0}
   .tnav-tab svg{display:block;width:16px;height:16px}
-  .topnav-inner{padding:0 8px}
+  .topnav .topnav-inner{padding:0 8px}
 }
 /* Two columns down to phone width: one per row stacked 7 full-width cards above the table */
 @media(max-width:900px){#bn-stats .stat:last-child{grid-column:span 2}}
@@ -1586,7 +1594,7 @@ function renderTable() {
         const cmcHtml = cmcLink ? '<a href="' + cmcLink + '" target="_blank" title="CoinMarketCap"><img src="https://www.google.com/s2/favicons?domain=coinmarketcap.com&sz=32" alt="CMC"></a>' : '';
 
         return `<tr class="${rowClass}">
-            <td><div class="tk">${coinIconHtml}<div><div class="tk-sym">${t.sym}</div><div class="tk-name">${t.name||t.sym}</div><div class="tk-links"><a href="${binanceLink}" target="_blank" title="${linkTitle}" onclick="event.stopPropagation()">${linkPrimaryIcon}</a>${cmcHtml ? cmcHtml.replace('href=', 'onclick="event.stopPropagation()" href=') : ''}</div></div></div></td>
+            <td><div class="tk">${coinIconHtml}<div class="tk-txt"><div class="tk-sym">${t.sym}</div><div class="tk-name">${t.name||t.sym}</div><div class="tk-links"><a href="${binanceLink}" target="_blank" title="${linkTitle}" onclick="event.stopPropagation()">${linkPrimaryIcon}</a>${cmcHtml ? cmcHtml.replace('href=', 'onclick="event.stopPropagation()" href=') : ''}</div></div></div></td>
             <td>${badges[t.status]||''}</td>
             <td>${riskHtml}</td>
             <td class="col-days">${domHtml}</td>
@@ -2111,7 +2119,7 @@ function cbRenderAll() {
         const rowClass = c.status === 'delisted' ? 'delisted-row' : c.limitOnly ? 'limit-row' : (c._risk >= 60 ? 'highrisk-row' : '');
 
         return `<tr class="${rowClass}">
-            <td><div class="tk">${coinIconHtmlCb}<div><div class="tk-sym">${c.sym}</div><div class="tk-name">${c.name || ld.name || (c.pairs.length + ' pair' + (c.pairs.length > 1 ? 's' : ''))}</div><div class="tk-links"><a href="${cbLink}" target="_blank" title="${c.status==='delisted'?'CoinGecko':'Coinbase'}">${primaryIcon}</a>${cmcHtml}</div></div></div></td>
+            <td><div class="tk">${coinIconHtmlCb}<div class="tk-txt"><div class="tk-sym">${c.sym}</div><div class="tk-name">${c.name || ld.name || (c.pairs.length + ' pair' + (c.pairs.length > 1 ? 's' : ''))}</div><div class="tk-links"><a href="${cbLink}" target="_blank" title="${c.status==='delisted'?'CoinGecko':'Coinbase'}">${primaryIcon}</a>${cmcHtml}</div></div></div></td>
             <td>${badge}</td>
             <td>${riskHtml}</td>
             <td><span class="vol">${fmtPrice(ld.price)}</span></td>
