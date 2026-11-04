@@ -58,7 +58,6 @@
 *{margin:0;padding:0;box-sizing:border-box;font-family:inherit}
 html{font-family:'Inter',sans-serif}
 body{background:var(--bg-0);color:var(--text-1);font-family:'Inter',sans-serif;min-height:100vh;overflow-x:hidden;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale}
-body::after{content:'';position:fixed;top:0;left:0;width:100%;height:100%;opacity:0.025;background:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");pointer-events:none;z-index:0}
 .wrap{position:relative;z-index:1;max-width:1700px;margin:0 auto;padding:28px 24px}
 .mono{font-family:'IBM Plex Mono',monospace;font-variant-numeric:tabular-nums}
 
@@ -67,29 +66,28 @@ body::after{content:'';position:fixed;top:0;left:0;width:100%;height:100%;opacit
 .hdr-left{display:flex;align-items:center;gap:14px}
 .logo{width:38px;height:38px;background:linear-gradient(135deg,#f59e0b,#ea580c);border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:800;color:#fff;font-family:'IBM Plex Mono',monospace;box-shadow:0 4px 12px rgba(245,158,11,0.25)}
 .hdr h1{font-size:22px;font-weight:800;letter-spacing:-0.5px;color:var(--text-1)}
-.hdr .sub{font-size:12px;color:var(--text-3);font-family:'IBM Plex Mono',monospace;margin-top:3px;letter-spacing:0.01em}
+.hdr .sub{font-size:13px;color:var(--text-3);margin-top:4px}
 .hdr-right{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
-.live{display:flex;align-items:center;gap:6px;font-size:11px;font-family:'IBM Plex Mono',monospace;color:var(--green);background:rgba(34,197,94,0.08);padding:5px 12px;border-radius:20px;border:1px solid rgba(34,197,94,0.2);letter-spacing:0.05em;font-weight:600}
-.live-dot{width:6px;height:6px;background:var(--green);border-radius:50%;animation:blink 1.4s ease-in-out infinite;box-shadow:0 0 6px rgba(34,197,94,0.6)}
+.live{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--green);background:rgba(34,197,94,0.08);padding:5px 12px;border-radius:20px;border:1px solid rgba(34,197,94,0.2);letter-spacing:0.02em;font-weight:600}
+.live-dot{width:6px;height:6px;background:var(--green);border-radius:50%;animation:blink 1.4s ease-in-out infinite}
 @keyframes blink{0%,100%{opacity:1;transform:scale(1)}50%{opacity:0.3;transform:scale(0.8)}}
-.meta-text{font-size:11px;font-family:'IBM Plex Mono',monospace;color:var(--text-3)}
-.btn{background:var(--bg-3);border:1px solid var(--border-2);color:var(--text-2);padding:7px 14px;border-radius:8px;font-family:'IBM Plex Mono',monospace;font-size:11px;cursor:pointer;transition:all 0.2s cubic-bezier(0.16,1,0.3,1);display:flex;align-items:center;gap:5px}
+.meta-text{font-size:12px;color:var(--text-3);font-variant-numeric:tabular-nums}
+.btn{background:var(--bg-3);border:1px solid var(--border-2);color:var(--text-2);padding:7px 14px;border-radius:8px;font-size:12px;font-weight:500;cursor:pointer;transition:all 0.2s cubic-bezier(0.16,1,0.3,1);display:flex;align-items:center;gap:5px}
 .btn:hover{background:var(--bg-4);border-color:var(--border-3);color:var(--text-1)}
 .btn:active{transform:translateY(0)}
 .btn.spinning svg{animation:spin 0.8s linear infinite}
 @keyframes spin{from{transform:rotate(0)}to{transform:rotate(360deg)}}
 
 /* STATS */
-.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px;margin-bottom:24px}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:1px;margin-bottom:24px;background:var(--border-1);border:1px solid var(--border-1);border-radius:12px;overflow:hidden}
 /* Binance has 7 stats, Coinbase 6; auto-fit wrapped them 6+1 or 5+1, leaving one orphan card */
-@media(min-width:901px){#bn-stats{grid-template-columns:repeat(4,1fr)}#cb-statsBar{grid-template-columns:repeat(3,1fr)}}
-@media(min-width:1280px){#bn-stats{grid-template-columns:repeat(7,1fr)}#cb-statsBar{grid-template-columns:repeat(6,1fr)}}
-.stat{background:var(--bg-1);border:1px solid var(--border-1);border-radius:10px;padding:17px 20px;transition:border-color 0.2s,box-shadow 0.2s;position:relative;overflow:hidden}
-.stat:hover{border-color:var(--border-2)}
-.stat-label{font-size:10px;text-transform:uppercase;letter-spacing:0.1em;color:var(--text-3);font-family:'IBM Plex Mono',monospace;margin-bottom:9px;font-weight:600}
+@media(min-width:901px){#bn-stats{grid-template-columns:repeat(4,1fr)}#bn-stats .stat:last-child{grid-column:span 2}#cb-statsBar{grid-template-columns:repeat(3,1fr)}}
+@media(min-width:1280px){#bn-stats{grid-template-columns:repeat(7,1fr)}#bn-stats .stat:last-child{grid-column:auto}#cb-statsBar{grid-template-columns:repeat(6,1fr)}}
+.stat{background:var(--bg-1);padding:16px 20px;position:relative}
+.stat-label{font-size:12px;color:var(--text-2);margin-bottom:8px;font-weight:500}
 .stat-val{font-size:27px;font-weight:600;letter-spacing:-0.6px;line-height:1;font-family:'IBM Plex Mono',monospace;font-variant-numeric:tabular-nums}
 .stat-val.r{color:var(--red)}.stat-val.a{color:var(--amber)}.stat-val.g{color:var(--green)}.stat-val.b{color:var(--blue)}.stat-val.p{color:var(--purple)}
-.stat-sub{font-size:10px;color:var(--text-3);font-family:'IBM Plex Mono',monospace;margin-top:6px}
+.stat-sub{font-size:12px;color:var(--text-3);margin-top:6px}
 
 /* PREDICTION */
 /* Coin-level recovery detail rows */
@@ -98,25 +96,25 @@ body::after{content:'';position:fixed;top:0;left:0;width:100%;height:100%;opacit
 .filters{display:flex;align-items:center;gap:6px;margin-bottom:16px;flex-wrap:wrap}
 .ftab{padding:7px 16px;border-radius:20px;font-size:12px;font-weight:500;cursor:pointer;transition:all 0.2s;border:1px solid var(--border-1);background:transparent;color:var(--text-2);font-family:'Inter',sans-serif;white-space:nowrap;min-height:36px}
 .ftab:hover{background:var(--bg-3);border-color:var(--border-2);color:var(--text-1)}
-.ftab.active{background:var(--text-1);color:var(--bg-0);border-color:var(--text-1);font-weight:600}
+.ftab.active{background:var(--bg-4);color:var(--text-1);border-color:var(--border-3);font-weight:600}
 .fdot{display:inline-block;width:7px;height:7px;border-radius:50%;margin-right:7px;vertical-align:1px;background:var(--text-3)}
 .fdot.r{background:var(--red)}.fdot.a{background:var(--amber)}.fdot.g{background:var(--green)}.fdot.b{background:var(--blue)}
 .ftab .cnt{font-family:'IBM Plex Mono',monospace;font-size:10px;margin-left:4px;opacity:0.6}
-.search{margin-left:auto;background:rgba(255,255,255,0.04);border:1px solid var(--border-2);border-radius:8px;padding:0 14px;color:var(--text-1);font-family:'IBM Plex Mono',monospace;font-size:12px;width:200px;outline:none;transition:all 0.2s;height:36px}
+.search{margin-left:auto;background:rgba(255,255,255,0.04);border:1px solid var(--border-2);border-radius:8px;padding:0 14px;color:var(--text-1);font-size:13px;width:200px;outline:none;transition:all 0.2s;height:36px}
 .search::placeholder{color:var(--text-3)}
 .search:focus{border-color:var(--blue);box-shadow:0 0 0 2px rgba(59,130,246,0.15);background:rgba(255,255,255,0.06)}
 
 /* TABLE */
-.tbl-wrap{background:var(--bg-1);border:1px solid var(--border-1);border-radius:12px;overflow-x:auto;box-shadow:0 1px 0 rgba(255,255,255,0.02),0 10px 34px rgba(0,0,0,0.34)}
+.tbl-wrap{background:var(--bg-1);border:1px solid var(--border-1);border-radius:12px;overflow-x:auto}
 table{width:100%;border-collapse:collapse;min-width:1200px}
 thead{background:rgba(255,255,255,0.02)}
-th{padding:11px 14px;text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:0.1em;color:var(--text-3);font-family:'IBM Plex Mono',monospace;font-weight:600;border-bottom:1px solid var(--border-2);white-space:nowrap;cursor:pointer;user-select:none;transition:color 0.15s}
+th{padding:11px 14px;text-align:left;font-size:12px;color:var(--text-3);font-weight:500;border-bottom:1px solid var(--border-2);white-space:nowrap;cursor:pointer;user-select:none;transition:color 0.15s}
 th:hover{color:var(--text-2)}
-th.sorted{color:var(--blue)}
+th.sorted{color:var(--text-1)}
 th[data-sort]::after{content:'';margin-left:3px;opacity:0.3;font-size:9px}
 th[data-sort].sorted::after{content:' ▼';opacity:1}
 th[data-sort].sorted.asc-dir::after{content:' ▲';opacity:1}
-td{padding:10px 14px;border-bottom:1px solid var(--border-1);font-size:12.5px;vertical-align:middle}
+td{padding:10px 14px;border-bottom:1px solid var(--border-1);font-size:13px;vertical-align:middle}
 tr{transition:background 0.15s,border-left 0.15s}
 tbody tr:hover{background:rgba(255,255,255,0.03)}
 tbody tr:last-child td{border-bottom:none}
@@ -135,7 +133,7 @@ td:has(.mcap),td:has(.vol),td:has(.pct),td:has(.depth),td:has(.risk-score),td:ha
 .tk-ico img{width:28px;height:28px;border-radius:50%;object-fit:cover;display:block}
 .coin-letter-icon{width:28px;height:28px;border-radius:50%;background:linear-gradient(135deg,var(--bg-4),var(--bg-3));border:1px solid var(--border-2);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:var(--text-2);font-family:'IBM Plex Mono',monospace;flex-shrink:0}
 .tk-sym{font-weight:700;font-size:13px;letter-spacing:-0.2px;color:var(--text-1)}
-.tk-name{font-size:10px;color:var(--text-3);max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tk-name{font-size:11.5px;color:var(--text-3);max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .tk-links{display:flex;gap:3px;margin-top:2px;align-items:center}
 .tk-links a{display:flex;align-items:center;justify-content:center;width:20px;height:20px;opacity:0.45;transition:opacity 0.15s;border-radius:3px}
 .tk-links a:hover{opacity:1}
@@ -145,16 +143,15 @@ td:has(.mcap),td:has(.vol),td:has(.pct),td:has(.depth),td:has(.risk-score),td:ha
 .ex-icons a:hover{opacity:1}
 .ex-icons a img{width:16px;height:16px;border-radius:3px;display:block}
 
-.badge{display:inline-flex;align-items:center;gap:4px;padding:3px 8px;border-radius:5px;font-size:10px;font-weight:600;font-family:'IBM Plex Mono',monospace;text-transform:uppercase;letter-spacing:0.04em}
-.badge.monitoring{background:var(--amber-soft);color:var(--amber);border:1px solid rgba(245,158,11,0.15)}
-.badge.delisting{background:var(--red-soft);color:var(--red);border:1px solid rgba(239,68,68,0.15);animation:dpulse 2s ease-in-out infinite}
-.badge.delisted{background:rgba(100,100,130,0.08);color:var(--text-3);border:1px solid rgba(100,100,130,0.1)}
-.badge.restored{background:var(--green-soft);color:var(--green);border:1px solid rgba(34,197,94,0.15)}
-.badge.active{background:var(--blue-soft);color:var(--blue);border:1px solid rgba(59,130,246,0.15)}
-.badge.online{background:var(--green-soft);color:var(--green);border:1px solid rgba(34,197,94,0.15)}
-.badge.limit{background:var(--amber-soft);color:var(--amber);border:1px solid rgba(245,158,11,0.15)}
-.badge.new-tag{background:var(--purple-soft);color:var(--purple);border:1px solid rgba(167,139,250,0.2);animation:dpulse 2s ease-in-out infinite}
-@keyframes dpulse{0%,100%{box-shadow:none}50%{box-shadow:0 0 8px rgba(239,68,68,0.12)}}
+.badge{display:inline-flex;align-items:center;gap:4px;padding:3px 8px;border-radius:5px;font-size:10.5px;font-weight:600;text-transform:uppercase;letter-spacing:0.03em}
+.badge.monitoring{background:var(--amber-soft);color:var(--amber)}
+.badge.delisting{background:var(--red-soft);color:var(--red)}
+.badge.delisted{background:rgba(100,100,130,0.08);color:var(--text-3)}
+.badge.restored{background:var(--green-soft);color:var(--green)}
+.badge.active{background:var(--blue-soft);color:var(--blue)}
+.badge.online{background:var(--green-soft);color:var(--green)}
+.badge.limit{background:var(--amber-soft);color:var(--amber)}
+.badge.new-tag{background:var(--purple-soft);color:var(--purple)}
 .bdot{width:4px;height:4px;border-radius:50%}
 .bdot.a{background:var(--amber)}.bdot.r{background:var(--red);animation:blink 1s ease-in-out infinite}.bdot.g{background:var(--green)}
 
@@ -175,15 +172,15 @@ td:has(.mcap),td:has(.vol),td:has(.pct),td:has(.depth),td:has(.risk-score),td:ha
 
 /* RISK SCORE */
 .risk-score{display:inline-flex;align-items:center;gap:5px;font-family:'IBM Plex Mono',monospace;font-size:12px;font-weight:700;padding:3px 8px;border-radius:4px}
-.risk-score.safe{background:var(--green-soft);color:var(--green);border:1px solid rgba(34,197,94,0.15)}
-.risk-score.low{background:rgba(34,197,94,0.06);color:#6ee7b7;border:1px solid rgba(34,197,94,0.1)}
-.risk-score.medium{background:var(--amber-soft);color:var(--amber);border:1px solid rgba(245,158,11,0.15)}
-.risk-score.high{background:rgba(239,68,68,0.08);color:#f87171;border:1px solid rgba(239,68,68,0.12)}
-.risk-score.critical{background:var(--red-soft);color:var(--red);border:1px solid rgba(239,68,68,0.2)}
+.risk-score.safe{background:var(--green-soft);color:var(--green)}
+.risk-score.low{background:rgba(34,197,94,0.06);color:#6ee7b7}
+.risk-score.medium{background:var(--amber-soft);color:var(--amber)}
+.risk-score.high{background:rgba(239,68,68,0.08);color:#f87171}
+.risk-score.critical{background:var(--red-soft);color:var(--red)}
 .risk-bar{width:40px;height:4px;background:var(--bg-4);border-radius:2px;overflow:hidden;display:inline-block;vertical-align:middle}
 .risk-fill{height:100%;border-radius:2px;transition:width 0.3s}
 
-.lnk{color:var(--blue);text-decoration:none;font-size:11px;font-family:'IBM Plex Mono',monospace;display:inline-flex;align-items:center;gap:3px;padding:3px 8px;border-radius:4px;border:1px solid rgba(59,130,246,0.15);background:rgba(59,130,246,0.04);transition:all 0.15s;white-space:nowrap}
+.lnk{color:var(--blue);text-decoration:none;font-size:12px;display:inline-flex;align-items:center;gap:3px;padding:3px 8px;border-radius:4px;border:1px solid rgba(59,130,246,0.15);background:rgba(59,130,246,0.04);transition:all 0.15s;white-space:nowrap}
 .lnk:hover{background:rgba(59,130,246,0.08);border-color:rgba(59,130,246,0.3)}
 
 /* TIMELINE */
@@ -197,10 +194,11 @@ td:has(.mcap),td:has(.vol),td:has(.pct),td:has(.depth),td:has(.risk-score),td:ha
 .tcard.urgent .tdate{color:var(--red)}
 .tcard .tevt{font-size:13px;font-weight:500;margin-bottom:8px;line-height:1.4;color:var(--text-1)}
 .ttokens{display:flex;flex-wrap:wrap;gap:4px}
+.tl-empty{flex:1;padding:18px 20px;border:1px dashed var(--border-2);border-radius:10px;color:var(--text-3);font-size:13px}
 .ttk{font-family:'IBM Plex Mono',monospace;font-size:10px;padding:2px 7px;border-radius:20px;background:var(--bg-0);border:1px solid var(--border-1);color:var(--text-2)}
 
 /* FOOTER */
-.footer{margin-top:48px;text-align:center;font-size:12px;color:var(--text-3);font-family:'IBM Plex Mono',monospace;padding:28px 0;border-top:1px solid var(--border-1);background:linear-gradient(to bottom,transparent,rgba(2,4,8,0.5))}
+.footer{margin-top:48px;text-align:center;font-size:12.5px;line-height:1.7;color:var(--text-3);padding:28px 0;border-top:1px solid var(--border-1)}
 .footer a{color:var(--text-2);text-decoration:none;transition:color 0.15s}
 .footer a:hover{color:var(--blue);text-decoration:underline}
 
@@ -209,19 +207,19 @@ td:has(.mcap),td:has(.vol),td:has(.pct),td:has(.depth),td:has(.risk-score),td:ha
 .cookie-bar.hidden{transform:translateY(100%);pointer-events:none}
 .cookie-bar-inner{max-width:1700px;margin:0 auto;width:100%;display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap}
 .cookie-bar-left{display:flex;align-items:center;gap:10px;flex:1;min-width:0}
-.cookie-bar-text{font-size:11px;color:var(--text-2);font-family:'IBM Plex Mono',monospace;line-height:1.6}
+.cookie-bar-text{font-size:12.5px;color:var(--text-2);line-height:1.6}
 .cookie-bar-text a{color:var(--blue);text-decoration:none}
 .cookie-bar-text a:hover{text-decoration:underline}
 .cookie-bar-actions{display:flex;gap:8px;flex-shrink:0}
-.cookie-btn{padding:8px 18px;border-radius:8px;font-size:11px;font-weight:600;cursor:pointer;font-family:'IBM Plex Mono',monospace;transition:all 0.2s;border:1px solid transparent;min-height:36px}
+.cookie-btn{padding:8px 18px;border-radius:8px;font-size:12.5px;font-weight:600;cursor:pointer;transition:all 0.2s;border:1px solid transparent;min-height:36px}
 .cookie-btn.accept{background:var(--blue);color:#fff;border-color:var(--blue)}
-.cookie-btn.accept:hover{background:#2563eb;transform:translateY(-1px);box-shadow:0 4px 12px rgba(59,130,246,0.3)}
+.cookie-btn.accept:hover{background:#2563eb}
 .cookie-btn.decline{background:transparent;color:var(--text-3);border-color:var(--border-2)}
 .cookie-btn.decline:hover{color:var(--text-2);border-color:var(--border-3)}
 
 /* PAGINATION */
-.pagination{display:flex;align-items:center;justify-content:center;gap:8px;margin-top:16px;font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--text-3)}
-.pagination button{background:var(--bg-3);border:1px solid var(--border-1);color:var(--text-2);padding:5px 12px;border-radius:5px;cursor:pointer;font-family:'IBM Plex Mono',monospace;font-size:11px;transition:all 0.15s}
+.pagination{display:flex;align-items:center;justify-content:center;gap:8px;margin-top:16px;font-size:12.5px;font-variant-numeric:tabular-nums;color:var(--text-3)}
+.pagination button{background:var(--bg-3);border:1px solid var(--border-1);color:var(--text-2);padding:5px 12px;border-radius:5px;cursor:pointer;font-size:12px;transition:all 0.15s}
 .pagination button:hover{background:var(--bg-4)}
 .pagination button:disabled{opacity:0.3;cursor:not-allowed}
 .pagination .pg-info{color:var(--text-3)}
@@ -233,7 +231,7 @@ td:has(.mcap),td:has(.vol),td:has(.pct),td:has(.depth),td:has(.risk-score),td:ha
 .loader .lname{font-size:28px;font-weight:800;letter-spacing:-1px;margin-bottom:24px;color:var(--text-1)}
 .loader .lname span{color:var(--amber)}
 .loader .spinner{width:36px;height:36px;border:2px solid var(--border-2);border-top-color:var(--amber);border-radius:50%;animation:spin 0.7s linear infinite;margin:0 auto 16px}
-.loader .ltxt{font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--text-3);margin-bottom:20px}
+.loader .ltxt{font-size:12.5px;color:var(--text-3);margin-bottom:20px}
 .loader .lprog{width:200px;height:2px;background:var(--border-1);border-radius:1px;margin:0 auto;overflow:hidden}
 .loader .lprog-fill{height:100%;width:0%;background:var(--amber);border-radius:1px;transition:width 0.5s ease}
 
@@ -246,7 +244,7 @@ td:has(.mcap),td:has(.vol),td:has(.pct),td:has(.depth),td:has(.risk-score),td:ha
   .tnav-right{margin-left:4px}
   .live{padding:4px 8px;font-size:10px;gap:4px}
   .live-dot{width:5px;height:5px}
-  .stats{grid-template-columns:repeat(2,1fr);gap:8px}
+  .stats{grid-template-columns:repeat(2,1fr)}
   .stat{padding:14px 16px}
   .stat-val{font-size:24px}
   .filters{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch;padding-bottom:4px}
@@ -265,7 +263,7 @@ td:has(.mcap),td:has(.vol),td:has(.pct),td:has(.depth),td:has(.risk-score),td:ha
   .tk-ico img{width:24px;height:24px}
   .coin-letter-icon{width:24px;height:24px;font-size:10px}
   .tk-sym{font-size:12px}
-  .tk-name{font-size:9px;max-width:80px}
+  .tk-name{font-size:10.5px;max-width:80px}
 }
 @media(max-width:440px){
   .tnav-tab{font-size:0;padding:7px 9px;gap:0}
@@ -285,7 +283,7 @@ td:has(.mcap),td:has(.vol),td:has(.pct),td:has(.depth),td:has(.risk-score),td:ha
 .topnav{position:sticky;top:0;z-index:200;background:rgba(2,4,8,0.92);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-bottom:1px solid rgba(255,255,255,0.07);box-shadow:0 1px 0 rgba(255,255,255,0.03)}
 .topnav-inner{max-width:1700px;margin:0 auto;padding:0 24px;height:56px;display:flex;align-items:center;gap:0}
 .tnav-brand{display:flex;align-items:center;gap:10px;flex-shrink:0;text-decoration:none}
-.tnav-logo{width:32px;height:32px;background:linear-gradient(135deg,#f59e0b,#ea580c);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:16px;font-family:'IBM Plex Mono',monospace;font-weight:800;box-shadow:0 2px 8px rgba(245,158,11,0.3)}
+.tnav-logo{width:32px;height:32px;background:linear-gradient(135deg,#f59e0b,#ea580c);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:16px;font-family:'IBM Plex Mono',monospace;font-weight:800}
 .tnav-name{font-size:14px;font-weight:700;letter-spacing:-0.3px;color:var(--text-2)}
 .tnav-divider{width:1px;height:20px;background:var(--border-1);margin:0 16px;flex-shrink:0}
 .tnav-scroll{flex:1;overflow-x:auto;scrollbar-width:none}
@@ -294,10 +292,8 @@ td:has(.mcap),td:has(.vol),td:has(.pct),td:has(.depth),td:has(.risk-score),td:ha
 .tnav-tab{display:inline-flex;align-items:center;gap:7px;padding:9px 16px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;transition:all 0.18s;border:1px solid transparent;background:transparent;color:var(--text-3);font-family:'Inter',sans-serif;letter-spacing:-0.2px;text-decoration:none;flex-shrink:0;position:relative}
 .tnav-tab:hover{background:var(--bg-3);color:var(--text-2)}
 .tnav-tab.active{color:var(--text-1)}
-.tnav-tab.active.binance{background:rgba(240,185,11,0.08);color:#F0B90B;border-color:rgba(240,185,11,0.15)}
-.tnav-tab.active.binance::after{content:'';position:absolute;bottom:-1px;left:16px;right:16px;height:2px;background:#F0B90B;border-radius:2px 2px 0 0}
-.tnav-tab.active.coinbase{background:rgba(0,82,255,0.08);color:#6b9fff;border-color:rgba(0,82,255,0.15)}
-.tnav-tab.active.coinbase::after{content:'';position:absolute;bottom:-1px;left:16px;right:16px;height:2px;background:#6b9fff;border-radius:2px 2px 0 0}
+.tnav-tab.active.binance{background:rgba(240,185,11,0.08);color:#F0B90B}
+.tnav-tab.active.coinbase{background:rgba(0,82,255,0.08);color:#6b9fff}
 .tnav-tab.stablecoins{color:var(--text-3)}
 .tnav-tab.stablecoins:hover{background:rgba(34,197,94,0.07);color:#22c55e}
 .tnav-right{display:flex;align-items:center;gap:12px;flex-shrink:0;min-width:fit-content;margin-left:8px}
@@ -433,7 +429,7 @@ th[data-sort][aria-sort="ascending"],th[data-sort][aria-sort="descending"]{color
     <div class="hdr-left">
         <div>
             <h1>Binance Monitor</h1>
-            <div class="sub mono">risk scores · monitoring tags · delistings · all coins</div>
+            <div class="sub">risk scores · monitoring tags · delistings · all coins</div>
         </div>
     </div>
     <div class="hdr-right">
@@ -441,7 +437,7 @@ th[data-sort][aria-sort="ascending"],th[data-sort][aria-sort="descending"]{color
         <span class="meta-text" id="bn-refreshTimer"></span>
         <button class="btn" id="bn-refreshBtn" onclick="bnDoRefresh()">
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
-            refresh
+            Refresh
         </button>
     </div>
 </div>
@@ -454,14 +450,14 @@ th[data-sort][aria-sort="ascending"],th[data-sort][aria-sort="descending"]{color
             <th scope="col" tabindex="0" aria-sort="none" data-sort="status" onclick="bnSortBy('status')">Status</th>
             <th scope="col" tabindex="0" aria-sort="none" data-sort="risk" onclick="bnSortBy('risk')" title="Risk score: volume + mcap + spread + status">Risk</th>
             <th scope="col" tabindex="0" aria-sort="none" class="col-days" data-sort="daysOnMon" onclick="bnSortBy('daysOnMon')" title="Days since monitoring tag added">Days</th>
-            <th scope="col" tabindex="0" aria-sort="none" class="col-mon" data-sort="monDate" onclick="bnSortBy('monDate')">Mon. Added</th>
-            <th scope="col" tabindex="0" aria-sort="none" data-sort="delistDate" onclick="bnSortBy('delistDate')">Delist Date</th>
+            <th scope="col" tabindex="0" aria-sort="none" class="col-mon" data-sort="monDate" onclick="bnSortBy('monDate')">Mon. added</th>
+            <th scope="col" tabindex="0" aria-sort="none" data-sort="delistDate" onclick="bnSortBy('delistDate')">Delist date</th>
             <th scope="col" tabindex="0" aria-sort="none" data-sort="price" onclick="bnSortBy('price')">Price</th>
             <th scope="col" tabindex="0" aria-sort="none" data-sort="change" onclick="bnSortBy('change')">24h %</th>
-            <th scope="col" tabindex="0" aria-sort="none" class="col-vol" data-sort="vol" onclick="bnSortBy('vol')">24h Vol</th>
-            <th scope="col" tabindex="0" aria-sort="none" class="col-mcap" data-sort="mcap" onclick="bnSortBy('mcap')">Mkt Cap</th>
+            <th scope="col" tabindex="0" aria-sort="none" class="col-vol" data-sort="vol" onclick="bnSortBy('vol')">24h vol</th>
+            <th scope="col" tabindex="0" aria-sort="none" class="col-mcap" data-sort="mcap" onclick="bnSortBy('mcap')">Mkt cap</th>
             <th scope="col" tabindex="0" aria-sort="none" class="col-spread" data-sort="spread" onclick="bnSortBy('spread')" title="Binance bid/ask spread % (via CoinGecko) — wider = thinner liquidity, higher delist risk">Spread</th>
-            <th scope="col" class="col-also" title="Also listed on other exchanges">Also On</th>
+            <th scope="col" class="col-also" title="Also listed on other exchanges">Also on</th>
         </tr></thead>
         <tbody id="bn-tbody"></tbody>
     </table>
@@ -490,7 +486,7 @@ th[data-sort][aria-sort="ascending"],th[data-sort][aria-sort="descending"]{color
     <div class="hdr-left">
         <div>
             <h1>Coinbase Monitor</h1>
-            <div class="sub mono">risk scores · trading status · delistings · all coins</div>
+            <div class="sub">risk scores · trading status · delistings · all coins</div>
         </div>
     </div>
     <div class="hdr-right">
@@ -498,24 +494,24 @@ th[data-sort][aria-sort="ascending"],th[data-sort][aria-sort="descending"]{color
         <span class="meta-text" id="cb-refreshTimer"></span>
         <button class="btn" id="cb-refreshBtn" onclick="cbDoRefresh()">
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
-            refresh
+            Refresh
         </button>
     </div>
 </div>
 <div class="stats" id="cb-statsBar">
     <div class="stat"><div class="stat-label">Online</div><div class="stat-val g" id="cb-sOnline">-</div><div class="stat-sub">trading on Coinbase</div></div>
-    <div class="stat"><div class="stat-label">Limit Only</div><div class="stat-val a" id="cb-sLimit">-</div><div class="stat-sub">post-only mode</div></div>
+    <div class="stat"><div class="stat-label">Limit only</div><div class="stat-val a" id="cb-sLimit">-</div><div class="stat-sub">post-only mode</div></div>
     <div class="stat"><div class="stat-label">Delisted</div><div class="stat-val r" id="cb-sDelisted">-</div><div class="stat-sub">removed from trading</div></div>
-    <div class="stat"><div class="stat-label">Total Tracked</div><div class="stat-val b" id="cb-sTotal">-</div><div class="stat-sub">in our database</div></div>
-    <div class="stat"><div class="stat-label">High Risk</div><div class="stat-val r" id="cb-sHighRisk">-</div><div class="stat-sub">risk score ≥ 50</div></div>
-    <div class="stat"><div class="stat-label">Active Pairs</div><div class="stat-val p" id="cb-sPairs">-</div><div class="stat-sub">USD trading pairs</div></div>
+    <div class="stat"><div class="stat-label">Total tracked</div><div class="stat-val" id="cb-sTotal">-</div><div class="stat-sub">in our database</div></div>
+    <div class="stat"><div class="stat-label">High risk</div><div class="stat-val r" id="cb-sHighRisk">-</div><div class="stat-sub">risk score ≥ 50</div></div>
+    <div class="stat"><div class="stat-label">Active pairs</div><div class="stat-val" id="cb-sPairs">-</div><div class="stat-sub">USD trading pairs</div></div>
 </div>
 <div class="filters">
     <button class="ftab active" data-f="all" onclick="cbSetFilter('all')">All <span class="cnt" id="cb-cAll"></span></button>
     <button class="ftab" data-f="online" onclick="cbSetFilter('online')"><span class="fdot g"></span>Online <span class="cnt" id="cb-cOnline"></span></button>
-    <button class="ftab" data-f="limit" onclick="cbSetFilter('limit')"><span class="fdot a"></span>Limit Only <span class="cnt" id="cb-cLimit"></span></button>
+    <button class="ftab" data-f="limit" onclick="cbSetFilter('limit')"><span class="fdot a"></span>Limit only <span class="cnt" id="cb-cLimit"></span></button>
     <button class="ftab" data-f="delisted" onclick="cbSetFilter('delisted')"><span class="fdot"></span>Delisted <span class="cnt" id="cb-cDelisted"></span></button>
-    <button class="ftab" data-f="highrisk" onclick="cbSetFilter('highrisk')"><span class="fdot r"></span>High Risk <span class="cnt" id="cb-cHighRisk"></span></button>
+    <button class="ftab" data-f="highrisk" onclick="cbSetFilter('highrisk')"><span class="fdot r"></span>High risk <span class="cnt" id="cb-cHighRisk"></span></button>
     <input class="search" type="text" placeholder="Search coins... ( / )" id="cb-searchInput" oninput="cbSetQuery(this.value)">
 </div>
 <div class="tbl-wrap">
@@ -526,11 +522,11 @@ th[data-sort][aria-sort="ascending"],th[data-sort][aria-sort="descending"]{color
     <th scope="col" tabindex="0" aria-sort="none" data-sort="risk" onclick="cbSortBy('risk')" title="Risk score based on volume, mcap, exchange support">Risk</th>
     <th scope="col" tabindex="0" aria-sort="none" data-sort="price" onclick="cbSortBy('price')">Price</th>
     <th scope="col" tabindex="0" aria-sort="none" data-sort="change" onclick="cbSortBy('change')">24h %</th>
-    <th scope="col" tabindex="0" aria-sort="none" class="col-vol" data-sort="vol" onclick="cbSortBy('vol')">24h Vol</th>
-    <th scope="col" tabindex="0" aria-sort="none" class="col-mcap" data-sort="mcap" onclick="cbSortBy('mcap')">Mkt Cap</th>
+    <th scope="col" tabindex="0" aria-sort="none" class="col-vol" data-sort="vol" onclick="cbSortBy('vol')">24h vol</th>
+    <th scope="col" tabindex="0" aria-sort="none" class="col-mcap" data-sort="mcap" onclick="cbSortBy('mcap')">Mkt cap</th>
     <th scope="col" tabindex="0" aria-sort="none" class="col-bid" data-sort="bidDepth" onclick="cbSortBy('bidDepth')" title="Bid depth within 2% below price">Bid -2%</th>
     <th scope="col" tabindex="0" aria-sort="none" class="col-ask" data-sort="askDepth" onclick="cbSortBy('askDepth')" title="Ask depth within 2% above price">Ask +2%</th>
-    <th scope="col" class="col-also" title="Also listed on other exchanges">Also On</th>
+    <th scope="col" class="col-also" title="Also listed on other exchanges">Also on</th>
 </tr></thead>
 <tbody id="cb-tBody"><tr><td colspan="10" style="text-align:center;padding:40px;color:var(--text-3)">Loading Coinbase data... If this persists, try hard refresh (Ctrl+Shift+R)</td></tr></tbody>
 </table>
@@ -1465,13 +1461,13 @@ function renderStats() {
     const highRisk = allCoins.filter(t => t.status === 'active' && t._risk >= 50).length;
     const medDays = getMedianMonToDelist();
     document.getElementById('bn-stats').innerHTML = `
-        <div class="stat"><div class="stat-label">Active Coins</div><div class="stat-val b">${active}</div><div class="stat-sub">trading on Binance</div></div>
-        <div class="stat"><div class="stat-label">High Risk</div><div class="stat-val r">${highRisk}</div><div class="stat-sub">risk score ≥ 50</div></div>
+        <div class="stat"><div class="stat-label">Active coins</div><div class="stat-val">${active}</div><div class="stat-sub">trading on Binance</div></div>
+        <div class="stat"><div class="stat-label">High risk</div><div class="stat-val r">${highRisk}</div><div class="stat-sub">risk score ≥ 50</div></div>
         <div class="stat"><div class="stat-label">Monitoring</div><div class="stat-val a">${mon}</div><div class="stat-sub">tagged by Binance</div></div>
         <div class="stat"><div class="stat-label">Delisting</div><div class="stat-val r">${deling}</div><div class="stat-sub">scheduled removal</div></div>
         <div class="stat"><div class="stat-label">Restored</div><div class="stat-val g">${rest}</div><div class="stat-sub">tag removed</div></div>
         <div class="stat"><div class="stat-label">Delisted</div><div class="stat-val">${deled}</div><div class="stat-sub">since Jul 2023</div></div>
-        <div class="stat"><div class="stat-label">Median to Delist</div><div class="stat-val p">${medDays||'—'}d</div><div class="stat-sub">tag → removal</div></div>
+        <div class="stat"><div class="stat-label">Median to delist</div><div class="stat-val">${medDays||'—'}d</div><div class="stat-sub">tag → removal</div></div>
     `;
 }
 
@@ -1486,7 +1482,7 @@ function renderFilters() {
 
     const tabs = [
         ['active', '<span class="fdot g"></span>Active', active],
-        ['highrisk', '<span class="fdot r"></span>At Risk', highrisk],
+        ['highrisk', '<span class="fdot r"></span>At risk', highrisk],
         ['monitoring', '<span class="fdot a"></span>Monitoring', mon],
         ['delisting', '<span class="fdot r"></span>Delisting', deling],
         ['restored', '<span class="fdot b"></span>Restored', rest],
@@ -1648,7 +1644,7 @@ function renderTimeline() {
             <div class="tevt">Delisting ${evts.length} token${evts.length>1?'s':''}</div>
             <div class="ttokens">${evts.map(e => `<span class="ttk">${e.sym}</span>`).join('')}</div>
         </div>`;
-    }).join('') || '<div style="color:var(--text-3);font-size:13px">No upcoming events</div>';
+    }).join('') || '<div class="tl-empty">No scheduled delistings or tag changes right now.</div>';
 
     document.getElementById('bn-tokenCount').textContent = allCoins.length;
 }
