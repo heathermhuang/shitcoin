@@ -93,7 +93,9 @@ body{background:var(--bg-0);color:var(--text-1);font-family:'Inter',sans-serif;m
 
 /* FILTERS */
 .filters{display:flex;align-items:center;gap:6px;margin-bottom:16px;flex-wrap:wrap}
-.seg{display:flex;gap:2px;padding:3px;background:var(--bg-1);border:1px solid var(--border-1);border-radius:9px}
+/* Scrolls rather than clips when the seven Binance filters outgrow the row (tablet widths) */
+.seg{display:flex;gap:2px;padding:3px;background:var(--bg-1);border:1px solid var(--border-1);border-radius:9px;max-width:100%;overflow-x:auto;scrollbar-width:none}
+.seg::-webkit-scrollbar{display:none}
 .ftab{padding:0 11px;border-radius:6px;font-size:13px;font-weight:500;cursor:pointer;transition:background 0.15s,color 0.15s;border:0;background:transparent;color:var(--text-3);font-family:'Inter',sans-serif;white-space:nowrap;min-height:30px}
 .ftab:hover{color:var(--text-1)}
 .ftab.active{background:var(--bg-4);color:var(--text-1)}
