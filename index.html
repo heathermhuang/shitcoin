@@ -141,6 +141,8 @@ td:has(.mcap),td:has(.vol),td:has(.pct),td:has(.depth),td:has(.risk-score),td:ha
 .tk-txt{display:grid;grid-template-columns:auto 1fr;column-gap:6px;align-items:center;min-width:0}
 .tk-txt .tk-links{grid-row:1;grid-column:2;margin-top:0}
 .tk-txt .tk-name{grid-column:1/-1}
+.st-when{display:none;margin-top:4px;font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--red);font-variant-numeric:tabular-nums;white-space:nowrap}
+.st-when.st-past{color:var(--text-3)}
 .tk-links a{display:flex;align-items:center;justify-content:center;width:20px;height:20px;opacity:0.45;transition:opacity 0.15s;border-radius:3px}
 .tk-links a:hover{opacity:1}
 .tk-links a img{width:14px;height:14px;border-radius:2px;display:block}
@@ -263,13 +265,16 @@ td:has(.mcap),td:has(.vol),td:has(.pct),td:has(.depth),td:has(.risk-score),td:ha
   .cookie-bar{padding:12px 14px}
   .cookie-bar-inner{flex-direction:column;align-items:flex-start;gap:10px}
   .cookie-bar-actions{align-self:flex-end}
-  .col-days,.col-mon,.col-vol,.col-mcap,.col-bid,.col-ask,.col-spread,.col-also{display:none}
-  table{min-width:360px}
-  td,th{padding:10px 10px}
+  /* Phones keep token, status, risk and price on screen with no sideways scroll */
+  .col-days,.col-mon,.col-delist,.col-chg,.col-vol,.col-mcap,.col-bid,.col-ask,.col-spread,.col-also,.tk-txt .tk-links{display:none}
+  .st-when{display:block}
+  table{min-width:0}
+  td,th{padding:10px 6px}
+  .tk{gap:7px}
   .tk-ico{width:24px;height:24px}
   .tk-ico img{width:24px;height:24px}
   .coin-letter-icon{width:24px;height:24px;font-size:10px}
-  .tk-sym{font-size:12px}
+  .tk-sym{font-size:12px;max-width:72px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
   .tk-name{font-size:10.5px;max-width:80px}
   .risk-bar{display:none}
 }
@@ -459,9 +464,9 @@ th[data-sort][aria-sort="ascending"],th[data-sort][aria-sort="descending"]{color
             <th scope="col" tabindex="0" aria-sort="none" data-sort="risk" onclick="bnSortBy('risk')" title="Risk score: volume + mcap + spread + status">Risk</th>
             <th scope="col" tabindex="0" aria-sort="none" class="col-days" data-sort="daysOnMon" onclick="bnSortBy('daysOnMon')" title="Days since monitoring tag added">Days</th>
             <th scope="col" tabindex="0" aria-sort="none" class="col-mon" data-sort="monDate" onclick="bnSortBy('monDate')">Mon. added</th>
-            <th scope="col" tabindex="0" aria-sort="none" data-sort="delistDate" onclick="bnSortBy('delistDate')">Delist date</th>
+            <th scope="col" tabindex="0" aria-sort="none" class="col-delist" data-sort="delistDate" onclick="bnSortBy('delistDate')">Delist date</th>
             <th scope="col" tabindex="0" aria-sort="none" data-sort="price" onclick="bnSortBy('price')">Price</th>
-            <th scope="col" tabindex="0" aria-sort="none" data-sort="change" onclick="bnSortBy('change')">24h %</th>
+            <th scope="col" tabindex="0" aria-sort="none" class="col-chg" data-sort="change" onclick="bnSortBy('change')">24h %</th>
             <th scope="col" tabindex="0" aria-sort="none" class="col-vol" data-sort="vol" onclick="bnSortBy('vol')">24h vol</th>
             <th scope="col" tabindex="0" aria-sort="none" class="col-mcap" data-sort="mcap" onclick="bnSortBy('mcap')">Mkt cap</th>
             <th scope="col" tabindex="0" aria-sort="none" class="col-spread" data-sort="spread" onclick="bnSortBy('spread')" title="Binance bid/ask spread % (via CoinGecko) — wider = thinner liquidity, higher delist risk">Spread</th>
@@ -529,7 +534,7 @@ th[data-sort][aria-sort="ascending"],th[data-sort][aria-sort="descending"]{color
     <th scope="col" tabindex="0" aria-sort="none" data-sort="status" onclick="cbSortBy('status')">Status</th>
     <th scope="col" tabindex="0" aria-sort="none" data-sort="risk" onclick="cbSortBy('risk')" title="Risk score based on volume, mcap, exchange support">Risk</th>
     <th scope="col" tabindex="0" aria-sort="none" data-sort="price" onclick="cbSortBy('price')">Price</th>
-    <th scope="col" tabindex="0" aria-sort="none" data-sort="change" onclick="cbSortBy('change')">24h %</th>
+    <th scope="col" tabindex="0" aria-sort="none" class="col-chg" data-sort="change" onclick="cbSortBy('change')">24h %</th>
     <th scope="col" tabindex="0" aria-sort="none" class="col-vol" data-sort="vol" onclick="cbSortBy('vol')">24h vol</th>
     <th scope="col" tabindex="0" aria-sort="none" class="col-mcap" data-sort="mcap" onclick="cbSortBy('mcap')">Mkt cap</th>
     <th scope="col" tabindex="0" aria-sort="none" class="col-bid" data-sort="bidDepth" onclick="cbSortBy('bidDepth')" title="Bid depth within 2% below price">Bid -2%</th>
@@ -1568,6 +1573,8 @@ function renderTable() {
             if (dl <= 0) delistHtml = `<span class="past">${fmtDate(t.delistDate)}</span>`;
             else delistHtml = `${fmtDate(t.delistDate)}<div class="cd" style="font-size:10px;color:var(--red)">${dl}d left</div>`;
         }
+        // Phones drop the delist column; the countdown rides under the status badge instead
+        const whenHtml = t.delistDate ? (daysUntil(t.delistDate) > 0 ? `<div class="st-when">${daysUntil(t.delistDate)}d left</div>` : `<div class="st-when st-past">${fmtDate(t.delistDate)}</div>`) : '';
 
         // Price change
         let changeHtml = '—';
@@ -1595,13 +1602,13 @@ function renderTable() {
 
         return `<tr class="${rowClass}">
             <td><div class="tk">${coinIconHtml}<div class="tk-txt"><div class="tk-sym">${t.sym}</div><div class="tk-name">${t.name||t.sym}</div><div class="tk-links"><a href="${binanceLink}" target="_blank" title="${linkTitle}" onclick="event.stopPropagation()">${linkPrimaryIcon}</a>${cmcHtml ? cmcHtml.replace('href=', 'onclick="event.stopPropagation()" href=') : ''}</div></div></div></td>
-            <td>${badges[t.status]||''}</td>
+            <td>${badges[t.status]||''}${whenHtml}</td>
             <td>${riskHtml}</td>
             <td class="col-days">${domHtml}</td>
             <td class="col-mon"><span class="dt">${t.monDate ? fmtDate(t.monDate) : '<span class="na">—</span>'}</span></td>
-            <td><div class="dt">${delistHtml}</div></td>
+            <td class="col-delist"><div class="dt">${delistHtml}</div></td>
             <td><span class="vol">${fmtPrice(ld.price)}</span></td>
-            <td>${changeHtml}</td>
+            <td class="col-chg">${changeHtml}</td>
             <td class="col-vol"><span class="vol">${ld.vol ? fmtNum(ld.vol,1) : '—'}</span></td>
             <td class="col-mcap"><span class="mcap">${ld.mcap ? fmtNum(ld.mcap,0) : '—'}</span></td>
             <td class="col-spread"><span class="depth">${ld.spread != null ? ld.spread.toFixed(2) + '%' : '—'}</span></td>
@@ -2123,7 +2130,7 @@ function cbRenderAll() {
             <td>${badge}</td>
             <td>${riskHtml}</td>
             <td><span class="vol">${fmtPrice(ld.price)}</span></td>
-            <td>${changeHtml}</td>
+            <td class="col-chg">${changeHtml}</td>
             <td class="col-vol"><span class="vol">${ld.vol ? fmtNum(ld.vol,1) : '\u2014'}</span></td>
             <td class="col-mcap"><span class="mcap">${ld.mcap ? fmtNum(ld.mcap,0) : '\u2014'}</span></td>
             <td class="col-bid"><span class="depth">${ld.bidDepth ? fmtNum(ld.bidDepth,0) : '\u2014'}</span></td>
