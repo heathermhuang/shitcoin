@@ -31,11 +31,11 @@
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
 <style>
 :root {
-    --bg-0: #08090c;
-    --bg-1: #0c0e12;
-    --bg-2: #111318;
-    --bg-3: #171a21;
-    --bg-4: #222730;
+    --bg-0: #08090a;
+    --bg-1: #0f1011;
+    --bg-2: #141516;
+    --bg-3: #1a1b1d;
+    --bg-4: #232428;
     --border-1: rgba(255,255,255,0.07);
     --border-2: rgba(255,255,255,0.12);
     --border-3: rgba(255,255,255,0.18);
@@ -62,13 +62,15 @@ body{background:var(--bg-0);color:var(--text-1);font-family:'Inter',sans-serif;m
 .mono{font-family:'IBM Plex Mono',monospace;font-variant-numeric:tabular-nums}
 
 /* HEADER */
-.hdr{display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:16px;margin-bottom:24px}
+.hdr{display:flex;align-items:flex-end;justify-content:space-between;flex-wrap:wrap;gap:16px 32px;margin-bottom:20px}
 .hdr-left{display:flex;align-items:center;gap:14px}
 .logo{width:38px;height:38px;background:linear-gradient(135deg,#f59e0b,#ea580c);border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:800;color:#fff;font-family:'IBM Plex Mono',monospace;box-shadow:0 4px 12px rgba(245,158,11,0.25)}
-.hdr h1{font-size:22px;font-weight:800;letter-spacing:-0.5px;color:var(--text-1)}
+.hdr h1{font-size:24px;font-weight:600;letter-spacing:-0.5px;line-height:1.25;color:var(--text-1)}
+.hdr h1 em{font-style:normal;color:var(--amber)}
 .hdr .sub{font-size:13px;color:var(--text-3);margin-top:4px}
+.hdr-meta{display:flex;align-items:center;gap:10px;margin-top:10px}
 .hdr-right{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
-.live{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--green);background:rgba(34,197,94,0.08);padding:5px 12px;border-radius:20px;border:1px solid rgba(34,197,94,0.2);letter-spacing:0.02em;font-weight:600}
+.live{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text-3);font-weight:500}
 .live-dot{width:6px;height:6px;background:var(--green);border-radius:50%;animation:blink 1.4s ease-in-out infinite}
 @keyframes blink{0%,100%{opacity:1;transform:scale(1)}50%{opacity:0.3;transform:scale(0.8)}}
 .meta-text{font-size:12px;color:var(--text-3);font-variant-numeric:tabular-nums}
@@ -78,48 +80,45 @@ body{background:var(--bg-0);color:var(--text-1);font-family:'Inter',sans-serif;m
 .btn.spinning svg{animation:spin 0.8s linear infinite}
 @keyframes spin{from{transform:rotate(0)}to{transform:rotate(360deg)}}
 
-/* STATS */
-.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:1px;margin-bottom:24px;background:var(--border-1);border:1px solid var(--border-1);border-radius:12px;overflow:hidden}
-/* Binance has 7 stats, Coinbase 6; auto-fit wrapped them 6+1 or 5+1, leaving one orphan card */
-@media(min-width:901px){#bn-stats{grid-template-columns:repeat(4,1fr)}#bn-stats .stat:last-child{grid-column:span 2}#cb-statsBar{grid-template-columns:repeat(3,1fr)}}
-@media(min-width:1280px){#bn-stats{grid-template-columns:repeat(7,1fr)}#bn-stats .stat:last-child{grid-column:auto}#cb-statsBar{grid-template-columns:repeat(6,1fr)}}
-.stat{background:var(--bg-1);padding:16px 20px;position:relative}
-.stat-label{font-size:12px;color:var(--text-2);margin-bottom:8px;font-weight:500}
-.stat-val{font-size:27px;font-weight:600;letter-spacing:-0.6px;line-height:1;font-family:'IBM Plex Mono',monospace;font-variant-numeric:tabular-nums}
-.stat-val.r{color:var(--red)}.stat-val.a{color:var(--amber)}.stat-val.g{color:var(--green)}.stat-val.b{color:var(--blue)}.stat-val.p{color:var(--purple)}
-.stat-sub{font-size:12px;color:var(--text-3);margin-top:6px}
+/* STATS: four figures beside the headline, divided by hairlines */
+.stats{display:flex;align-items:flex-end}
+.stat{padding:0 20px;border-left:1px solid var(--border-1)}
+.stat:first-child{border-left:0;padding-left:0}
+.stat:last-child{padding-right:0}
+.stat-val{font-size:18px;font-weight:500;letter-spacing:-0.4px;line-height:1.1;font-family:'IBM Plex Mono',monospace;font-variant-numeric:tabular-nums}
+.stat-label{font-size:12px;color:var(--text-3);margin-top:4px;white-space:nowrap}
 
 /* PREDICTION */
 /* Coin-level recovery detail rows */
 
 /* FILTERS */
 .filters{display:flex;align-items:center;gap:6px;margin-bottom:16px;flex-wrap:wrap}
-.ftab{padding:7px 16px;border-radius:20px;font-size:12px;font-weight:500;cursor:pointer;transition:all 0.2s;border:1px solid var(--border-1);background:transparent;color:var(--text-2);font-family:'Inter',sans-serif;white-space:nowrap;min-height:36px}
-.ftab:hover{background:var(--bg-3);border-color:var(--border-2);color:var(--text-1)}
-.ftab.active{background:var(--bg-4);color:var(--text-1);border-color:var(--border-3);font-weight:600}
+.seg{display:flex;gap:2px;padding:3px;background:var(--bg-1);border:1px solid var(--border-1);border-radius:9px}
+.ftab{padding:0 11px;border-radius:6px;font-size:13px;font-weight:500;cursor:pointer;transition:background 0.15s,color 0.15s;border:0;background:transparent;color:var(--text-3);font-family:'Inter',sans-serif;white-space:nowrap;min-height:30px}
+.ftab:hover{color:var(--text-1)}
+.ftab.active{background:var(--bg-4);color:var(--text-1)}
+.ftab .fdot{display:none}
 .fdot{display:inline-block;width:7px;height:7px;border-radius:50%;margin-right:7px;vertical-align:1px;background:var(--text-3)}
 .fdot.r{background:var(--red)}.fdot.a{background:var(--amber)}.fdot.g{background:var(--green)}.fdot.b{background:var(--blue)}
-.ftab .cnt{font-family:'IBM Plex Mono',monospace;font-size:10px;margin-left:4px;opacity:0.6}
-.search{margin-left:auto;background:rgba(255,255,255,0.04);border:1px solid var(--border-2);border-radius:8px;padding:0 14px;color:var(--text-1);font-size:13px;width:200px;outline:none;transition:all 0.2s;height:36px}
+.ftab .cnt{font-family:'IBM Plex Mono',monospace;font-size:11px;margin-left:6px;color:var(--text-3)}
+.search{margin-left:auto;background:var(--bg-1);border:1px solid var(--border-1);border-radius:8px;padding:0 12px;color:var(--text-1);font-size:13px;width:240px;outline:none;transition:border-color 0.2s;height:38px}
 .search::placeholder{color:var(--text-3)}
 .search:focus{border-color:var(--blue);box-shadow:0 0 0 2px rgba(59,130,246,0.15);background:rgba(255,255,255,0.06)}
 
 /* TABLE */
-.tbl-wrap{background:var(--bg-1);border:1px solid var(--border-1);border-radius:12px;overflow-x:auto}
+.tbl-wrap{overflow-x:auto}
 table{width:100%;border-collapse:collapse;min-width:1200px}
-thead{background:rgba(255,255,255,0.02)}
-th{padding:11px 14px;text-align:left;font-size:12px;color:var(--text-3);font-weight:500;border-bottom:1px solid var(--border-2);white-space:nowrap;cursor:pointer;user-select:none;transition:color 0.15s}
+th{padding:10px 14px;text-align:left;font-size:12px;color:var(--text-3);font-weight:500;border-bottom:1px solid var(--border-1);white-space:nowrap;cursor:pointer;user-select:none;transition:color 0.15s}
 th:hover{color:var(--text-2)}
 th.sorted{color:var(--text-1)}
 th[data-sort]::after{content:'';margin-left:3px;opacity:0.3;font-size:9px}
 th[data-sort].sorted::after{content:' ▼';opacity:1}
 th[data-sort].sorted.asc-dir::after{content:' ▲';opacity:1}
-td{padding:10px 14px;border-bottom:1px solid var(--border-1);font-size:13px;vertical-align:middle}
+td{padding:12px 14px;border-bottom:1px solid var(--border-1);font-size:13px;vertical-align:middle}
 tr{transition:background 0.15s,border-left 0.15s}
-tbody tr:hover{background:rgba(255,255,255,0.03)}
-tbody tr:last-child td{border-bottom:none}
+tbody tr:hover{background:var(--bg-1)}
 /* Pin the header under the nav once the table fits without side-scrolling: a scroll container blocks sticky */
-@media(min-width:1280px){.tbl-wrap{overflow:visible}th{position:sticky;top:56px;z-index:2;background:linear-gradient(rgba(255,255,255,0.02),rgba(255,255,255,0.02)),var(--bg-1)}th:first-child{border-top-left-radius:12px}th:last-child{border-top-right-radius:12px}}
+@media(min-width:1280px){.tbl-wrap{overflow:visible}th{position:sticky;top:56px;z-index:2;background:var(--bg-0)}}
 tbody tr.delisting-row{background:rgba(239,68,68,0.04)}
 tbody tr.delisted-row{opacity:0.4}
 tbody tr.restored-row{background:rgba(34,197,94,0.04)}
@@ -151,16 +150,19 @@ td:has(.mcap),td:has(.vol),td:has(.pct),td:has(.depth),td:has(.risk-score),td:ha
 .ex-icons a:hover{opacity:1}
 .ex-icons a img{width:16px;height:16px;border-radius:3px;display:block}
 
-.badge{display:inline-flex;align-items:center;gap:4px;padding:3px 8px;border-radius:5px;font-size:10.5px;font-weight:600;text-transform:uppercase;letter-spacing:0.03em}
+.badge{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:500;white-space:nowrap;background:none!important}
+.badge::before{content:'';width:6px;height:6px;border-radius:50%;background:currentColor;flex-shrink:0}
+.badge.new-tag{font-size:11px;padding:1px 6px;border-radius:4px;background:var(--purple-soft)!important}
+.badge.new-tag::before{display:none}
 .badge.monitoring{background:var(--amber-soft);color:var(--amber)}
 .badge.delisting{background:var(--red-soft);color:var(--red)}
 .badge.delisted{background:rgba(100,100,130,0.08);color:var(--text-3)}
 .badge.restored{background:var(--green-soft);color:var(--green)}
-.badge.active{background:var(--blue-soft);color:var(--blue)}
+.badge.active{color:var(--text-3)}
 .badge.online{background:var(--green-soft);color:var(--green)}
 .badge.limit{background:var(--amber-soft);color:var(--amber)}
 .badge.new-tag{background:var(--purple-soft);color:var(--purple)}
-.bdot{width:4px;height:4px;border-radius:50%}
+.bdot{display:none}
 .bdot.a{background:var(--amber)}.bdot.r{background:var(--red);animation:blink 1s ease-in-out infinite}.bdot.g{background:var(--green)}
 
 .dt{font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--text-2)}
@@ -179,13 +181,13 @@ td:has(.mcap),td:has(.vol),td:has(.pct),td:has(.depth),td:has(.risk-score),td:ha
 .depth{font-family:'IBM Plex Mono',monospace;font-size:11.5px;color:var(--text-2);font-variant-numeric:tabular-nums}
 
 /* RISK SCORE */
-.risk-score{display:inline-flex;align-items:center;gap:5px;font-family:'IBM Plex Mono',monospace;font-size:12px;font-weight:700;padding:3px 8px;border-radius:4px}
+.risk-score{display:inline-flex;flex-direction:row-reverse;align-items:center;gap:10px;font-family:'IBM Plex Mono',monospace;font-size:13px;font-weight:500;background:none!important}
 .risk-score.safe{background:var(--green-soft);color:var(--green)}
 .risk-score.low{background:rgba(34,197,94,0.06);color:#6ee7b7}
 .risk-score.medium{background:var(--amber-soft);color:var(--amber)}
 .risk-score.high{background:rgba(239,68,68,0.08);color:#f87171}
 .risk-score.critical{background:var(--red-soft);color:var(--red)}
-.risk-bar{width:40px;height:4px;background:var(--bg-4);border-radius:2px;overflow:hidden;display:inline-block;vertical-align:middle}
+.risk-bar{width:56px;height:4px;background:var(--bg-4);border-radius:2px;overflow:hidden;display:inline-block;vertical-align:middle}
 .risk-fill{height:100%;border-radius:2px;transition:width 0.3s}
 
 .lnk{color:var(--blue);text-decoration:none;font-size:12px;display:inline-flex;align-items:center;gap:3px;padding:3px 8px;border-radius:4px;border:1px solid rgba(59,130,246,0.15);background:rgba(59,130,246,0.04);transition:all 0.15s;white-space:nowrap}
@@ -243,7 +245,7 @@ td:has(.mcap),td:has(.vol),td:has(.pct),td:has(.depth),td:has(.risk-score),td:ha
 .loader .lprog{width:200px;height:2px;background:var(--border-1);border-radius:1px;margin:0 auto;overflow:hidden}
 .loader .lprog-fill{height:100%;width:0%;background:var(--amber);border-radius:1px;transition:width 0.5s ease}
 
-@media(max-width:900px){.wrap{padding:16px 14px}.hdr{flex-direction:column}.search{width:100%;margin-left:0}.stats{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:900px){.wrap{padding:16px 14px}.hdr{flex-direction:column;align-items:flex-start}.search{width:100%;margin-left:0}}
 @media(max-width:640px){
   .tnav-name{display:none}
   .tnav-divider{display:none}
@@ -253,14 +255,15 @@ td:has(.mcap),td:has(.vol),td:has(.pct),td:has(.depth),td:has(.risk-score),td:ha
   .topnav .tnav-right{margin-left:4px}
   .live{padding:4px 8px;font-size:10px;gap:4px}
   .live-dot{width:5px;height:5px}
-  .stats{grid-template-columns:repeat(2,1fr)}
-  .stat{padding:14px 16px}
-  .stat-val{font-size:24px}
+  .stats{display:grid;grid-template-columns:1fr 1fr;gap:14px 16px;width:100%}
+  .stat,.stat:first-child,.stat:last-child{border:0;padding:0}
+  .stat-val{font-size:16px}
+  .seg{flex-shrink:0}
   .filters{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch;padding-bottom:4px}
   .filters::-webkit-scrollbar{display:none}
   .ftab{flex-shrink:0;padding:5px 12px;font-size:11px}
   .search{min-width:140px;font-size:11px}
-  .hdr h1{font-size:18px}
+  .hdr h1{font-size:19px}
   .hdr .sub{font-size:11px}
   .cookie-bar{padding:12px 14px}
   .cookie-bar-inner{flex-direction:column;align-items:flex-start;gap:10px}
@@ -283,8 +286,6 @@ td:has(.mcap),td:has(.vol),td:has(.pct),td:has(.depth),td:has(.risk-score),td:ha
   .tnav-tab svg{display:block;width:16px;height:16px}
   .topnav .topnav-inner{padding:0 8px}
 }
-/* Two columns down to phone width: one per row stacked 7 full-width cards above the table */
-@media(max-width:900px){#bn-stats .stat:last-child{grid-column:span 2}}
 ::-webkit-scrollbar{width:5px;height:5px}::-webkit-scrollbar-track{background:var(--bg-1)}::-webkit-scrollbar-thumb{background:var(--border-2);border-radius:3px}::-webkit-scrollbar-thumb:hover{background:var(--text-3)}
 
 /* SHIMMER LOADING */
@@ -293,20 +294,19 @@ td:has(.mcap),td:has(.vol),td:has(.pct),td:has(.depth),td:has(.risk-score),td:ha
 .shimmer-row td *{opacity:0}
 
 /* TOP NAV */
-.topnav{position:sticky;top:0;z-index:200;background:rgba(2,4,8,0.92);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-bottom:1px solid rgba(255,255,255,0.07);box-shadow:0 1px 0 rgba(255,255,255,0.03)}
+.topnav{position:sticky;top:0;z-index:200;background:rgba(8,9,10,0.92);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-bottom:1px solid rgba(255,255,255,0.07);box-shadow:0 1px 0 rgba(255,255,255,0.03)}
 .topnav-inner{max-width:1700px;margin:0 auto;padding:0 24px;height:56px;display:flex;align-items:center;gap:0}
 .tnav-brand{display:flex;align-items:center;gap:10px;flex-shrink:0;text-decoration:none}
-.tnav-logo{width:32px;height:32px;background:linear-gradient(135deg,#f59e0b,#ea580c);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:16px;font-family:'IBM Plex Mono',monospace;font-weight:800}
-.tnav-name{font-size:14px;font-weight:700;letter-spacing:-0.3px;color:var(--text-2)}
+.tnav-logo{width:26px;height:26px;background:var(--amber);color:#1a1200;border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:16px;font-family:'IBM Plex Mono',monospace;font-weight:800}
+.tnav-name{font-size:14px;font-weight:600;letter-spacing:-0.2px;color:var(--text-1)}
 .tnav-divider{width:1px;height:20px;background:var(--border-1);margin:0 16px;flex-shrink:0}
 .tnav-scroll{flex:1;overflow-x:auto;scrollbar-width:none}
 .tnav-scroll::-webkit-scrollbar{display:none}
 .tnav-tabs{display:flex;align-items:center;gap:2px;flex-shrink:0;white-space:nowrap;padding:0 4px}
-.tnav-tab{display:inline-flex;align-items:center;gap:7px;padding:9px 16px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;transition:all 0.18s;border:1px solid transparent;background:transparent;color:var(--text-3);font-family:'Inter',sans-serif;letter-spacing:-0.2px;text-decoration:none;flex-shrink:0;position:relative}
+.tnav-tab{display:inline-flex;align-items:center;gap:7px;padding:7px 12px;border-radius:7px;font-size:13px;font-weight:500;cursor:pointer;transition:all 0.18s;border:1px solid transparent;background:transparent;color:var(--text-3);font-family:'Inter',sans-serif;letter-spacing:-0.2px;text-decoration:none;flex-shrink:0;position:relative}
 .tnav-tab:hover{background:var(--bg-3);color:var(--text-2)}
 .tnav-tab.active{color:var(--text-1)}
-.tnav-tab.active.binance{background:rgba(240,185,11,0.08);color:#F0B90B}
-.tnav-tab.active.coinbase{background:rgba(0,82,255,0.08);color:#6b9fff}
+.tnav-tab.active{background:var(--bg-2)}
 .tnav-tab.stablecoins{color:var(--text-3)}
 .tnav-tab.stablecoins:hover{background:rgba(34,197,94,0.07);color:#22c55e}
 .tnav-right{display:flex;align-items:center;gap:12px;flex-shrink:0;min-width:fit-content;margin-left:8px}
@@ -409,7 +409,7 @@ th[data-sort][aria-sort="ascending"],th[data-sort][aria-sort="descending"]{color
     <div class="topnav-inner">
         <div class="tnav-brand">
             <div class="tnav-logo">⚡</div>
-            <span class="tnav-name">Crypto Monitor</span>
+            <span class="tnav-name">shitcoin.io</span>
         </div>
         <div class="tnav-divider"></div>
         <div class="tnav-scroll">
@@ -429,7 +429,7 @@ th[data-sort][aria-sort="ascending"],th[data-sort][aria-sort="descending"]{color
             </div>
         </div>
         <div class="tnav-right">
-            <div class="live" id="tnav-live" style="display:none"><span class="live-dot"></span>LIVE</div>
+            <div class="live" id="tnav-live" style="display:none"><span class="live-dot"></span>Live</div>
         </div>
     </div>
 </nav>
@@ -441,21 +441,21 @@ th[data-sort][aria-sort="ascending"],th[data-sort][aria-sort="descending"]{color
 <div class="hdr">
     <div class="hdr-left">
         <div>
-            <h1>Binance Monitor</h1>
-            <div class="sub">risk scores · monitoring tags · delistings · all coins</div>
+            <h1 id="bn-headline">Binance delisting monitor</h1>
+            <div class="sub">Binance tags coins with Monitoring before removing them. Risk scores refresh every 5 minutes.</div>
+            <div class="hdr-meta">
+                <span class="meta-text" id="bn-updTime">loading...</span>
+                <span class="meta-text" id="bn-refreshTimer"></span>
+                <button class="btn" id="bn-refreshBtn" onclick="bnDoRefresh()">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+                    Refresh
+                </button>
+            </div>
         </div>
     </div>
-    <div class="hdr-right">
-        <span class="meta-text" id="bn-updTime">loading...</span>
-        <span class="meta-text" id="bn-refreshTimer"></span>
-        <button class="btn" id="bn-refreshBtn" onclick="bnDoRefresh()">
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
-            Refresh
-        </button>
-    </div>
+    <div class="stats" id="bn-stats"></div>
 </div>
-<div class="stats" id="bn-stats"></div>
-<div class="filters" id="bn-filters"><input class="search" type="text" placeholder="Search token... ( / )" id="bn-searchInput" oninput="bnSetQuery(this.value)"></div>
+<div class="filters" id="bn-filters"><div class="seg" id="bn-seg"></div><input class="search" type="text" placeholder="Search token... ( / )" id="bn-searchInput" oninput="bnSetQuery(this.value)"></div>
 <div class="tbl-wrap">
     <table>
         <thead><tr>
@@ -498,33 +498,33 @@ th[data-sort][aria-sort="ascending"],th[data-sort][aria-sort="descending"]{color
 <div class="hdr">
     <div class="hdr-left">
         <div>
-            <h1>Coinbase Monitor</h1>
-            <div class="sub">risk scores · trading status · delistings · all coins</div>
+            <h1><span id="cb-sOnline">-</span> coins trade on Coinbase. <em id="cb-sHighRisk">-</em> score as high risk.</h1>
+            <div class="sub">Coinbase publishes no delisting feed, so we watch every coin's trading status. Refreshes every 3 minutes.</div>
+            <div class="hdr-meta">
+                <span class="meta-text" id="cb-updTime">loading...</span>
+                <span class="meta-text" id="cb-refreshTimer"></span>
+                <button class="btn" id="cb-refreshBtn" onclick="cbDoRefresh()">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+                    Refresh
+                </button>
+            </div>
         </div>
     </div>
-    <div class="hdr-right">
-        <span class="meta-text" id="cb-updTime">loading...</span>
-        <span class="meta-text" id="cb-refreshTimer"></span>
-        <button class="btn" id="cb-refreshBtn" onclick="cbDoRefresh()">
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
-            Refresh
-        </button>
+    <div class="stats" id="cb-statsBar">
+        <div class="stat"><div class="stat-val" id="cb-sLimit">-</div><div class="stat-label">Limit only</div></div>
+        <div class="stat"><div class="stat-val" id="cb-sDelisted">-</div><div class="stat-label">Delisted</div></div>
+        <div class="stat"><div class="stat-val" id="cb-sTotal">-</div><div class="stat-label">Tracked</div></div>
+        <div class="stat"><div class="stat-val" id="cb-sPairs">-</div><div class="stat-label">USD pairs</div></div>
     </div>
 </div>
-<div class="stats" id="cb-statsBar">
-    <div class="stat"><div class="stat-label">Online</div><div class="stat-val g" id="cb-sOnline">-</div><div class="stat-sub">trading on Coinbase</div></div>
-    <div class="stat"><div class="stat-label">Limit only</div><div class="stat-val a" id="cb-sLimit">-</div><div class="stat-sub">post-only mode</div></div>
-    <div class="stat"><div class="stat-label">Delisted</div><div class="stat-val r" id="cb-sDelisted">-</div><div class="stat-sub">removed from trading</div></div>
-    <div class="stat"><div class="stat-label">Total tracked</div><div class="stat-val" id="cb-sTotal">-</div><div class="stat-sub">in our database</div></div>
-    <div class="stat"><div class="stat-label">High risk</div><div class="stat-val r" id="cb-sHighRisk">-</div><div class="stat-sub">risk score ≥ 50</div></div>
-    <div class="stat"><div class="stat-label">Active pairs</div><div class="stat-val" id="cb-sPairs">-</div><div class="stat-sub">USD trading pairs</div></div>
-</div>
 <div class="filters">
+    <div class="seg">
     <button class="ftab active" data-f="all" onclick="cbSetFilter('all')">All <span class="cnt" id="cb-cAll"></span></button>
     <button class="ftab" data-f="online" onclick="cbSetFilter('online')"><span class="fdot g"></span>Online <span class="cnt" id="cb-cOnline"></span></button>
     <button class="ftab" data-f="limit" onclick="cbSetFilter('limit')"><span class="fdot a"></span>Limit only <span class="cnt" id="cb-cLimit"></span></button>
     <button class="ftab" data-f="delisted" onclick="cbSetFilter('delisted')"><span class="fdot"></span>Delisted <span class="cnt" id="cb-cDelisted"></span></button>
     <button class="ftab" data-f="highrisk" onclick="cbSetFilter('highrisk')"><span class="fdot r"></span>High risk <span class="cnt" id="cb-cHighRisk"></span></button>
+    </div>
     <input class="search" type="text" placeholder="Search coins... ( / )" id="cb-searchInput" oninput="cbSetQuery(this.value)">
 </div>
 <div class="tbl-wrap">
@@ -1469,18 +1469,16 @@ function renderStats() {
     const mon = allCoins.filter(t => t.status === 'monitoring').length;
     const deling = allCoins.filter(t => t.status === 'delisting').length;
     const deled = allCoins.filter(t => t.status === 'delisted').length;
-    const rest = allCoins.filter(t => t.status === 'restored').length;
     const active = allCoins.filter(t => t.status === 'active').length;
     const highRisk = allCoins.filter(t => t.status === 'active' && t._risk >= 50).length;
     const medDays = getMedianMonToDelist();
+    document.getElementById('bn-headline').innerHTML =
+        `${mon} ${mon === 1 ? 'coin is' : 'coins are'} on Binance's watchlist. <em>${highRisk}</em> score as high risk.`;
     document.getElementById('bn-stats').innerHTML = `
-        <div class="stat"><div class="stat-label">Active coins</div><div class="stat-val">${active}</div><div class="stat-sub">trading on Binance</div></div>
-        <div class="stat"><div class="stat-label">High risk</div><div class="stat-val r">${highRisk}</div><div class="stat-sub">risk score ≥ 50</div></div>
-        <div class="stat"><div class="stat-label">Monitoring</div><div class="stat-val a">${mon}</div><div class="stat-sub">tagged by Binance</div></div>
-        <div class="stat"><div class="stat-label">Delisting</div><div class="stat-val r">${deling}</div><div class="stat-sub">scheduled removal</div></div>
-        <div class="stat"><div class="stat-label">Restored</div><div class="stat-val g">${rest}</div><div class="stat-sub">tag removed</div></div>
-        <div class="stat"><div class="stat-label">Delisted</div><div class="stat-val">${deled}</div><div class="stat-sub">since Jul 2023</div></div>
-        <div class="stat"><div class="stat-label">Median to delist</div><div class="stat-val">${medDays||'—'}d</div><div class="stat-sub">tag → removal</div></div>
+        <div class="stat"><div class="stat-val">${active}</div><div class="stat-label">Active coins</div></div>
+        <div class="stat"><div class="stat-val">${deling}</div><div class="stat-label">Delisting now</div></div>
+        <div class="stat"><div class="stat-val">${deled}</div><div class="stat-label">Delisted since Jul 2023</div></div>
+        <div class="stat"><div class="stat-val">${medDays||'—'}d</div><div class="stat-label">Median tag → removal</div></div>
     `;
 }
 
@@ -1508,12 +1506,9 @@ function renderFilters() {
     // focused node out from under anyone mid-search. The old `value="${query}"`
     // was also unescaped, so a typed double quote injected an attribute and
     // truncated the term. Leaving the input alone fixes both.
-    const container = document.getElementById('bn-filters');
-    const search = document.getElementById('bn-searchInput');
-    container.querySelectorAll('.ftab').forEach(b => b.remove());
-    search.insertAdjacentHTML('beforebegin', tabs.map(([k,l,c]) =>
+    document.getElementById('bn-seg').innerHTML = tabs.map(([k,l,c]) =>
         `<button class="ftab ${filter===k?'active':''}" onclick="bnSetFilter('${k}')">${l}<span class="cnt">${c}</span></button>`
-    ).join(''));
+    ).join('');
 }
 
 function renderTable() {
@@ -1542,15 +1537,15 @@ function renderTable() {
 
         // "NEW" label for tokens recently added to monitoring (within 30 days)
         const isNew = t.monDate && daysBetween(t.monDate, today) <= 30 && (t.status === 'monitoring' || t.status === 'delisting');
-        const newBadge = isNew ? `<span class="badge new-tag">NEW</span> ` : '';
+        const newBadge = isNew ? `<span class="badge new-tag">New</span> ` : '';
 
         // Status badge
         const badges = {
-            monitoring: `${newBadge}<span class="badge monitoring"><span class="bdot a"></span>MON</span>`,
-            delisting: `${newBadge}<span class="badge delisting"><span class="bdot r"></span>DELIST</span>`,
-            delisted: `<span class="badge delisted">DELISTED</span>`,
-            restored: `<span class="badge restored"><span class="bdot g"></span>RESTORED</span>`,
-            active: `<span class="badge active">ACTIVE</span>`,
+            monitoring: `${newBadge}<span class="badge monitoring"><span class="bdot a"></span>Monitoring</span>`,
+            delisting: `${newBadge}<span class="badge delisting"><span class="bdot r"></span>Delisting</span>`,
+            delisted: `<span class="badge delisted">Delisted</span>`,
+            restored: `<span class="badge restored"><span class="bdot g"></span>Restored</span>`,
+            active: `<span class="badge active">Active</span>`,
         };
 
         // Risk score
@@ -2109,9 +2104,9 @@ function cbRenderAll() {
 
         // Status badge
         let badge;
-        if (c.status === 'delisted') badge = '<span class="badge delisted">DELISTED</span>';
-        else if (c.limitOnly) badge = '<span class="badge limit"><span class="bdot a"></span>LIMIT</span>';
-        else badge = '<span class="badge online"><span class="bdot g"></span>ONLINE</span>';
+        if (c.status === 'delisted') badge = '<span class="badge delisted">Delisted</span>';
+        else if (c.limitOnly) badge = '<span class="badge limit"><span class="bdot a"></span>Limit only</span>';
+        else badge = '<span class="badge online"><span class="bdot g"></span>Online</span>';
 
         // Risk
         const riskHtml = `<span class="risk-score ${rl}">${c._risk}<div class="risk-bar"><div class="risk-fill" style="width:${c._risk}%;background:${rc}"></div></div></span>`;
