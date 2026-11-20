@@ -1381,5 +1381,61 @@
     "monDate": null,
     "delistDate": "2023-08-22",
     "restoreDate": null
+  },
+  {
+    "sym": "BANK",
+    "name": "BANK",
+    "status": "monitoring",
+    "monDate": "2026-11-20",
+    "delistDate": null,
+    "restoreDate": null
+  },
+  {
+    "sym": "INIT",
+    "name": "INIT",
+    "status": "monitoring",
+    "monDate": "2026-11-20",
+    "delistDate": null,
+    "restoreDate": null
+  },
+  {
+    "sym": "MITO",
+    "name": "MITO",
+    "status": "monitoring",
+    "monDate": "2026-11-20",
+    "delistDate": null,
+    "restoreDate": null
+  },
+  {
+    "sym": "ONE",
+    "name": "ONE",
+    "status": "monitoring",
+    "monDate": "2026-11-20",
+    "delistDate": null,
+    "restoreDate": null
+  },
+  {
+    "sym": "THE",
+    "name": "THE",
+    "status": "monitoring",
+    "monDate": "2026-11-20",
+    "delistDate": null,
+    "restoreDate": null
+  },
+  {
+    "sym": "ZIL",
+    "name": "ZIL",
+    "status": "monitoring",
+    "monDate": "2026-11-20",
+    "delistDate": null,
+    "restoreDate": null
+  },
+  {
+    "sym": "HYPE",
+    "name": "HYPE",
+    "status": "monitoring",
+    "monDate": "2026-11-20",
+    "delistDate": null,
+    "restoreDate": null
   }
 ]
