@@ -154,18 +154,19 @@ async function fetchBinanceTitles() {
   return { titles: [...titles], empty };
 }
 
-// The list ends at the first fragment that isn't a ticker. The 2026-11-20 title was
-// "... Monitoring Tag to Include BANK, INIT, MITO, ONE, THE & ZIL, Remove the Seed
-// Tag for MORPHO & HYPE on 2026-11-20"; filtering instead of stopping kept HYPE, a
-// Seed Tag removal, as a new monitoring row.
+// The list ends at the first fragment that is prose (has a space). The 2026-11-20
+// title was "... Monitoring Tag to Include BANK, INIT, MITO, ONE, THE & ZIL, Remove
+// the Seed Tag for MORPHO & HYPE on 2026-11-20"; without the stop, HYPE (a Seed Tag
+// removal) became a monitoring row. Stopping at any non-ticker instead would cut
+// "COS, D, HIGH, MBOX" at the one-letter D and lose HIGH and MBOX.
 function splitSymbols(s) {
   const frags = s
     .replace(/\band\b/gi, ',')
     .split(/[,&]/)
-    .map(x => x.replace(/\(.*?\)/g, '').trim()) // drop parenthetical names
-    .filter(Boolean);
-  const end = frags.findIndex(x => !/^[A-Z0-9]{2,12}$/.test(x)); // plausible ticker only
-  return end === -1 ? frags : frags.slice(0, end);
+    .map(x => x.replace(/\(.*?\)/g, '').trim()); // drop parenthetical names
+  const end = frags.findIndex(x => /\s/.test(x));
+  return (end === -1 ? frags : frags.slice(0, end))
+    .filter(x => /^[A-Z0-9]{2,12}$/.test(x));   // plausible ticker only
 }
 
 // -> [{sym, kind:'delisting'|'monitoring', date}]
@@ -505,7 +506,9 @@ function selftestParse() {
     ['Seed Tag removal in a monitoring title is not a monitoring row',
       syms('Binance Will Extend the Monitoring Tag to Include BANK, INIT, MITO, ONE, THE & ZIL, Remove the Seed Tag for MORPHO & HYPE on 2026-11-20')
         === ['BANK', 'INIT', 'MITO', 'ONE', 'THE', 'ZIL'].map(s => `${s}:monitoring:2026-11-20`).join(' ')],
-    ['delist title with a trailing "and" still parses',
+    ['a one-letter ticker does not end the list',
+      syms('Binance Will Delist COS, D, HIGH, MBOX on 2026-06-19') === 'COS:delisting:2026-06-19 HIGH:delisting:2026-06-19 MBOX:delisting:2026-06-19'],
+    ['plain two-ticker delist title still parses',
       syms('Binance Will Delist EPIC, QUICK on 2026-10-28') === 'EPIC:delisting:2026-10-28 QUICK:delisting:2026-10-28'],
     ['"... and Will Delist" batch title still parses',
       syms('Binance Announced the First Batch of Vote to Delist Results and Will Delist BADGER, BAL, BETA on 2025-04-16')
