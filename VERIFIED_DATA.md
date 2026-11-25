@@ -354,3 +354,37 @@ Also in this run: FORTH-USD went limit-only and is now Coinbase's only FORTH pai
 joins the wind-down list. AXIS-USD left cancel-only and trades normally. STABLE-USD and RITUAL-USD are new
 listings. Binance has nothing new, and the asset-list check reports 0 disagreements. Detector PR #44, which
 reported only the FORTH change, is superseded by #45.
+
+## 2026-11-25 — detector PRs #50–#56
+
+### Binance
+
+| Monitoring tag | Token | Source |
+|----------------|-------|--------|
+| 2026-11-20 | BANK (Lorenzo Protocol), INIT (Initia), MITO (Mitosis), ONE (Harmony), THE (THENA), ZIL (Zilliqa) | Binance notice 1e39047366d44eeba508896a67314b4a |
+
+Names are the notice's own. **HYPE is not tagged.** The same notice removed the Seed Tag from MORPHO and HYPE, and its
+title ran both lists together ("... THE & ZIL, Remove the Seed Tag for MORPHO & HYPE on 2026-11-20"). The title
+parser kept every ticker-shaped fragment, so it added HYPE as a monitoring row; Binance's asset list showed no
+Monitoring tag on HYPE, which is how the reconciliation caught it. The parser now stops at the first fragment that
+isn't a ticker (`--selftest-parse`). CoinGecko ids added for BANK, INIT, MITO and THE (ONE and ZIL already had
+them), each checked by matching Binance's USDT price to CoinGecko's; their CMC slugs equal the ids.
+
+### Coinbase
+
+| Suspended | Token | Source |
+|-----------|-------|--------|
+| 2026-11-09 | BAL (Balancer), TNSR (Tensor) | Coinbase Exchange status page, announced 2026-10-08 |
+| 2026-11-16 | NEON (Neon), SYND (Syndicate) | Coinbase Exchange status page, announced 2026-10-15 |
+| 2026-11-20 | PYR (Vulcan Forged), STG (Stargate Finance V1) | Coinbase Exchange status page, announced 2026-10-07 |
+| 2026-11-23 | FORTH (Ampleforth Governance Token) | Coinbase Exchange status page, announced 2026-10-22 |
+
+Each was a listing-standards review, suspended on or around 2 PM ET after limit-only order books, with
+withdrawals left open. Each status-page "We have disabled trading" update falls between the detector run that
+last saw the asset online and the one that first saw it delisted. Names are Coinbase's own (`/currencies/<SYM>`).
+CoinGecko ids added for TNSR (`tensor`), SYND (`syndicate-3`), NEON (`neon`) and STG (`stargate-finance`).
+
+Still pending, nothing to curate yet: **CFG** (Centrifuge) is limit-only, with trading to be suspended on
+2026-12-18 because Centrifuge is ending the token. **ZETACHAIN** is limit-only ahead of a 1:1 migration to ZETA on
+Ethereum, with trading disabled from 2026-12-07. The 11 quote-pair removals (APE-USDT, ATOM-USDT, ALGO-BTC, …) were
+Coinbase consolidating liquidity, announced 2026-11-12; every base asset still trades.

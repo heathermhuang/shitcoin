@@ -665,7 +665,9 @@ const COIN_IDS = {
     'AEUR':'anchored-coins-eur','TROY':'troy-2','WAVES':'waves','XEM':'nem',
     'KDA':'kadena','BAKE':'bakerytoken','WRX':'wazirx','SLF':'self-chain',
     'PNT':'pnetwork','IDRT':'rupiah-token','FOR':'force-protocol','WNXM':'wrapped-nxm',
-    'SRM':'serum','AI':'sleepless-ai'
+    'SRM':'serum','AI':'sleepless-ai',
+    'BANK':'lorenzo-protocol','INIT':'initia','MITO':'mitosis','THE':'thena',
+    'TNSR':'tensor','SYND':'syndicate-3','NEON':'neon','STG':'stargate-finance'
 };
 
 // Coinbase-only exceptions to COIN_IDS, for a ticker the two exchanges use for
@@ -1883,6 +1885,15 @@ const CB_DELISTED = [
     // VELO trading on 11-02 after limit-only order books (Coinbase status page,
     // Crypto Briefing).
     {sym:'VELO',   name:'Velodrome Finance (migrated to AERO)', delistDate:'2026-11-02'},
+    // Detector PRs #50–#56. Listing-standards reviews; each suspended on or around
+    // 2 PM ET on the date shown after weeks limit-only (Coinbase Exchange status page).
+    {sym:'BAL',    name:'Balancer',            delistDate:'2026-11-09'},
+    {sym:'TNSR',   name:'Tensor',              delistDate:'2026-11-09'},
+    {sym:'NEON',   name:'Neon',                delistDate:'2026-11-16'},
+    {sym:'SYND',   name:'Syndicate',           delistDate:'2026-11-16'},
+    {sym:'PYR',    name:'Vulcan Forged',       delistDate:'2026-11-20'},
+    {sym:'STG',    name:'Stargate Finance V1', delistDate:'2026-11-20'},
+    {sym:'FORTH',  name:'Ampleforth Governance Token', delistDate:'2026-11-23'},
     // ── Name backfill, added 2026-08-12 ───────────────────────────────────
     // Fully delisted on Coinbase, and the API still returns them, so these rows
     // ALREADY render — just with no curated name, so each falls back to

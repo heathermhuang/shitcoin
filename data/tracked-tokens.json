@@ -1381,5 +1381,53 @@
     "monDate": null,
     "delistDate": "2023-08-22",
     "restoreDate": null
+  },
+  {
+    "sym": "BANK",
+    "name": "Lorenzo Protocol",
+    "status": "monitoring",
+    "monDate": "2026-11-20",
+    "delistDate": null,
+    "restoreDate": null
+  },
+  {
+    "sym": "INIT",
+    "name": "Initia",
+    "status": "monitoring",
+    "monDate": "2026-11-20",
+    "delistDate": null,
+    "restoreDate": null
+  },
+  {
+    "sym": "MITO",
+    "name": "Mitosis",
+    "status": "monitoring",
+    "monDate": "2026-11-20",
+    "delistDate": null,
+    "restoreDate": null
+  },
+  {
+    "sym": "ONE",
+    "name": "Harmony",
+    "status": "monitoring",
+    "monDate": "2026-11-20",
+    "delistDate": null,
+    "restoreDate": null
+  },
+  {
+    "sym": "THE",
+    "name": "THENA",
+    "status": "monitoring",
+    "monDate": "2026-11-20",
+    "delistDate": null,
+    "restoreDate": null
+  },
+  {
+    "sym": "ZIL",
+    "name": "Zilliqa",
+    "status": "monitoring",
+    "monDate": "2026-11-20",
+    "delistDate": null,
+    "restoreDate": null
   }
 ]
