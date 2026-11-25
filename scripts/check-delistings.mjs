@@ -16,6 +16,7 @@
 //   node scripts/check-delistings.mjs --selftest-edit  # in-memory test of the array editor
 //   node scripts/check-delistings.mjs --selftest-cb    # in-memory test of the Coinbase differ
 //   node scripts/check-delistings.mjs --selftest-assets  # in-memory test of the asset-list check
+//   node scripts/check-delistings.mjs --selftest-parse   # in-memory test of the title parser
 //
 // Asymmetry worth knowing: Binance is monitored from its announcement feed, so
 // findings are FORWARD-looking. Coinbase publishes no feed we read — it is
@@ -153,11 +154,18 @@ async function fetchBinanceTitles() {
   return { titles: [...titles], empty };
 }
 
+// The list ends at the first fragment that is prose (has a space). The 2026-11-20
+// title was "... Monitoring Tag to Include BANK, INIT, MITO, ONE, THE & ZIL, Remove
+// the Seed Tag for MORPHO & HYPE on 2026-11-20"; without the stop, HYPE (a Seed Tag
+// removal) became a monitoring row. Stopping at any non-ticker instead would cut
+// "COS, D, HIGH, MBOX" at the one-letter D and lose HIGH and MBOX.
 function splitSymbols(s) {
-  return s
+  const frags = s
     .replace(/\band\b/gi, ',')
     .split(/[,&]/)
-    .map(x => x.replace(/\(.*?\)/g, '').trim()) // drop parenthetical names
+    .map(x => x.replace(/\(.*?\)/g, '').trim()); // drop parenthetical names
+  const end = frags.findIndex(x => /\s/.test(x));
+  return (end === -1 ? frags : frags.slice(0, end))
     .filter(x => /^[A-Z0-9]{2,12}$/.test(x));   // plausible ticker only
 }
 
@@ -491,6 +499,27 @@ function selftestAssets() {
   process.exitCode = ok ? 0 : 1;
 }
 
+// In-memory self-test of the title parser. Run: --selftest-parse. Real titles.
+function selftestParse() {
+  const syms = t => parseAnnouncements([t]).map(e => `${e.sym}:${e.kind}:${e.date}`).join(' ');
+  const checks = [
+    ['Seed Tag removal in a monitoring title is not a monitoring row',
+      syms('Binance Will Extend the Monitoring Tag to Include BANK, INIT, MITO, ONE, THE & ZIL, Remove the Seed Tag for MORPHO & HYPE on 2026-11-20')
+        === ['BANK', 'INIT', 'MITO', 'ONE', 'THE', 'ZIL'].map(s => `${s}:monitoring:2026-11-20`).join(' ')],
+    ['a one-letter ticker does not end the list',
+      syms('Binance Will Delist COS, D, HIGH, MBOX on 2026-06-19') === 'COS:delisting:2026-06-19 HIGH:delisting:2026-06-19 MBOX:delisting:2026-06-19'],
+    ['plain two-ticker delist title still parses',
+      syms('Binance Will Delist EPIC, QUICK on 2026-10-28') === 'EPIC:delisting:2026-10-28 QUICK:delisting:2026-10-28'],
+    ['"... and Will Delist" batch title still parses',
+      syms('Binance Announced the First Batch of Vote to Delist Results and Will Delist BADGER, BAL, BETA on 2025-04-16')
+        === 'BADGER:delisting:2025-04-16 BAL:delisting:2025-04-16 BETA:delisting:2025-04-16'],
+  ];
+  let ok = true;
+  for (const [name, pass] of checks) { console.log(`${pass ? 'PASS' : 'FAIL'}  ${name}`); if (!pass) ok = false; }
+  console.log(ok ? '\n✅ selftest-parse PASSED' : '\n❌ selftest-parse FAILED');
+  process.exitCode = ok ? 0 : 1;
+}
+
 // ---------- Coinbase ----------
 async function fetchCoinbase() {
   const r = await fetch('https://api.exchange.coinbase.com/products', { headers: { 'User-Agent': UA } });
@@ -590,6 +619,7 @@ async function main() {
   if (FLAGS.has('--selftest-edit')) return selftestEdit();
   if (FLAGS.has('--selftest-cb')) return selftestCb();
   if (FLAGS.has('--selftest-assets')) return selftestAssets();
+  if (FLAGS.has('--selftest-parse')) return selftestParse();
 
   const trackedTokens = JSON.parse(await readFile(TRACKED, 'utf8'));
   const tracked = parseTracked(trackedTokens);
