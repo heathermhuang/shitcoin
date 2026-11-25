@@ -1,0 +1,63 @@
+name: Deploy
+
+# Deploys the Worker on every merge to main. Before this, deploys were manual and
+# the live site drifted: on 2026-09-18 it was still serving a 2026-08-24 build
+# with 12 merged PRs unshipped.
+#
+# Requires:
+#   secret   CLOUDFLARE_API_TOKEN   ("Edit Cloudflare Workers" template)
+#   variable CLOUDFLARE_ACCOUNT_ID
+#   variable GA_ID                  the live measurement ID. Kept out of the repo on
+#                                   purpose; index.html ships `const GA_ID = ''`.
+# Worker secrets (CG_DEMO_KEY, RELAY_URL, RELAY_TOKEN) live in Cloudflare and are
+# untouched by `wrangler deploy`.
+
+on:
+  push:
+    branches: [main]
+    paths-ignore:
+      - '**.md'
+      - 'docs/**'
+  workflow_dispatch:
+
+# Never cancel a deploy halfway; queue the next merge behind it.
+concurrency:
+  group: deploy
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    # Forks have no Cloudflare credentials; don't fail their runs.
+    if: github.repository == 'heathermhuang/shitcoin'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - run: npm ci
+
+      # Fails rather than deploying without analytics: a missing ID would ship
+      # silently and only show up weeks later as a traffic drop.
+      - name: Fill GA measurement ID
+        env:
+          GA_ID: ${{ vars.GA_ID }}
+        run: |
+          [ -n "$GA_ID" ] || { echo "::error::Repo variable GA_ID is not set"; exit 1; }
+          grep -q "const GA_ID = ''" index.html || { echo "::error::GA_ID placeholder not found in index.html"; exit 1; }
+          sed -i "s/const GA_ID = ''/const GA_ID = '${GA_ID}'/" index.html
+          grep -q "const GA_ID = '${GA_ID}'" index.html
+
+      # wrangler.toml's [build] runs `node build.js`, so this builds and deploys.
+      - name: Deploy
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
+        run: npx wrangler deploy
