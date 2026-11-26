@@ -304,6 +304,13 @@ const resolvedAssetKeys = (findings, reported) => {
   const now = new Set(findings.map(f => f.key));
   return reported.filter(k => !now.has(k));
 };
+// The file holds keys from two sources: merge:* from the announcement feed, the
+// rest from the asset list. A source whose fetch failed found nothing, so its
+// reported keys are carried over rather than dropped (and later re-announced).
+const persistedKeys = (findings, reported, { assetErr, binanceErr }) => {
+  const kept = reported.filter(k => (k.startsWith('merge:') ? binanceErr : assetErr));
+  return [...new Set([...findings.map(f => f.key), ...kept])].sort();
+};
 
 // ---------- current data ----------
 // data/tracked-tokens.json is the source of truth. It used to be an array
@@ -546,6 +553,14 @@ function selftestAssets() {
   checks.push(['a fixed finding is resolved', only(resolvedAssetKeys([], ['untagged:MBL']), ['untagged:MBL'])]);
   checks.push(['a standing finding is not resolved', !resolvedAssetKeys(mbl, ['untagged:MBL']).length]);
   checks.push(['asset findings change the signature', findingsSignature([], [], [], mbl) !== findingsSignature([], [], [])]);
+  // One source failing must not erase the other's reported keys from the file.
+  const vel = [{ key: 'merge:VELODROME' }];
+  checks.push(['asset fetch failed: its reported keys are kept',
+    only(persistedKeys(vel, ['untagged:MBL'], { assetErr: 'x' }), ['merge:VELODROME', 'untagged:MBL'])]);
+  checks.push(['announcements failed: reported merge keys are kept',
+    only(persistedKeys(mbl, ['merge:VELODROME'], { binanceErr: 'x' }), ['merge:VELODROME', 'untagged:MBL'])]);
+  checks.push(['both succeeded: a fixed key is dropped',
+    only(persistedKeys(vel, ['untagged:MBL'], {}), ['merge:VELODROME'])]);
   checks.push(['no asset findings leaves existing signatures unchanged',
     findingsSignature([], [], [], []) === findingsSignature([], [], [])]);
 
@@ -803,7 +818,7 @@ async function main() {
       await writeFile(TRACKED, serializeTracked(projectedTokens));
     }
     if (assetNew.length || assetResolved.length) {
-      await writeFile(ASSET_FINDINGS, JSON.stringify(keyed.map(f => f.key), null, 2) + '\n');
+      await writeFile(ASSET_FINDINGS, JSON.stringify(persistedKeys(keyed, reportedKeys, { assetErr, binanceErr }), null, 2) + '\n');
     }
     if (cbSnap && (cb.baseline || cbAny)) {
       await writeFile(SNAPSHOT, JSON.stringify(cbSnap, null, 0) + '\n');
