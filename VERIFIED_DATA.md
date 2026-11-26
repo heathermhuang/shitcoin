@@ -388,3 +388,21 @@ Still pending, nothing to curate yet: **CFG** (Centrifuge) is limit-only, with t
 2026-12-18 because Centrifuge is ending the token. **ZETACHAIN** is limit-only ahead of a 1:1 migration to ZETA on
 Ethereum, with trading disabled from 2026-12-07. The 11 quote-pair removals (APE-USDT, ATOM-USDT, ALGO-BTC, …) were
 Coinbase consolidating liquidity, announced 2026-11-12; every base asset still trades.
+
+---
+
+## 2026-11-26 — PR #60 (Binance, found by a live-site audit)
+
+| Pairs removed | Token | Source |
+|---------------|-------|--------|
+| 2026-11-03 03:00 UTC (announced 2026-10-16) | VELODROME (Velodrome Finance) | Binance notice a88495062d5947e895999cf73fa8bce1; completed c01e51bf7fb54b8f8277bbeaadda9933 (2026-11-19) |
+
+**Merge, not a delisting for quality.** Binance's side of the same Velodrome→Aerodrome merge recorded for Coinbase
+VELO on 2026-11-03: VELODROME/USDT was removed and every VELODROME was swapped for 0.044 AERO. The row stayed
+`monitoring` for three weeks, at the top of the risk table with no price. The daily check missed it: the notices are in CMS catalog 157 (Maintenance Updates), which it didn't read,
+and they are titled "Token Merge", with the date only in the body. Binance's asset list keeps VELODROME
+`delisted:false` with the Monitoring tag, only `trading:false`, so the reconciliation was quiet too. The detector
+now reads catalog 157 for "Token Merge" titles, and flags any tracked coin Binance has stopped trading
+(`halted:`). Stored as `delisting` with the removal date, as EPIC and QUICK are; the page promotes it on load. The
+name says it migrated to AERO, matching the Coinbase VELO row. Every other tracked coin's Binance pairs matched its
+row on 2026-11-26.
