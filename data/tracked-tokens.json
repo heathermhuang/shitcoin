@@ -224,10 +224,10 @@
   },
   {
     "sym": "VELODROME",
-    "name": "Velodrome Finance",
-    "status": "monitoring",
+    "name": "Velodrome Finance (migrated to AERO)",
+    "status": "delisting",
     "monDate": "2026-04-14",
-    "delistDate": null,
+    "delistDate": "2026-11-03",
     "restoreDate": null
   },
   {

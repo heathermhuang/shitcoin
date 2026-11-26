@@ -85,9 +85,13 @@ const CMS_PATH = '/bapi/composite/v1/public/cms/article/list/query';
 // over seven weeks (2026-07-03, 07-24, 08-11) and wrongly recorded ACX/PYR/VANRY as
 // never tagged. Sweep both and merge. A catalog that returns nothing is reported,
 // because "no announcements" and "we stopped looking here" must not look alike.
+// 157 carries token merges, which remove the merged token's spot pairs without a
+// "Delist" title: VELODROME's pairs went on 2026-11-03 (merged into AERO) and the
+// row still read monitoring three weeks later. See parseMerges().
 const CATALOGS = [
   { id: 161, name: 'Delisting' },
   { id: 49, name: 'Latest Binance News' },
+  { id: 157, name: 'Maintenance Updates' },
 ];
 const TODAY = process.env.TODAY || new Date().toISOString().slice(0, 10);
 const UA = 'Mozilla/5.0 (compatible; shitcoin-monitor/1.0)';
@@ -188,6 +192,35 @@ function parseAnnouncements(titles) {
   return out;
 }
 
+// -> [{sym, into, title}]. "Binance Will Support / Has Completed the Velodrome Finance
+// (VELODROME) Token Merge to Aerodrome (AERO) ...": the merged token's spot pairs
+// are removed for good. Only "Token Merge": a rebrand (TON -> GRAM) or contract
+// swap keeps the coin trading. The removal date is in the notice body, not the
+// title, so these become findings for a human rather than edits.
+function parseMerges(titles) {
+  const out = [];
+  for (const t of titles) {
+    const m = t.match(/^Binance (?:Will Support|Has Completed) the .+? \(([A-Z0-9]{2,12})\) Token Merge to .+? \(([A-Z0-9]{2,12})\)/);
+    if (m) out.push({ sym: m[1], into: m[2], title: t });
+  }
+  return out;
+}
+
+// Merges of tracked coins whose row does not yet record a delisting. Keyed like the
+// asset-list findings so a standing one is reported once.
+function mergeFindings(merges, tokens) {
+  const bySym = new Map(tokens.map(t => [t.sym, t]));
+  const out = [];
+  for (const m of merges) {
+    const t = bySym.get(m.sym);
+    if (!t || t.status === 'delisting' || t.status === 'delisted') continue;
+    if (out.some(f => f.sym === m.sym)) continue; // "Will Support" and "Has Completed"
+    out.push({ key: `merge:${m.sym}`, sym: m.sym,
+      text: `merging into ${m.into}, so Binance removes its spot pairs; tracked as ${t.status}. Take the removal date from the notice: "${m.title}"` });
+  }
+  return out.sort((x, y) => x.key.localeCompare(y.key));
+}
+
 // ---------- Binance asset list ----------
 // Titles are the forward-looking signal but not the whole truth. Tag REMOVALS are
 // announced in notice bodies, so MBL's 2025-10-09 restore left its row on
@@ -237,6 +270,16 @@ function reconcileAssets(assets, tokens, today = TODAY) {
       out.push({ key: `untagged:${sym}`, sym,
         text: 'tracked as monitoring, but Binance no longer tags it and it still trades: likely restored; the restore date has to come from the notice' });
     }
+    // The row says it still trades, Binance says it doesn't. Catches removals no
+    // title parser saw (a merge, a rebrand, odd wording). On the delist day itself
+    // the row is still 'delisting' (promotion is date < today), so only a future
+    // date counts.
+    const rowTrades = status === 'monitoring' || status === 'restored'
+      || (status === 'delisting' && !!t.delistDate && t.delistDate > today);
+    if (rowTrades && !trading) {
+      out.push({ key: `halted:${sym}`, sym,
+        text: `Binance no longer trades it, but it is tracked as ${status}${t.delistDate ? ` (delistDate ${t.delistDate})` : ''}: find the notice (catalog 157 for merges) and record the removal date` });
+    }
     if (tagged && trading && status !== 'monitoring' && status !== 'delisting') {
       out.push({ key: `tagged:${sym}`, sym,
         text: `Binance tags it Monitoring; ${t ? `tracked as ${status}` : 'not in dataset'}` });
@@ -260,6 +303,13 @@ const newAssetFindings = (findings, reported) => {
 const resolvedAssetKeys = (findings, reported) => {
   const now = new Set(findings.map(f => f.key));
   return reported.filter(k => !now.has(k));
+};
+// The file holds keys from two sources: merge:* from the announcement feed, the
+// rest from the asset list. A source whose fetch failed found nothing, so its
+// reported keys are carried over rather than dropped (and later re-announced).
+const persistedKeys = (findings, reported, { assetErr, binanceErr }) => {
+  const kept = reported.filter(k => (k.startsWith('merge:') ? binanceErr : assetErr));
+  return [...new Set([...findings.map(f => f.key), ...kept])].sort();
 };
 
 // ---------- current data ----------
@@ -479,6 +529,19 @@ function selftestAssets() {
   checks.push(['fiat pair removals are ignored (UAH)',
     !keys([A('UAH', { trading: true, pd: '2026-09-28', fiat: true })], []).length]);
 
+  // Trading stopped while the row still says it trades. VELODROME's pairs went to
+  // BREAK on 2026-11-03 (merged into AERO) with no preDelist and the tag still on.
+  checks.push(['halted while tracked as monitoring (VELODROME)',
+    only(keys([A('VELODROME', { tags: ['Monitoring'], trading: false })], [T('VELODROME', 'monitoring')]), ['halted:VELODROME'])]);
+  checks.push(['halted while tracked as restored',
+    only(keys([A('MBL', { trading: false })], [T('MBL', 'restored')]), ['halted:MBL'])]);
+  checks.push(['halted before a future delist date',
+    only(keys([A('EPIC', { tags: ['Monitoring'], trading: false })], [T('EPIC', 'delisting', '2026-10-28')]), ['halted:EPIC'])]);
+  checks.push(['halted on its own delist day is quiet (EPIC)',
+    !reconcileAssets([A('EPIC', { tags: ['Monitoring'], trading: false })], [T('EPIC', 'delisting', '2026-10-28')], '2026-10-28').length]);
+  checks.push(['halted but untracked is quiet',
+    !keys([A('ZZNOTRACK', { trading: false })], []).length]);
+
   // Reporting: only unreported keys are new, and the keys carry no run date.
   const mbl = reconcileAssets([A('MBL')], [T('MBL', 'monitoring')], '2026-10-16');
   const later = reconcileAssets([A('MBL')], [T('MBL', 'monitoring')], '2027-01-01');
@@ -490,6 +553,14 @@ function selftestAssets() {
   checks.push(['a fixed finding is resolved', only(resolvedAssetKeys([], ['untagged:MBL']), ['untagged:MBL'])]);
   checks.push(['a standing finding is not resolved', !resolvedAssetKeys(mbl, ['untagged:MBL']).length]);
   checks.push(['asset findings change the signature', findingsSignature([], [], [], mbl) !== findingsSignature([], [], [])]);
+  // One source failing must not erase the other's reported keys from the file.
+  const vel = [{ key: 'merge:VELODROME' }];
+  checks.push(['asset fetch failed: its reported keys are kept',
+    only(persistedKeys(vel, ['untagged:MBL'], { assetErr: 'x' }), ['merge:VELODROME', 'untagged:MBL'])]);
+  checks.push(['announcements failed: reported merge keys are kept',
+    only(persistedKeys(mbl, ['merge:VELODROME'], { binanceErr: 'x' }), ['merge:VELODROME', 'untagged:MBL'])]);
+  checks.push(['both succeeded: a fixed key is dropped',
+    only(persistedKeys(vel, ['untagged:MBL'], {}), ['merge:VELODROME'])]);
   checks.push(['no asset findings leaves existing signatures unchanged',
     findingsSignature([], [], [], []) === findingsSignature([], [], [])]);
 
@@ -502,6 +573,10 @@ function selftestAssets() {
 // In-memory self-test of the title parser. Run: --selftest-parse. Real titles.
 function selftestParse() {
   const syms = t => parseAnnouncements([t]).map(e => `${e.sym}:${e.kind}:${e.date}`).join(' ');
+  const merges = t => parseMerges([t]).map(m => `${m.sym}>${m.into}`).join(' ');
+  const mf = tokens => mergeFindings(
+    parseMerges(['Binance Will Support the Velodrome Finance (VELODROME) Token Merge to Aerodrome (AERO) and the AERO Contract Swap']),
+    tokens).map(f => f.key).join(' ');
   const checks = [
     ['Seed Tag removal in a monitoring title is not a monitoring row',
       syms('Binance Will Extend the Monitoring Tag to Include BANK, INIT, MITO, ONE, THE & ZIL, Remove the Seed Tag for MORPHO & HYPE on 2026-11-20')
@@ -513,6 +588,23 @@ function selftestParse() {
     ['"... and Will Delist" batch title still parses',
       syms('Binance Announced the First Batch of Vote to Delist Results and Will Delist BADGER, BAL, BETA on 2025-04-16')
         === 'BADGER:delisting:2025-04-16 BAL:delisting:2025-04-16 BETA:delisting:2025-04-16'],
+    // Token merges (catalog 157). The title has no date, so they are findings for a
+    // human, never announcement rows.
+    ['merge notice is not an announcement row',
+      syms('Binance Will Support the Velodrome Finance (VELODROME) Token Merge to Aerodrome (AERO) and the AERO Contract Swap') === ''],
+    ['merge notice names the merged token (VELODROME)',
+      merges('Binance Will Support the Velodrome Finance (VELODROME) Token Merge to Aerodrome (AERO) and the AERO Contract Swap') === 'VELODROME>AERO'],
+    ['completion notice counts too (VELODROME)',
+      merges('Binance Has Completed the Velodrome Finance (VELODROME) Token Merge to Aerodrome (AERO) and the AERO Contract Swap') === 'VELODROME>AERO'],
+    ['merge without a trailing clause (STG)',
+      merges('Binance Will Support the Stargate Finance (STG) Token Merge to LayerZero (ZRO)') === 'STG>ZRO'],
+    ['rebrand is not a merge (TON)', merges('Binance Will Support the Toncoin (TON) Rebranding to Gram (GRAM)') === ''],
+    ['contract swap is not a merge (KITE)', merges('Binance Will Support the KITE (KITE) Contract Swap') === ''],
+    ['merge of a tracked monitoring coin is a finding',
+      mf([{ sym: 'VELODROME', status: 'monitoring' }]) === 'merge:VELODROME'],
+    ['merge of a coin already delisting is quiet',
+      mf([{ sym: 'VELODROME', status: 'delisting', delistDate: '2026-11-03' }]) === ''],
+    ['merge of an untracked coin is quiet', mf([]) === ''],
   ];
   let ok = true;
   for (const [name, pass] of checks) { console.log(`${pass ? 'PASS' : 'FAIL'}  ${name}`); if (!pass) ok = false; }
@@ -624,11 +716,12 @@ async function main() {
   const trackedTokens = JSON.parse(await readFile(TRACKED, 'utf8'));
   const tracked = parseTracked(trackedTokens);
 
-  let binanceNew = [], binanceErr = null, emptyCatalogs = [];
+  let binanceNew = [], binanceErr = null, emptyCatalogs = [], merges = [];
   try {
     const { titles, empty } = await fetchBinanceTitles();
     emptyCatalogs = empty;
     binanceNew = diffBinance(parseAnnouncements(titles), tracked);
+    merges = parseMerges(titles);
   } catch (e) { binanceErr = e.message; }
 
   // Checked against the data as it will be once the title findings are applied, so
@@ -638,10 +731,14 @@ async function main() {
   try {
     assetFindings = reconcileAssets(await fetchBinanceAssets(), projectedTokens);
   } catch (e) { assetErr = e.message; }
+  const mergeFound = mergeFindings(merges, projectedTokens);
+  // Merge findings share the asset findings' reported-keys file, so both are
+  // reported once and both leave the file when fixed.
+  const keyed = [...assetFindings, ...mergeFound];
   try { reportedKeys = JSON.parse(await readFile(ASSET_FINDINGS, 'utf8')); } catch {}
-  const assetNew = newAssetFindings(assetFindings, reportedKeys);
+  const assetNew = newAssetFindings(keyed, reportedKeys);
   // A failed fetch found nothing, which must not read as "everything resolved".
-  const assetResolved = assetErr ? [] : resolvedAssetKeys(assetFindings, reportedKeys);
+  const assetResolved = (assetErr || binanceErr) ? [] : resolvedAssetKeys(keyed, reportedKeys);
 
   let cb ={ baseline: false, changes: [], pairChurn: [], windDown: [] }, cbErr = null, cbSnap = null;
   try {
@@ -656,7 +753,7 @@ async function main() {
   // apart from real findings so the PR never overstates what happened.
   const cbAny = !cb.baseline && (cb.changes.length || cb.pairChurn.length || cb.windDown.length);
   const hasChanges = !!(binanceNew.length || cbAny || assetNew.length || assetResolved.length);
-  const signature = findingsSignature(binanceNew, cb.baseline ? [] : cb.changes, cb.baseline ? [] : cb.windDown, assetFindings);
+  const signature = findingsSignature(binanceNew, cb.baseline ? [] : cb.changes, cb.baseline ? [] : cb.windDown, keyed);
 
   // Human-readable markdown report — used for console output AND the PR body.
   const lines = [`# Auto-update check — ${TODAY}`, `Tracked Binance coins: ${tracked.size}`];
@@ -666,9 +763,14 @@ async function main() {
   if (emptyCatalogs.length) lines.push(`\n⚠ Binance catalog(s) returned no articles — Binance may have moved them again: ${emptyCatalogs.join(', ')}`);
   lines.push(`\n## Binance — ${binanceNew.length} change(s) not yet in data`);
   for (const n of binanceNew) lines.push(`- **${n.sym}** → ${n.expected} (${n.kind} ${n.date}) — ${n.reason}`);
+  if (mergeFound.length) {
+    lines.push(`\n## Binance token merges — ${mergeFound.length} tracked coin(s) losing their pairs`);
+    lines.push(`_Not applied: the removal date is in the notice body, not its title. Record it from the notice, as for the Coinbase VELO row._`);
+    for (const f of mergeFound) lines.push(`- **${f.sym}** — ${f.text}${reportedKeys.includes(f.key) ? '' : ' _(new)_'}`);
+  }
   if (assetErr) lines.push(`\n⚠ Binance asset-list fetch FAILED: ${assetErr}`);
   else {
-    lines.push(`\n## Binance asset list — ${assetFindings.length} disagreement(s) with data (${assetNew.length} new)`);
+    lines.push(`\n## Binance asset list — ${assetFindings.length} disagreement(s) with data (${assetFindings.filter(f => !reportedKeys.includes(f.key)).length} new)`);
     if (assetFindings.length) lines.push(`_Not applied. Binance's own asset list (live Monitoring tag, delisting deadlines) disagrees with data/tracked-tokens.json. Confirm each against the official notice, then edit the row by hand._`);
     for (const f of assetFindings) lines.push(`- **${f.sym}** — ${f.text}${reportedKeys.includes(f.key) ? '' : ' _(new)_'}`);
     if (assetResolved.length) {
@@ -704,7 +806,7 @@ async function main() {
   const md = lines.join('\n');
 
   if (FLAGS.has('--json')) {
-    console.log(JSON.stringify({ today: TODAY, trackedCount: tracked.size, signature, binanceNew, binanceErr, assetFindings, assetNew, assetResolved, assetErr, coinbase: cb, cbErr, hasChanges }, null, 2));
+    console.log(JSON.stringify({ today: TODAY, trackedCount: tracked.size, signature, binanceNew, binanceErr, mergeFindings: mergeFound, assetFindings, assetNew, assetResolved, assetErr, coinbase: cb, cbErr, hasChanges }, null, 2));
   } else {
     console.log(md);
   }
@@ -716,7 +818,7 @@ async function main() {
       await writeFile(TRACKED, serializeTracked(projectedTokens));
     }
     if (assetNew.length || assetResolved.length) {
-      await writeFile(ASSET_FINDINGS, JSON.stringify(assetFindings.map(f => f.key), null, 2) + '\n');
+      await writeFile(ASSET_FINDINGS, JSON.stringify(persistedKeys(keyed, reportedKeys, { assetErr, binanceErr }), null, 2) + '\n');
     }
     if (cbSnap && (cb.baseline || cbAny)) {
       await writeFile(SNAPSHOT, JSON.stringify(cbSnap, null, 0) + '\n');
